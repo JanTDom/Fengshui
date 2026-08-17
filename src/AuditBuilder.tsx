@@ -343,19 +343,92 @@ function furnitureSymbolClass(label: string) {
 
 function renderFurnitureSymbol(label: string) {
   const symbolClass = furnitureSymbolClass(label);
-  const showFacingArrow = symbolClass !== "bed";
+
+  if (symbolClass === "bed") {
+    return (
+      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg bed-svg" aria-hidden="true">
+        {/* Rama łóżka */}
+        <rect x="2" y="2" width="34" height="22" rx="3" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" strokeWidth="1.6" />
+        {/* Wezgłowie (głowa) po lewej */}
+        <rect x="3" y="3" width="5" height="20" rx="1.5" fill="#FFFFFF" opacity="0.9" />
+        {/* Poduszki */}
+        <rect x="9" y="4" width="7" height="8" rx="2" fill="#FFFFFF" opacity="0.65" />
+        <rect x="9" y="14" width="7" height="8" rx="2" fill="#FFFFFF" opacity="0.65" />
+        {/* Linia kołdry */}
+        <line x1="18" y1="3" x2="18" y2="23" stroke="#FFFFFF" strokeWidth="1.2" strokeDasharray="2 2" opacity="0.7" />
+        {/* Strzałka kierunku patrzenia / leżenia */}
+        <path d="M 26 13 L 33 13 M 30 10 L 33 13 L 30 16" stroke="#C49544" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (symbolClass === "desk") {
+    return (
+      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg desk-svg" aria-hidden="true">
+        {/* Blat biurka */}
+        <rect x="2" y="4" width="34" height="18" rx="2.5" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" strokeWidth="1.6" />
+        {/* Monitor / Laptop */}
+        <rect x="13" y="6" width="12" height="4" rx="1" fill="#FFFFFF" opacity="0.9" />
+        {/* Krzesło biurowe */}
+        <rect x="14" y="14" width="10" height="7" rx="3" fill="#FFFFFF" opacity="0.6" />
+        {/* Strzałka wzroku użytkownika (w stronę ekranu/okna) */}
+        <path d="M 19 12 L 19 4 M 16 7 L 19 3 L 22 7" stroke="#C49544" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (symbolClass === "sofa") {
+    return (
+      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg sofa-svg" aria-hidden="true">
+        {/* Oparcie tylne */}
+        <rect x="2" y="2" width="34" height="6" rx="2" fill="#FFFFFF" opacity="0.9" />
+        {/* Podłokietniki */}
+        <rect x="2" y="8" width="5" height="15" rx="2" fill="#FFFFFF" opacity="0.85" />
+        <rect x="31" y="8" width="5" height="15" rx="2" fill="#FFFFFF" opacity="0.85" />
+        {/* Poduchy siedziska */}
+        <rect x="8" y="8" width="10" height="14" rx="2" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.2" />
+        <rect x="20" y="8" width="10" height="14" rx="2" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.2" />
+        {/* Strzałka kierunku patrzenia */}
+        <path d="M 19 14 L 19 23 M 16 20 L 19 24 L 22 20" stroke="#C49544" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+
+  if (symbolClass === "stove") {
+    return (
+      <svg viewBox="0 0 36 26" width="36" height="26" className="arch-furniture-svg stove-svg" aria-hidden="true">
+        {/* Płyta indukcyjna */}
+        <rect x="2" y="2" width="32" height="22" rx="3" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" strokeWidth="1.6" />
+        {/* 4 Palniki */}
+        <circle cx="10" cy="8" r="4.5" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
+        <circle cx="26" cy="8" r="5" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
+        <circle cx="10" cy="18" r="3.5" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
+        <circle cx="26" cy="18" r="4" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
+        {/* Panel sterowania */}
+        <circle cx="18" cy="20" r="1.5" fill="#C49544" />
+      </svg>
+    );
+  }
+
+  if (symbolClass === "table") {
+    return (
+      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg table-svg" aria-hidden="true">
+        {/* Blat stołu */}
+        <rect x="7" y="5" width="24" height="16" rx="3" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.6" />
+        {/* Krzesła dookoła */}
+        <rect x="13" y="1" width="12" height="3" rx="1.5" fill="#FFFFFF" opacity="0.8" />
+        <rect x="13" y="22" width="12" height="3" rx="1.5" fill="#FFFFFF" opacity="0.8" />
+        <rect x="2" y="9" width="3" height="8" rx="1.5" fill="#FFFFFF" opacity="0.8" />
+        <rect x="33" y="9" width="3" height="8" rx="1.5" fill="#FFFFFF" opacity="0.8" />
+      </svg>
+    );
+  }
 
   return (
-    <span className={`furniture-symbol ${symbolClass}`} aria-hidden="true">
-      {symbolClass === "bed" ? <span className="bed-person" /> : null}
-      {symbolClass === "desk" ? <span className="desk-chair" /> : null}
-      {symbolClass === "sofa" ? <><span className="sofa-back" /><span className="sofa-person" /></> : null}
-      {symbolClass === "table" ? <span className="table-center" /> : null}
-      {symbolClass === "stove" ? <span className="stove-burner" /> : null}
-      {symbolClass === "storage" ? <span className="storage-door" /> : null}
-      {symbolClass === "counter" ? <span className="counter-line" /> : null}
-      {showFacingArrow ? <span className="furniture-facing-arrow" /> : null}
-    </span>
+    <svg viewBox="0 0 34 26" width="34" height="26" className="arch-furniture-svg generic-svg" aria-hidden="true">
+      <rect x="2" y="2" width="30" height="22" rx="3" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.5" />
+      <path d="M 17 8 L 17 18 M 12 13 L 17 19 L 22 13" stroke="#C49544" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -1391,12 +1464,12 @@ export function AuditBuilder({
                         </span>
                       </label>
                       <div className="furniture-presets" aria-label="Szybkie ustawienia kierunku mebla">
-                        <button type="button" onClick={() => setFurnitureDirectionValue(0)}>u góry</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(90)}>po prawej</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(180)}>na dole</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(270)}>po lewej</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(furnitureDirection - 15)}>-15°</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(furnitureDirection + 15)}>+15°</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(0)}>0° W górę</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(90)}>90° W prawo</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(180)}>180° W dół</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(270)}>270° W lewo</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(((furnitureDirection - 45) + 360) % 360)}>↺ -45°</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue((furnitureDirection + 45) % 360)}>↻ +45°</button>
                       </div>
                       <small>
                         {furnitureDirectionHelp(selectedMarkerLabel)}
