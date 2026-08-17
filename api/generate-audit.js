@@ -53,101 +53,106 @@ const compassSectors = [
 
 const ROOM_KNOWLEDGE_BASE = {
   sypialnia: {
-    diagnosis: "Sypialnia to strefa Yin służąca głębokiej regeneracji. Kluczem jest pozycja dominująca wezgłowia (oparcie o pełną ścianę) i odsunięcie od bezpośredniej osi wejścia.",
+    diagnosis: "Strefa czystego Yin. Wymaga całkowitego wyciszenia, ochrony przed przeciągami energii i solidnego oparcia wezgłowia o pełną ścianę nośną (Czarny Żółw).",
     strengths: [
-      "Wezgłowie z dala od pionów kanalizacyjnych",
-      "Możliwość swobodnego, symetrycznego dojścia z obu stron łóżka (min. 60-70 cm)",
-      "Naturalna strefa wyciszenia i ochrony prywatności"
+      "Możliwość zachowania min. 65 cm swobodnego dojścia z obu stron łóżka (równowaga relacyjna)",
+      "Wezgłowie z dala od hałaśliwych pionów kanalizacyjnych i windy",
+      "Brak belek stropowych i ciężkich szafek wiszących bezpośrednio nad głową"
     ],
     risks: [
-      "Oś przeciągu energii (łóżko w bezpośredniej linii drzwi-okno)",
-      "Lustro odbijające śpiące osoby (stymulacja Yang zaburzająca fazę głębokiego snu REM)",
-      "Brak pełnego oparcia wezgłowia o ścianę murowaną (słaby Czarny Żółw)"
+      "Łóżko w bezpośredniej osi drzwi-okno (tzw. tunel Chong Qi wywołujący płytki sen)",
+      "Lustro odbijające taflę materaca (nadmierna stymulacja Yang zaburzająca fazę REM)",
+      "Ostre krawędzie szafek nocnych celujące w głowę (tzw. zatrute strzały Sha Qi)"
     ],
     recommendations: [
-      "Ustaw wezgłowie łóżka o pełną ścianę z widokiem na drzwi (pozycja dominująca)",
-      "Zastosuj ciepłe oświetlenie warstwowe 2200K–2700K sprzyjające wydzielaniu melatoniny",
-      "Wprowadź kolory Ziemi i Drewna (beże, len, zgaszona szałwia) i wyeliminuj elektronikę z okolic głowy"
+      "Dosuń wezgłowie łóżka do pełnej ściany, zachowując widok na drzwi, ale poza ich osią",
+      "Zainstaluj ciepłe oświetlenie nocne 2200K–2700K (brak pasma niebieskiego)",
+      "Wprowadź naturalne tekstylia (len, wełna) i barwy Ziemi (beż, piasek, terakota)"
     ]
   },
   salon: {
-    diagnosis: "Centrum życia rodzinnego (Yang) i integracji. Wymaga jasnego doświetlenia naturalnego, stabilnego oparcia sofy i swobodnych ciągów komunikacyjnych.",
+    diagnosis: "Główne centrum Yang i przestrzeń integracji. Wymaga wyrazistego centrum, jasnego światła dziennego i stabilnego podparcia strefy wypoczynkowej.",
     strengths: [
-      "Dobre doświetlenie światłem dziennym od strefy dziennej",
-      "Przestronna strefa wypoczynkowa z naturalnym miejscem na integrację"
+      "Naturalne doświetlenie słoneczne od strony południowej/zachodniej",
+      "Przestronność umożliwiająca zachowanie swobodnych ciągów komunikacyjnych min. 90–110 cm",
+      "Możliwość wydzielenia strefy jadalnej bez kolizji ze strefą TV"
     ],
     risks: [
-      "Sofa ustawiona tyłem do wejścia do pokoju (podświadome poczucie zagrożenia i brak kontroli)",
-      "Zatory w przejściach komunikacyjnych poniżej ergonomicznego standardu 90 cm"
+      "Sofa ustawiona tyłem do wejścia (wywołująca podświadomy mikrostres i brak kontroli)",
+      "Zatory meblowe blokujące swobodne dojście do okna balkonowego",
+      "Brak wyrazistego punktu centralnego sprzyjającego skupieniu uwagi domowników"
     ],
     recommendations: [
-      "Ustaw główną sofę z oparciem o ścianę lub niską konsolę z widokiem na wejście",
-      "Wprowadź rośliny o obłych liściach (Monstera, Ficus) w narożnikach, aby rozproszyć zastaną energię",
-      "Wydziel 3 warstwy światła: ogólne sufitowe, nastrojowe boczne i punktowe do czytania"
+      "Ustaw główną sofę z oparciem o ścianę lub niską konsolę z roślinami",
+      "Wprowadź 3 warstwy oświetlenia: sufitowe ogólne, lampę 2700K do czytania i nastrojowe kinkiety",
+      "Umieść w narożnikach rośliny o miękkich, obłych liściach (Monstera, Ficus elastica) neutralizujące Sha Qi"
     ]
   },
   kuchnia: {
-    diagnosis: "Strefa Ognia (kuchenka/płyta) i Wody (zlew/lodówka). Podstawą jest zachowanie trójkąta roboczego i bufora neutralizującego konflikt żywiołów.",
+    diagnosis: "Serce metabolizmu i dobrobytu domu. Kluczowym zadaniem jest rozdzielenie żywiołu Ognia (płyta) od Wody (zlew) oraz zachowanie trójkąta roboczego.",
     strengths: [
-      "Funkcjonalny podział na strefę przygotowywania i gotowania",
-      "Dostęp do dobrej wentylacji i doświetlenia blatu"
+      "Logiczny ciąg technologiczny: lodówka -> zlew -> blat roboczy -> płyta grzewcza",
+      "Dostęp do wydajnej wentylacji i dobrego doświetlenia blatu"
     ],
     risks: [
-      "Płyta grzewcza w bezpośrednim sąsiedztwie zlewu lub lodówki (konflikt Ogień–Woda)",
-      "Osoba gotująca stojąca tyłem do otwartej przestrzeni bez kontroli wejścia"
+      "Płyta grzewcza stykająca się bezpośrednio ze zlewem (konflikt Ogień–Woda niszczący równowagę)",
+      "Osoba gotująca stojąca tyłem do wejścia do kuchni (poczucie zaskoczenia)",
+      "Przeładowanie blatów drobnym AGD blokujące przepływ Qi"
     ],
     recommendations: [
-      "Zapewnij min. 40–60 cm blatu (żywioł Drewna) między płytą grzewczą a zlewem",
-      "Zadbaj o doświetlenie blatu roboczego światłem neutralnym 4000K (CRI > 90)",
-      "Utrzymuj blat w czystości bez nadmiaru małego AGD blokującego swobodny przepływ Qi"
+      "Zapewnij minimum 40–60 cm blatu z drewna lub kompozytu między płytą a zlewem (Drewno łączy żywioły)",
+      "Zainstaluj oświetlenie podszafkowe 4000K o wysokim współczynniku oddawania barw (CRI > 90)",
+      "Zamontuj subtelny panel ze stali szczotkowanej lub lustro ułatwiające widok na wejście podczas gotowania"
     ]
   },
   gabinet: {
-    diagnosis: "Strefa skupienia, autorytetu i jasności myślenia. Wymaga bezwzględnej pozycji dominującej (Command Position) biurka.",
+    diagnosis: "Strefa skupienia, autorytetu i jasności decyzji biznesowych. Wymaga bezwzględnej pozycji dowodzenia (Command Position).",
     strengths: [
-      "Wydzielona przestrzeń sprzyjająca głębokiej koncentracji",
-      "Dobre światło dzienne padające z boku stanowiska pracy"
+      "Wydzielona przestrzeń chroniąca przed domowym hałasem",
+      "Dobre doświetlenie światłem dziennym padającym z boku stanowiska pracy"
     ],
     risks: [
-      "Siedzenie tyłem do drzwi lub twarzą dosuniętą bezpośrednio do ściany (brak perspektywy)",
-      "Odblaski na monitorze wywołujące zmęczenie wzroku"
+      "Siedzenie tyłem do drzwi (brak poczucia bezpieczeństwa i permanentny spadek koncentracji)",
+      "Biurko dosunięte bezpośrednio do ściany (brak perspektywy i uczucie klaustrofobii)",
+      "Odblaski promieni słonecznych na monitorze powodujące szybkie zmęczenie wzroku"
     ],
     recommendations: [
-      "Ustaw biurko tak, aby za plecami była pełna ściana, a przed Tobą widok na wejście do pokoju",
-      "Zadbaj o światło zadaniowe 4000K padające z lewej strony (dla praworęcznych)",
-      "Wprowadź elementy Metalu (organizery, mosiądz) i Ziemi (stabilność decyzji biznesowych)"
+      "Ustaw fotel z oparciem o pełną ścianę i widokiem na drzwi (pozycja dominująca)",
+      "Zadbaj o lampę zadaniową 4000K z regulacją natężenia światła",
+      "Wprowadź akcenty Metalu (organizery, mosiądz) i Ziemi sprzyjające stabilności finansowej"
     ]
   },
   przedpokój: {
-    diagnosis: "Usta Qi (Qi Kou) – filtr energetyczny decydujący o pierwszym wrażeniu i komforcie po przekroczeniu progu domu.",
+    diagnosis: "Usta Qi (Qi Kou) – pierwszy filtr energetyczny. Decyduje o pierwszym wrażeniu i jakości energii rozprowadzanej do reszty mieszkania.",
     strengths: [
-      "Wydzielona strefa wejściowa na odzież i obuwie",
-      "Czytelny podział między strefą zewnętrzną a prywatną"
+      "Czytelne wydzielenie strefy wejściowej zatrzymującej brud i obuwie",
+      "Dobre proporcje umożliwiające montaż szafy wnękowej"
     ],
     risks: [
-      "Lustro umieszczone na wprost drzwi wejściowych (odbijające energię na zewnątrz)",
-      "Zastawione przejście butami i brak doświetlenia strefy powitalnej"
+      "Lustro zawieszone na wprost drzwi wejściowych (odbijające energię z powrotem na klatkę)",
+      "Wąskie przejście poniżej 90 cm zastawione butami",
+      "Bezpośrednia linia wzroku z wejścia wpadająca wprost do toalety lub na płytę kuchenną"
     ],
     recommendations: [
-      "Zawieś lustro na ścianie bocznej, nigdy naprzeciw drzwi wejściowych",
-      "Zastosuj zamknięte szafy eliminujące wizualny chaos i kurz",
-      "Wprowadź jasne, ciepłe oświetlenie powitalne (min. 200-300 lx)"
+      "Przenieś lustro na ścianę boczną pod kątem 90° do drzwi wejściowych",
+      "Zamknij obuwie i okrycia w szafie wnękowej, eliminując chaos wizualny",
+      "Zastosuj jasne, ciepłe oświetlenie powitalne min. 250 lx"
     ]
   },
   łazienka: {
-    diagnosis: "Strefa silnego odpływu żywiołu Wody. Wymaga zabezpieczenia przed ucieczką energii z części mieszkalnej.",
+    diagnosis: "Strefa silnego odpływu żywiołu Wody. Wymaga zabezpieczenia przed ucieczką energii życiowej z części mieszkalnej.",
     strengths: [
       "Sprawna wentylacja grawitacyjna lub mechaniczna",
-      "Praktyczne wykończenie materiałowe odporne na wilgoć"
+      "Wysokiej jakości ceramika i szczelna armatura zapobiegająca stratom wody"
     ],
     risks: [
-      "Drzwi łazienki otwierające się bezpośrednio na stół jadalny lub łóżko",
-      "Lokalizacja łazienki w centralnym punkcie rzutu (osłabienie Tai Qi)"
+      "Drzwi łazienki otwierające się bezpośrednio na stół w jadalni lub wezgłowie łóżka",
+      "Lokalizacja łazienki w centrum geometrycznym rzutu (osłabienie serca domu Tai Qi)"
     ],
     recommendations: [
-      "Zamykaj drzwi do łazienki oraz klapę toalety",
-      "Wprowadź rośliny lub elementy Drewna i Ziemi (ceramika, beże), które harmonizują nadmiar Wody",
-      "Zadbaj o doświetlenie lustra bez cieni na twarzy (barwa 3000K–4000K)"
+      "Zamykaj drzwi łazienki oraz klapę toalety po każdym użyciu",
+      "Wprowadź elementy Ziemi (ceramika, beże) i Drewna (rośliny, bambus), które równoważą nadmiar Wody",
+      "Zadbaj o neutralne oświetlenie lustra 3000K–4000K bez cieni pod oczami"
     ]
   }
 };
@@ -196,12 +201,10 @@ function buildFallbackReport(payload, mode, model) {
   const levelsCount = Math.max(1, Math.min(12, Number(payload.levelsCount) || 1));
   const orientationData = payload.orientationData || {};
   const planAnnotations = payload.planAnnotations || {};
-  const furnitureAnnotations = payload.furnitureAnnotations || {};
   const residentProfiles = payload.residentProfiles || [];
   const roomFunctions = planAnnotations.roomFunctions || [];
   const fixedElements = planAnnotations.fixedElements || [];
   const planMarkers = planAnnotations.markers || [];
-  const furnitureItems = furnitureAnnotations.keyPieces || [];
   const hasConfirmedNorth = orientationData.confirmed === true;
   const northAngle = normalizeAngleDeg(orientationData.northAngleDeg);
   const hasEntry = Boolean(safeText(payload.entryNote)) || fixedElements.includes("Wejście główne") || planMarkers.some((m) => m?.label === "Wejście główne");
@@ -219,39 +222,39 @@ function buildFallbackReport(payload, mode, model) {
     current_use: sector.direction === "Północ" ? "Strefa wejścia / gabinet" : sector.direction === "Południowy zachód" ? "Sypialnia główna" : sector.direction === "Południe" ? "Salon / strefa dzienna" : "Strefa funkcjonalna",
     assessment: `Sektor ${sector.direction} odpowiada za ${sector.sector.toLowerCase()} (żywioł ${sector.element}). Układ sprzyja stabilnemu funkcjonowaniu pod warunkiem zachowania właściwego oparcia mebli i harmonii barw.`,
     advice: sector.direction === "Centrum"
-      ? "Centrum (Tai Qi) powinno pozostać możliwie wolne od ciężkich mebli i zatorów komunikacyjnych, stanowiąc serce równowagi domu."
-      : `Wprowadź akcenty żywiołu ${sector.element.toLowerCase()} w sposób subtelny i zrównoważony.`,
+      ? "Centrum (Tai Qi) powinno pozostać wolne od ciężkich ścian i zatorów, stanowiąc serce równowagi domu."
+      : `Wprowadź akcenty żywiołu ${sector.element.toLowerCase()} w wykończeniu i dodatkach.`,
     priority: "średni"
   }));
 
   return {
     score: clampScore(score, 78),
     confidence: hasConfirmedNorth && hasEntry ? "high" : "medium",
-    executive_summary: `Audyt ${propertyLabel} wykazuje solidny potencjał funkcjonalny i przestrzenny. Kluczowe atuty to czytelny podział na strefę dzienną (Yang) i nocną (Yin). Główne priorytety obejmują ustawienie łóżka i biurka w pozycji dominującej (Command Position), doświetlenie stref pracy światłem 4000K oraz eliminację ostrych osi drzwi-okna.`,
+    executive_summary: `Audyt ${propertyLabel} wykazuje wysoki potencjał adaptacyjny. Kluczowe atuty to logiczny podział na strefę dzienną (Yang) i nocną (Yin). Główne priorytety obejmują ustawienie łóżka i biurka w pozycji dominującej (Command Position), doświetlenie blatów światłem 4000K oraz eliminację luster na osi wejścia.`,
     detected_inputs: [
       `${payload.files?.length || 1} plan nieruchomości`,
       `${levelsCount} kondygnacja`,
-      hasConfirmedNorth ? `Orientacja północy: ${northAngle}° (kierunek N)` : "Północ domyślna",
+      hasConfirmedNorth ? `Orientacja północy: ${northAngle}° N` : "Północ domyślna",
       hasEntry ? "Wejście główne zlokalizowane" : "Wejście domyślne",
       `Przeznaczenie: ${safeText(payload.purpose, "zamieszkanie")}`,
       "Zdefiniowane strefy funkcjonalne lokalu"
     ],
     missing_inputs: [
       ...(hasConfirmedNorth ? [] : ["Zatwierdź dokładną orientację północy kompasem"]),
-      ...(hasProfile ? [] : ["Dodaj daty urodzenia domowników dla pełnej analizy Kua"])
+      ...(hasProfile ? [] : ["Dodaj daty urodzenia domowników dla analizy Kua"])
     ],
     priority_actions: [
       {
         title: "Ustaw wezgłowie łóżka w pozycji dominującej",
-        why: "Pełna ściana za głową (Czarny Żółw) eliminuje podświadomy niepokój i gwarantuje głęboką regenerację w fazie REM.",
+        why: "Pełna ściana murowana za głową (Czarny Żółw) eliminuje podświadomy niepokój i gwarantuje głęboki sen w fazie REM.",
         method: "Szkoła Formy",
         impact: "bardzo wysoki",
         effort: "niski",
         confidence: "high"
       },
       {
-        title: "Odsuń biurko od pozycji tyłem do drzwi",
-        why: "Siedzenie tyłem do wejścia wywołuje permanentny mikrostres i obniża zdolność koncentracji.",
+        title: "Zapewnij Command Position dla biurka do pracy",
+        why: "Siedzenie tyłem do drzwi wywołuje permanentny mikrostres i obniża zdolność koncentracji o ponad 30%.",
         method: "Forma & Ergonomia",
         impact: "wysoki",
         effort: "niski",
@@ -259,7 +262,7 @@ function buildFallbackReport(payload, mode, model) {
       },
       {
         title: "Zachowaj min. 40-60 cm blatu między płytą a zlewem",
-        why: "Separacja strefy Ognia (gotowanie) i Wody (zmywanie) zapobiega konfliktowi żywiołów i podnosi ergonomię pracy.",
+        why: "Separacja strefy Ognia (płyta) i Wody (zlew) drewnianym blatem neutralizuje konflikt Wu Xing i podnosi ergonomię.",
         method: "Wu Xing & Ergonomia",
         impact: "wysoki",
         effort: "średni",
@@ -267,17 +270,9 @@ function buildFallbackReport(payload, mode, model) {
       },
       {
         title: "Wprowadź 3 warstwy oświetlenia w strefie dziennej",
-        why: "Połączenie światła ogólnego, nastrojowego (2700K) i zadaniowego (4000K) pozwala płynnie sterować rytmem dobowym domowników.",
+        why: "Światło ogólne, nastrojowe (2700K) i zadaniowe (4000K) reguluje naturalny rytm dobowy mieszkańców.",
         method: "Architektura & Światło",
         impact: "wysoki",
-        effort: "niski",
-        confidence: "high"
-      },
-      {
-        title: "Zdejmij lustro z osi naprzeciw drzwi wejściowych",
-        why: "Lustro vis-a-vis wejścia odbija energię Qi i optycznie destabilizuje strefę powitalną.",
-        method: "Forma (Qi Kou)",
-        impact: "średni",
         effort: "niski",
         confidence: "high"
       }
@@ -296,7 +291,7 @@ function buildFallbackReport(payload, mode, model) {
       {
         zone: "Strefa Wejścia",
         state: "Wymaga czystej ścieżki powitalnej",
-        recommendation: "Uporządkuj obuwie i zastosuj ciepłe światło powitalne min. 200 lx.",
+        recommendation: "Uporządkuj obuwie w szafie i zastosuj ciepłe światło powitalne min. 250 lx.",
         method: "Szkoła Formy"
       },
       {
@@ -329,7 +324,7 @@ function buildFallbackReport(payload, mode, model) {
       }
     ],
     sector_map: markedSectors,
-    room_recommendations: detectedRoomList.slice(0, 10).map((room) => {
+    room_recommendations: detectedRoomList.slice(0, 8).map((room) => {
       const exp = getRoomExpertise(room);
       return {
         room,
@@ -341,63 +336,56 @@ function buildFallbackReport(payload, mode, model) {
         method: "Forma + Ergonomia + 5 Żywiołów"
       };
     }),
-    furniture_recommendations: (furnitureItems.length > 0 ? furnitureItems : ["Łóżko Główne", "Biurko do pracy", "Sofa w salonie", "Płyta kuchenna"]).slice(0, 8).map((item) => {
-      const lower = item.toLowerCase();
-      if (lower.includes("łóż")) {
-        return {
-          item: "Łóżko Główne",
-          orientation_role: "Wezgłowie (oparcie głowy)",
-          direction: "Oparcie o ścianę nośną",
-          assessment: "Wezgłowie łóżka musi przylegać do stabilnej ściany murowanej, zapewniając podświadome poczucie ochrony (Czarny Żółw).",
-          practical_limit: "Należy unikać ustawienia głowy pod oknem lub bezpośrednio w świetle drzwi.",
-          recommendations: [
-            "Zapewnij swobodny dostęp do łóżka z obu stron (min. 60-70 cm)",
-            "Zastosuj miękkie, tapicerowane wezgłowie i stoliki nocne o obłych krawędziach",
-            "Wyeliminuj lustra odbijające taflę materaca"
-          ]
-        };
-      }
-      if (lower.includes("biur") || lower.includes("prac")) {
-        return {
-          item: "Biurko do pracy",
-          orientation_role: "Kierunek patrzenia osoby siedzącej",
-          direction: "Widok na wejście",
-          assessment: "Stanowisko pracy wymaga pełnej pozycji dominującej (Command Position).",
-          practical_limit: "Unikaj siedzenia tyłem do drzwi lub twarzą dosuniętą bezpośrednio do ściany.",
-          recommendations: [
-            "Ustaw fotel tyłem do pełnej ściany, widząc wejście do gabinetu",
-            "Zadbaj o doświetlenie blatu z lewej strony (dla osób praworęcznych)",
-            "Utrzymuj blat w porządku, stosując zamknięte organizery na dokumenty"
-          ]
-        };
-      }
-      if (lower.includes("sof") || lower.includes("kanap")) {
-        return {
-          item: "Sofa w salonie",
-          orientation_role: "Kierunek patrzenia domowników",
-          direction: "Oparcie o ścianę",
-          assessment: "Główny mebel wypoczynkowy powinien tworzyć bezpieczną strefę integracji.",
-          practical_limit: "Sofa nie powinna stać tyłem do głównego ciągu komunikacyjnego z korytarza.",
-          recommendations: [
-            "Ustaw sofę z oparciem o ścianę lub niską konsolę",
-            "Zachowaj min. 45 cm odległości między sofą a stolikiem kawowym",
-            "Wprowadź poduszki w kolorach Ziemi i Drewna stabilizujące strefę"
-          ]
-        };
-      }
-      return {
+    furniture_recommendations: [
+      {
+        item: "Łóżko Główne",
+        orientation_role: "Wezgłowie (oparcie głowy)",
+        direction: "Oparcie o pełną ścianę murowaną",
+        assessment: "Wezgłowie łóżka musi przylegać do stabilnej ściany murowanej z dala od okien i rur (Czarny Żółw).",
+        practical_limit: "Należy unikać ustawienia głowy pod oknem lub bezpośrednio w świetle drzwi.",
+        recommendations: [
+          "Zapewnij swobodne dojście z obu stron łóżka min. 65 cm",
+          "Zastosuj miękkie tapicerowane wezgłowie i lampki 2200K–2700K",
+          "Wyeliminuj lustra odbijające śpiące osoby"
+        ]
+      },
+      {
+        item: "Biurko do pracy",
+        orientation_role: "Kierunek patrzenia osoby pracującej",
+        direction: "Widok na drzwi (Command Position)",
+        assessment: "Stanowisko pracy wymaga pełnej pozycji dowodzenia – plecy podparte ścianą, wzrok na wejście.",
+        practical_limit: "Unikaj siedzenia tyłem do drzwi lub twarzą dosuniętą bezpośrednio do ściany.",
+        recommendations: [
+          "Ustaw fotel tyłem do ściany pod kątem 45-90° do okna",
+          "Doświetl blat lampą zadaniową 4000K z lewej strony",
+          "Zastosuj zamknięte organizery na dokumenty"
+        ]
+      },
+      {
+        item: "Sofa w salonie",
+        orientation_role: "Kierunek patrzenia domowników",
+        direction: "Oparcie o ścianę lub niską konsolę",
+        assessment: "Główny mebel wypoczynkowy powinien tworzyć bezpieczną strefę integracji z widokiem na pokój.",
+        practical_limit: "Sofa nie powinna stać tyłem do głównego wejścia do strefy dziennej.",
+        recommendations: [
+          "Ustaw sofę z oparciem o ścianę lub konsolę z roślinami",
+          "Zachowaj min. 45 cm odległości od stolika kawowego",
+          "Wprowadź miękki dywan stabilizujący strefę wypoczynku"
+        ]
+      },
+      {
         item: "Płyta kuchenna",
         orientation_role: "Podejście osoby gotującej",
-        direction: "Front roboczy",
-        assessment: "Płyta reprezentuje żywioł Ognia i źródło obfitości domu.",
-        practical_limit: "Instalacje determinują lokalizację, ale kluczowy jest bufor blatu od zlewu.",
+        direction: "Front roboczy z widokiem",
+        assessment: "Płyta reprezentuje żywioł Ognia. Wymaga bufora od zlewu (Woda) oraz dobrej widoczności.",
+        practical_limit: "Instalacje determinują lokalizację, ale kluczowy jest bufor blatu min. 40-60 cm.",
         recommendations: [
-          "Zachowaj minimum 40-60 cm blatu roboczego między płytą a zlewem",
-          "Zadbaj o wydajny okap i doświetlenie blatu 4000K",
-          "Utrzymuj palniki w nienagannej czystości"
+          "Zachowaj min. 40-60 cm blatu między płytą a zlewem",
+          "Zainstaluj oświetlenie podszafkowe 4000K CRI > 90",
+          "Utrzymuj płytę w nienagannej czystości"
         ]
-      };
-    }),
+      }
+    ],
     traditional_analysis: [
       {
         title: "Szkoła Formy (Luan Tou) i 4 Zwierzęta",
@@ -473,8 +461,8 @@ GŁÓWNE ZASADY JAKOŚCI AUDYTU:
    - Realne Atuty architektoniczne (doświetlenie, oparcie, bufor prywatności).
    - Poważne Ryzyka (łóżko na linii drzwi-okno tzw. pozycja trumienna, lustro vis-a-vis wejścia odbijające Qi, płyta bezpośrednio przy zlewie konflikt Ogień-Woda, siedzenie tyłem do drzwi).
    - Bezwzględnie Konkretne Rekomendacje (jak dokładnie przestawić meble, jakie światło zastosować np. 2200K sypialnia vs 4000K praca, jakie materiały i barwy wprowadzić).
-3. MEBLE:
-   - Łóżko: oparcie wezgłowia o pełną ścianę (Czarny Żółw), widok na drzwi (pozycja dominująca), min. 60-70 cm dojścia z obu stron, brak luster odbijających materac.
+3. MEBLE - ZAKAZ DUPLIKATÓW (Maksymalnie po 1 unikalnym meblu z każdej kategorii):
+   - Łóżko: oparcie wezgłowia o pełną ścianę (Czarny Żółw), widok na drzwi (pozycja dominująca), min. 65 cm dojścia z obu stron, brak luster odbijających materac.
    - Biurko: oparcie za plecami, widok na wejście, światło 4000K z lewej strony.
    - Płyta kuchenna: bufor min. 40-60 cm blatu od zlewu/lodówki (Drewno neutralizuje konflikt Ognia i Wody), dobra widoczność przestrzeni.
    - Sofa: oparcie o ścianę lub niską konsolę, widok na wejście do salonu, ciągi komunikacyjne 90-110 cm.
@@ -656,8 +644,33 @@ function normalizeStringArray(value, fallback = [], limit = 6) {
   return normalized.slice(0, limit);
 }
 
+function deduplicateFurnitureItems(items, fallback) {
+  const source = normalizeArray(items, fallback);
+  const seen = new Set();
+  const result = [];
+
+  for (const item of source) {
+    const raw = String(item?.item || "").toLowerCase();
+    let canonKey = raw;
+    if (raw.includes("łóż")) canonKey = "bed";
+    else if (raw.includes("biur") || raw.includes("prac")) canonKey = "desk";
+    else if (raw.includes("sof") || raw.includes("kanap")) canonKey = "sofa";
+    else if (raw.includes("płyt") || raw.includes("kuch") || raw.includes("kuchen")) canonKey = "stove";
+    else if (raw.includes("stół") || raw.includes("stol")) canonKey = "table";
+    else if (raw.includes("szaf") || raw.includes("gard")) canonKey = "wardrobe";
+
+    if (!seen.has(canonKey)) {
+      seen.add(canonKey);
+      result.push(item);
+    }
+  }
+
+  return result.length > 0 ? result : fallback;
+}
+
 function normalizeReport(report, payload, mode, model) {
   const fallback = buildFallbackReport(payload, mode, model);
+  const dedupedFurniture = deduplicateFurnitureItems(report?.furniture_recommendations, fallback.furniture_recommendations);
 
   return {
     score: clampScore(report?.score, fallback.score),
@@ -707,7 +720,7 @@ function normalizeReport(report, payload, mode, model) {
       advice: safeText(item?.advice, fallback.sector_map[index % fallback.sector_map.length].advice),
       priority: safeText(item?.priority, "średni")
     })),
-    room_recommendations: normalizeArray(report?.room_recommendations, fallback.room_recommendations).slice(0, 12).map((item, index) => ({
+    room_recommendations: normalizeArray(report?.room_recommendations, fallback.room_recommendations).slice(0, 10).map((item, index) => ({
       room: safeText(item?.room, fallback.room_recommendations[index % fallback.room_recommendations.length].room),
       function: safeText(item?.function, fallback.room_recommendations[index % fallback.room_recommendations.length].function),
       diagnosis: safeText(item?.diagnosis, fallback.room_recommendations[index % fallback.room_recommendations.length].diagnosis),
@@ -716,7 +729,7 @@ function normalizeReport(report, payload, mode, model) {
       recommendations: normalizeStringArray(item?.recommendations, fallback.room_recommendations[index % fallback.room_recommendations.length].recommendations, 6),
       method: safeText(item?.method, "Forma + Ergonomia + 5 Żywiołów")
     })),
-    furniture_recommendations: normalizeArray(report?.furniture_recommendations, fallback.furniture_recommendations).slice(0, 12).map((item, index) => ({
+    furniture_recommendations: dedupedFurniture.slice(0, 8).map((item, index) => ({
       item: safeText(item?.item, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].item),
       orientation_role: safeText(item?.orientation_role, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].orientation_role),
       direction: safeText(item?.direction, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].direction),

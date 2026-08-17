@@ -3957,72 +3957,71 @@ body {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-width: 29px;
-  height: 23px;
-  padding: 0 5px;
-  max-width: 92px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  max-width: 110px;
   transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px)));
-  border: 1.5px solid #fffdfa;
-  border-radius: 7px;
+  border: 2px solid #FFFFFF;
+  border-radius: 999px;
   background: var(--ink);
-  color: #fffdfa;
-  box-shadow: 0 5px 12px rgba(16, 34, 31, 0.2);
-  font-size: 0.62rem;
-  font-weight: 900;
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(16, 34, 31, 0.3);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.plan-marker:hover {
+  transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px))) scale(1.1);
+  box-shadow: 0 6px 18px rgba(16, 34, 31, 0.4);
 }
 
 .plan-marker.selected {
-  outline: 3px solid rgba(197, 150, 66, 0.38);
-  outline-offset: 3px;
+  outline: 3px solid #C49544;
+  outline-offset: 2px;
+  transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px))) scale(1.15);
+  box-shadow: 0 8px 22px rgba(196, 148, 63, 0.45);
 }
 
 .plan-marker.room {
-  background: var(--sage);
+  background: #3A6351;
 }
 
 .plan-marker.fixed {
-  background: var(--blue);
+  background: #345B73;
 }
 
 .plan-marker.furniture {
-  display: grid;
-  place-items: center;
-  width: 50px;
-  height: 42px;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: #fffdfa;
-  box-shadow: none;
-  overflow: visible;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: #C4623C;
+  color: #FFFFFF;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 4px 14px rgba(16, 34, 31, 0.3);
 }
 
 .furniture-marker-shape {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 32px;
-  border: 1.5px solid #fffdfa;
-  border-radius: 9px;
-  background: var(--terracotta);
-  color: #fffdfa;
-  box-shadow: 0 5px 12px rgba(16, 34, 31, 0.22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transform: rotate(var(--marker-facing, 0deg));
   transform-origin: 50% 50%;
 }
 
 .marker-code {
-  display: grid;
-  place-items: center;
-  min-width: 18px;
-  height: 17px;
-  line-height: 1;
+  font-weight: 900;
 }
 
 .marker-label {
-  min-width: 0;
-  max-width: 56px;
+  font-weight: 600;
+  max-width: 65px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

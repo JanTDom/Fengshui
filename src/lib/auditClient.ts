@@ -177,7 +177,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Kariera i Droga Życiowa",
     element: "Woda",
     trigram: "Kan (坎)",
-    colorBg: "rgba(74, 109, 124, 0.20)",
+    colorBg: "rgba(74, 109, 124, 0.12)",
     colorBorder: "#4A6D7C",
     colorText: "#1F3B44"
   },
@@ -187,7 +187,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Wiedza i Samorozwój",
     element: "Ziemia",
     trigram: "Gen (艮)",
-    colorBg: "rgba(185, 149, 86, 0.20)",
+    colorBg: "rgba(185, 149, 86, 0.12)",
     colorBorder: "#B99556",
     colorText: "#634718"
   },
@@ -197,7 +197,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Zdrowie i Rodzina",
     element: "Drewno",
     trigram: "Zhen (震)",
-    colorBg: "rgba(82, 126, 88, 0.20)",
+    colorBg: "rgba(82, 126, 88, 0.12)",
     colorBorder: "#527E58",
     colorText: "#25482A"
   },
@@ -207,7 +207,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Obfitość i Finanse",
     element: "Drewno",
     trigram: "Xun (巽)",
-    colorBg: "rgba(70, 120, 85, 0.20)",
+    colorBg: "rgba(70, 120, 85, 0.12)",
     colorBorder: "#467855",
     colorText: "#20462C"
   },
@@ -217,7 +217,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Sława i Reputacja",
     element: "Ogień",
     trigram: "Li (離)",
-    colorBg: "rgba(194, 101, 74, 0.20)",
+    colorBg: "rgba(194, 101, 74, 0.12)",
     colorBorder: "#C2654A",
     colorText: "#722E1A"
   },
@@ -227,7 +227,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Relacje i Partnerstwo",
     element: "Ziemia",
     trigram: "Kun (坤)",
-    colorBg: "rgba(175, 125, 85, 0.20)",
+    colorBg: "rgba(175, 125, 85, 0.12)",
     colorBorder: "#AF7D55",
     colorText: "#5E3A1E"
   },
@@ -237,7 +237,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Kreatywność i Dzieci",
     element: "Metal",
     trigram: "Dui (兌)",
-    colorBg: "rgba(148, 158, 153, 0.20)",
+    colorBg: "rgba(148, 158, 153, 0.12)",
     colorBorder: "#949E99",
     colorText: "#3E4844"
   },
@@ -247,7 +247,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Pomocni Ludzie i Mentorzy",
     element: "Metal",
     trigram: "Qian (乾)",
-    colorBg: "rgba(180, 150, 100, 0.20)",
+    colorBg: "rgba(180, 150, 100, 0.12)",
     colorBorder: "#B49664",
     colorText: "#5C441E"
   },
@@ -257,27 +257,21 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     sector: "Serce Domu i Równowaga",
     element: "Ziemia",
     trigram: "Tai Qi (太極)",
-    colorBg: "rgba(205, 162, 70, 0.24)",
+    colorBg: "rgba(205, 162, 70, 0.15)",
     colorBorder: "#CDA246",
     colorText: "#6A4D12"
   }
 };
 
-/**
- * Mathematically maps each cell of the 3x3 orthogonal grid covering the dwelling
- * to its exact, unique compass direction based on the verified North angle.
- */
 function getCellCompassSector(colIndex: number, rowIndex: number, northAngleDeg: number): CompassSectorMeta {
-  const dx = colIndex - 1; // -1 (left), 0 (center), 1 (right)
-  const dy = rowIndex - 1; // -1 (top), 0 (center), 1 (bottom)
+  const dx = colIndex - 1;
+  const dy = rowIndex - 1;
 
   if (dx === 0 && dy === 0) {
     return COMPASS_SECTOR_DEFINITIONS.CENTER;
   }
 
-  // Screen angle: Up is 0°, Right is 90°, Down is 180°, Left is 270°
   const planAngleDeg = ((Math.atan2(dx, -dy) * 180 / Math.PI) + 360) % 360;
-  // True geographic bearing relative to confirmed North
   const bearing = ((planAngleDeg - northAngleDeg) + 360) % 360;
 
   if (bearing >= 337.5 || bearing < 22.5) return COMPASS_SECTOR_DEFINITIONS.N;
@@ -330,8 +324,8 @@ function loadImageElement(src: string) {
 }
 
 /**
- * Creates a high-resolution, architectural Bagua 9-sector overlay image.
- * The 3x3 grid covers 100% of the floor plan footprint from wall to wall.
+ * Creates an elegant, high-clarity architectural Bagua 9-sector overlay.
+ * Floor plan remains 100% clearly visible in the center with discreet quadrant corner tags.
  */
 async function createPlanSectorOverlayImage(
   file: File | null | undefined,
@@ -345,7 +339,7 @@ async function createPlanSectorOverlayImage(
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImageElement(dataUrl);
 
-  const targetWidth = 1200;
+  const targetWidth = 1400;
   const aspectRatio = (image.naturalHeight || image.height) / (image.naturalWidth || image.width);
   const targetHeight = Math.round(targetWidth * (aspectRatio || 0.75));
 
@@ -356,17 +350,13 @@ async function createPlanSectorOverlayImage(
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  // Background and floor plan rendering
+  // Base background and floor plan rendering
   ctx.fillStyle = "#FAF8F5";
   ctx.fillRect(0, 0, targetWidth, targetHeight);
   ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
 
-  // Soft architectural veil for maximum plan readability
-  ctx.fillStyle = "rgba(250, 248, 245, 0.08)";
-  ctx.fillRect(0, 0, targetWidth, targetHeight);
-
-  // Full dwelling 3x3 grid dimensions (covering the entire footprint from wall to wall)
-  const pad = 12;
+  // Full dwelling 3x3 grid dimensions
+  const pad = 10;
   const gridX = pad;
   const gridY = pad;
   const gridW = targetWidth - pad * 2;
@@ -374,144 +364,131 @@ async function createPlanSectorOverlayImage(
   const cellW = gridW / 3;
   const cellH = gridH / 3;
 
-  // Draw each of the 9 sectors
+  // Draw 9 sectors with soft pastel tint and discreet corner pills
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       const cellX = gridX + col * cellW;
       const cellY = gridY + row * cellH;
       const sector = getCellCompassSector(col, row, northAngleDeg);
 
-      // Translucent tint per element
+      // Subtle element tint (very light so plan details are sharp)
       ctx.fillStyle = sector.colorBg;
       ctx.fillRect(cellX, cellY, cellW, cellH);
 
-      // Crisp cell border with warm gold accent
-      ctx.strokeStyle = "rgba(196, 148, 63, 0.55)";
+      // Delicate architectural dashed grid line
+      ctx.save();
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = "rgba(196, 148, 63, 0.75)";
       ctx.lineWidth = 1.5;
       ctx.strokeRect(cellX, cellY, cellW, cellH);
-
-      // Centered Luxury Badge in each cell
-      const badgeW = Math.min(cellW - 16, 260);
-      const badgeH = 52;
-      const badgeX = cellX + (cellW - badgeW) / 2;
-      const badgeY = cellY + (cellH - badgeH) / 2;
-
-      ctx.save();
-      // Badge background pill
-      ctx.fillStyle = "rgba(255, 253, 250, 0.94)";
-      ctx.strokeStyle = "rgba(196, 148, 63, 0.7)";
-      ctx.lineWidth = 1.5;
-      ctx.shadowColor = "rgba(16, 34, 31, 0.12)";
-      ctx.shadowBlur = 8;
-      ctx.shadowOffsetY = 2;
-      ctx.beginPath();
-      ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 8);
-      ctx.fill();
-      ctx.stroke();
       ctx.restore();
 
-      // Badge Text - Line 1 (Direction + Element)
+      // Compact architectural tag in top-left of the cell (leaving rooms and furniture clear!)
+      const tagW = Math.min(cellW - 20, 210);
+      const tagH = 26;
+      const tagX = cellX + 10;
+      const tagY = cellY + 10;
+
       ctx.save();
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
+      ctx.fillStyle = "rgba(255, 253, 250, 0.92)";
+      ctx.strokeStyle = "rgba(196, 148, 63, 0.8)";
+      ctx.lineWidth = 1;
+      ctx.shadowColor = "rgba(16, 34, 31, 0.1)";
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.roundRect(tagX, tagY, tagW, tagH, 5);
+      ctx.fill();
+      ctx.stroke();
+
+      // Tag Text
       ctx.fillStyle = sector.colorText;
       ctx.font = "bold 11px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
       ctx.fillText(
-        `${sector.direction.toUpperCase()} (${sector.code}) · ${sector.element.toUpperCase()}`,
-        badgeX + badgeW / 2,
-        badgeY + 9
+        `${sector.code} · ${sector.direction.toUpperCase()} · ${sector.element.toUpperCase()}`,
+        tagX + tagW / 2,
+        tagY + tagH / 2
       );
-
-      // Badge Text - Line 2 (Sector Life Domain)
-      ctx.fillStyle = "#10221F";
-      ctx.font = "bold 13px Arial, sans-serif";
-      ctx.fillText(sector.sector, badgeX + badgeW / 2, badgeY + 27);
       ctx.restore();
     }
   }
 
-  // Outer double luxury border around whole floor plan
+  // Outer frame
   ctx.strokeStyle = "#10221F";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2.5;
   ctx.strokeRect(gridX, gridY, gridW, gridH);
 
-  // Compass Rose / North Indicator Card in top right
+  // Discreet Compass widget in corner
   drawNorthCompassWidget(ctx, targetWidth, northAngleDeg);
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/jpeg", 0.94);
 }
 
 function drawNorthCompassWidget(ctx: CanvasRenderingContext2D, canvasWidth: number, northAngleDeg: number) {
-  const boxW = 88;
-  const boxH = 94;
-  const boxX = canvasWidth - boxW - 24;
-  const boxY = 24;
+  const boxW = 84;
+  const boxH = 90;
+  const boxX = canvasWidth - boxW - 20;
+  const boxY = 20;
 
   ctx.save();
-  // Card box
   ctx.fillStyle = "rgba(255, 253, 250, 0.96)";
-  ctx.strokeStyle = "rgba(196, 148, 63, 0.8)";
-  ctx.lineWidth = 2;
-  ctx.shadowColor = "rgba(16, 34, 31, 0.16)";
-  ctx.shadowBlur = 10;
-  ctx.shadowOffsetY = 3;
+  ctx.strokeStyle = "rgba(196, 148, 63, 0.85)";
+  ctx.lineWidth = 1.5;
+  ctx.shadowColor = "rgba(16, 34, 31, 0.15)";
+  ctx.shadowBlur = 8;
   ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxW, boxH, 10);
+  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
 
   const centerX = boxX + boxW / 2;
-  const centerY = boxY + 44;
+  const centerY = boxY + 42;
   const angleRad = (northAngleDeg * Math.PI) / 180;
 
-  // Dial needle
   ctx.save();
   ctx.translate(centerX, centerY);
   ctx.rotate(angleRad);
 
-  // North needle (Dark green / ink)
+  // North needle
   ctx.fillStyle = "#10221F";
   ctx.beginPath();
-  ctx.moveTo(0, -25);
+  ctx.moveTo(0, -24);
   ctx.lineTo(-7, 0);
   ctx.lineTo(7, 0);
   ctx.closePath();
   ctx.fill();
 
-  // South needle (Brass gold)
+  // South needle
   ctx.fillStyle = "#C49544";
   ctx.beginPath();
-  ctx.moveTo(0, 25);
+  ctx.moveTo(0, 24);
   ctx.lineTo(-7, 0);
   ctx.lineTo(7, 0);
   ctx.closePath();
   ctx.fill();
 
-  // Center pin
+  // Center dot
   ctx.fillStyle = "#FAF8F5";
   ctx.beginPath();
   ctx.arc(0, 0, 3, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Label N
+  // Labels
   ctx.save();
   ctx.textAlign = "center";
   ctx.fillStyle = "#10221F";
-  ctx.font = "bold 13px Arial, sans-serif";
+  ctx.font = "bold 12px Arial, sans-serif";
   ctx.fillText("N", centerX, boxY + 14);
 
-  // Degree readout
   ctx.fillStyle = "#7A6E5D";
-  ctx.font = "bold 11px Arial, sans-serif";
-  ctx.fillText(`${Math.round(northAngleDeg)}°`, centerX, boxY + 80);
+  ctx.font = "bold 10px Arial, sans-serif";
+  ctx.fillText(`${Math.round(northAngleDeg)}°`, centerX, boxY + 77);
   ctx.restore();
 }
 
-/**
- * Editorial Card block with unbreakable table layout to prevent page break splitting.
- */
 function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = "") {
   const stack: any[] = [];
 
@@ -520,7 +497,7 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
   }
 
   stack.push({ text: title, style: "cardTitle" });
-  stack.push({ text: body, style: "bodyText", margin: [0, 3, 0, bullets.length > 0 ? 6 : 0] });
+  stack.push({ text: body, style: "bodyText", margin: [0, 3, 0, bullets.length > 0 ? 5 : 0] });
 
   if (bullets.length > 0) {
     stack.push({
@@ -535,7 +512,7 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
     table: {
       dontBreakRows: true,
       widths: ["*"],
-      body: [[{ stack, margin: [14, 12, 14, 12] }]]
+      body: [[{ stack, margin: [13, 11, 13, 11] }]]
     },
     layout: {
       fillColor: () => "#FFFDFB",
@@ -546,13 +523,10 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
       paddingTop: () => 0,
       paddingBottom: () => 0
     },
-    margin: [0, 0, 0, 10]
+    margin: [0, 0, 0, 8]
   };
 }
 
-/**
- * Numbered Action Card with unbroken layout and contrast badge.
- */
 function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], index: number) {
   return {
     unbreakable: true,
@@ -581,9 +555,9 @@ function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], 
                 stack: [
                   { text: pdfText(action.method).toUpperCase(), style: "cardEyebrow" },
                   { text: pdfText(action.title), style: "cardTitle" },
-                  { text: pdfText(action.why), style: "bodyText", margin: [0, 3, 0, 6] },
+                  { text: pdfText(action.why), style: "bodyText", margin: [0, 3, 0, 5] },
                   {
-                    text: `${pdfText(action.impact, "wpływ")} · ${pdfText(action.effort, "wysiłek")} · pewność ${pdfConfidenceLabel(action.confidence)}`,
+                    text: `Wpływ: ${pdfText(action.impact, "wysoki")} · Wysiłek: ${pdfText(action.effort, "niski")} · Pewność: ${pdfConfidenceLabel(action.confidence)}`,
                     style: "mutedText"
                   }
                 ],
@@ -591,7 +565,7 @@ function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], 
               }
             ],
             columnGap: 2,
-            margin: [14, 12, 14, 12]
+            margin: [13, 11, 13, 11]
           }
         ]
       ]
@@ -605,17 +579,8 @@ function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], 
       paddingTop: () => 0,
       paddingBottom: () => 0
     },
-    margin: [0, 0, 0, 10]
+    margin: [0, 0, 0, 8]
   };
-}
-
-function pdfSectionTitle(title: string, subtitle?: string) {
-  return [
-    { text: title, style: "sectionTitle", keepWithNext: true, margin: [0, 18, 0, subtitle ? 3 : 8] },
-    ...(subtitle
-      ? [{ text: subtitle, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 10] }]
-      : [])
-  ];
 }
 
 function pdfCardGrid(cards: any[], columns = 2) {
@@ -627,20 +592,21 @@ function pdfCardGrid(cards: any[], columns = 2) {
       widths.map((_, columnIndex) => {
         const card = cards[index + columnIndex];
         return card
-          ? { stack: [card], margin: columnIndex === 0 ? [0, 0, 5, 0] : [5, 0, 0, 0] }
+          ? { stack: [card], margin: columnIndex === 0 ? [0, 0, 4, 0] : [4, 0, 0, 0] }
           : { text: "" };
       })
     );
   }
 
   return {
+    unbreakable: true,
     table: {
       dontBreakRows: true,
       widths,
       body: rows
     },
     layout: "noBorders",
-    margin: [0, 0, 0, 4]
+    margin: [0, 0, 0, 2]
   };
 }
 
@@ -674,13 +640,13 @@ function pdfMethodScoreChart(report: AuditReport) {
             ),
             { text: pdfText(item.signal), style: "mutedText", margin: [0, 3, 0, 0] }
           ],
-          margin: [0, 0, 0, 6]
+          margin: [0, 0, 0, 5]
         },
         { text: `${item.score}/100`, alignment: "right", style: "tableStrong", margin: [0, 2, 0, 0] }
       ])
     },
     layout: "noBorders",
-    margin: [0, 2, 0, 10]
+    margin: [0, 2, 0, 8]
   };
 }
 
@@ -721,7 +687,7 @@ function pdfSectorMatrix(sectors: AuditReport["sector_map"]) {
               { text: `Żywioł: ${item?.element || def.element}`, style: "matrixMeta" },
               { text: item?.current_use || "Strefa funkcjonalna", style: "matrixUse" }
             ],
-            margin: [8, 8, 8, 8]
+            margin: [7, 7, 7, 7]
           };
         })
       )
@@ -734,7 +700,7 @@ function pdfSectorMatrix(sectors: AuditReport["sector_map"]) {
       hLineColor: () => "#D8CDB8",
       vLineColor: () => "#D8CDB8"
     },
-    margin: [0, 0, 0, 14]
+    margin: [0, 0, 0, 10]
   };
 }
 
@@ -771,60 +737,68 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     return null;
   });
 
-  const roomCards = report.room_recommendations.slice(0, 12).map((room) =>
+  const roomCards = report.room_recommendations.slice(0, 10).map((room) =>
     pdfCard(
       pdfText(room.room),
       pdfText(room.diagnosis),
       [
-        ...pdfList(room.strengths, "mocne strony").map((item) => `Atut: ${item}`),
+        ...pdfList(room.strengths, "atuty").map((item) => `Atut: ${item}`),
         ...pdfList(room.risks, "ryzyka").map((item) => `Ryzyko: ${item}`),
-        ...pdfList(room.recommendations, "rekomendacje").map((item) => `Rada: ${item}`)
-      ].slice(0, 8),
+        ...pdfList(room.recommendations, "rekomendacje").map((item) => `Porada: ${item}`)
+      ].slice(0, 7),
       `${pdfText(room.function)} · ${pdfText(room.method)}`
     )
   );
 
-  const furnitureCards = report.furniture_recommendations.slice(0, 12).map((item) =>
+  // Robust deduplication of furniture recommendations by canonical key
+  const seenFurniture = new Set<string>();
+  const deduplicatedFurniture = report.furniture_recommendations.filter((item) => {
+    const raw = String(item.item || "").toLowerCase();
+    let canonKey = raw;
+    if (raw.includes("łóż")) canonKey = "bed";
+    else if (raw.includes("biur") || raw.includes("prac")) canonKey = "desk";
+    else if (raw.includes("sof") || raw.includes("kanap")) canonKey = "sofa";
+    else if (raw.includes("płyt") || raw.includes("kuch") || raw.includes("kuchen")) canonKey = "stove";
+    else if (raw.includes("stół") || raw.includes("stol")) canonKey = "table";
+    else if (raw.includes("szaf") || raw.includes("gard")) canonKey = "wardrobe";
+
+    if (seenFurniture.has(canonKey)) return false;
+    seenFurniture.add(canonKey);
+    return true;
+  });
+
+  const furnitureCards = deduplicatedFurniture.slice(0, 8).map((item) =>
     pdfCard(
       pdfText(item.item),
       `${pdfText(item.assessment)}\n\nOgraniczenie praktyczne: ${pdfText(item.practical_limit)}`,
-      pdfList(item.recommendations, "doprecyzuj ustawienie mebla").slice(0, 6),
+      pdfList(item.recommendations, "ustawienie mebla").slice(0, 5),
       `${pdfText(item.orientation_role)} · ${pdfText(item.direction)}`
     )
   );
 
-  const traditionalCards = report.traditional_analysis.slice(0, 6).map((section) =>
+  const traditionalCards = report.traditional_analysis.slice(0, 4).map((section) =>
     pdfCard(
       pdfText(section.title),
       pdfText(section.body),
-      pdfList(section.bullets, "wniosek do pogłębienia"),
+      pdfList(section.bullets, "wniosek").slice(0, 4),
       "Szkoła Formy & Tradycja"
     )
   );
 
-  const practicalCards = report.practical_analysis.slice(0, 6).map((section) =>
+  const practicalCards = report.practical_analysis.slice(0, 4).map((section) =>
     pdfCard(
       pdfText(section.title),
       pdfText(section.body),
-      pdfList(section.bullets, "wniosek do pogłębienia"),
+      pdfList(section.bullets, "wniosek").slice(0, 4),
       "Ergonomia & Architektura Wnętrz"
     )
   );
 
-  const priorityCards = report.priority_actions.slice(0, 8).map((action, index) =>
+  const priorityCards = report.priority_actions.slice(0, 6).map((action, index) =>
     pdfNumberedActionCard(action, index + 1)
   );
 
-  const sectorAdviceCards = report.sector_map.slice(0, 9).map((sector) =>
-    pdfCard(
-      pdfText(sector.direction),
-      pdfText(sector.assessment),
-      [pdfText(sector.advice)],
-      `${pdfText(sector.sector)} · ${pdfText(sector.element)}`
-    )
-  );
-
-  const sourceCards = report.source_ledger.slice(0, 8).map((source) =>
+  const sourceCards = report.source_ledger.slice(0, 6).map((source) =>
     pdfCard(
       pdfText(source.source),
       pdfText(source.used_for),
@@ -835,10 +809,10 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
 
   const docDefinition: any = {
     pageSize: "A4",
-    pageMargins: [38, 44, 38, 44],
+    pageMargins: [36, 42, 36, 42],
     defaultStyle: {
       font: "Roboto",
-      fontSize: 9.4,
+      fontSize: 9.2,
       color: "#10221F",
       lineHeight: 1.25
     },
@@ -847,41 +821,41 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         { text: "PLAN HARMONII · CERTYFIKOWANY AUDYT PRZESTRZENNY", fontSize: 7.5, bold: true, color: "#C49544", characterSpacing: 0.8 },
         { text: "AI FENG SHUI & ARCHITEKTURA", alignment: "right", fontSize: 7.5, color: "#7A6E5D" }
       ],
-      margin: [38, 16, 38, 0]
+      margin: [36, 16, 36, 0]
     }),
     footer: (currentPage: number, pageCount: number) => ({
       columns: [
         { text: "Plan Harmonii · www.e-fengshui.pl", color: "#7A6E5D", fontSize: 8 },
         { text: `Strona ${currentPage} z ${pageCount}`, alignment: "right", color: "#7A6E5D", fontSize: 8 }
       ],
-      margin: [38, 0, 38, 16]
+      margin: [36, 0, 36, 16]
     }),
     styles: {
       kicker: { color: "#C49544", bold: true, fontSize: 8.5, characterSpacing: 1.2 },
-      title: { fontSize: 26, bold: true, color: "#10221F", lineHeight: 1.05, margin: [0, 4, 0, 8] },
-      subtitle: { fontSize: 10, color: "#41524B", lineHeight: 1.35, margin: [0, 0, 0, 14] },
+      title: { fontSize: 24, bold: true, color: "#10221F", lineHeight: 1.05, margin: [0, 3, 0, 6] },
+      subtitle: { fontSize: 9.6, color: "#41524B", lineHeight: 1.35, margin: [0, 0, 0, 12] },
       scoreLabel: { color: "#7A6E5D", bold: true, fontSize: 7.8, characterSpacing: 1 },
-      sectionTitle: { fontSize: 16, bold: true, color: "#10221F" },
-      cardTitle: { fontSize: 11.5, bold: true, color: "#10221F" },
+      sectionTitle: { fontSize: 15, bold: true, color: "#10221F" },
+      cardTitle: { fontSize: 11.2, bold: true, color: "#10221F" },
       cardEyebrow: { fontSize: 7.5, bold: true, color: "#C49544", characterSpacing: 0.5, margin: [0, 0, 0, 2] },
       priorityBadge: { alignment: "center", color: "#FFFDFB", bold: true, fontSize: 10 },
-      bodyText: { fontSize: 9, color: "#2D3E38", lineHeight: 1.25 },
-      bulletText: { fontSize: 8.6, color: "#3B4E48", lineHeight: 1.2 },
-      mutedText: { fontSize: 8.5, color: "#66756E", lineHeight: 1.25 },
+      bodyText: { fontSize: 8.8, color: "#2D3E38", lineHeight: 1.25 },
+      bulletText: { fontSize: 8.4, color: "#3B4E48", lineHeight: 1.2 },
+      mutedText: { fontSize: 8.2, color: "#66756E", lineHeight: 1.25 },
       tableStrong: { bold: true, color: "#10221F", fontSize: 8.5 },
       matrixDirection: { color: "#C49544", bold: true, fontSize: 7.5, alignment: "center" },
-      matrixTitle: { color: "#10221F", bold: true, fontSize: 8.8, alignment: "center", margin: [0, 2, 0, 2] },
-      matrixMeta: { color: "#66756E", fontSize: 7.2, alignment: "center" },
-      matrixUse: { color: "#2D3E38", fontSize: 7.2, alignment: "center", margin: [0, 4, 0, 0] }
+      matrixTitle: { color: "#10221F", bold: true, fontSize: 8.5, alignment: "center", margin: [0, 2, 0, 2] },
+      matrixMeta: { color: "#66756E", fontSize: 7, alignment: "center" },
+      matrixUse: { color: "#2D3E38", fontSize: 7, alignment: "center", margin: [0, 3, 0, 0] }
     },
     content: [
+      // PAGE 1: TITLE, SCORE, AND PROMINENT PLAN OVERLAY
       { text: "PLAN HARMONII · RAPORT AUDYTOWY", style: "kicker" },
       { text: "Analiza Układu Przestrzennego & Feng Shui", style: "title" },
       {
-        text: "Raport łączy tradycyjną Szkołę Formy (Luan Tou), siatkę 9 stref Bagua i orientację kompasową z nowoczesną ergonomią, akustyką i doświetleniem. Rekomendacje nie zakładają zmian fizycznie niewykonalnych.",
+        text: "Raport łączy tradycyjną Szkołę Formy (Luan Tou), siatkę 9 stref Bagua i orientację kompasową z nowoczesną ergonomią, akustyką i doświetleniem.",
         style: "subtitle"
       },
-      // Executive Overview Table with Unbreakable Layout and No-Wrap Score
       {
         unbreakable: true,
         table: {
@@ -903,17 +877,17 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                   { text: `Pewność: ${pdfConfidenceLabel(report.confidence)}`, style: "mutedText" }
                 ],
                 fillColor: "#F7EDDB",
-                margin: [14, 12, 14, 12]
+                margin: [12, 10, 12, 10]
               },
               {
                 stack: [
                   { text: "PODSUMOWANIE STRATEGICZNE", style: "cardEyebrow" },
                   { text: pdfText(report.executive_summary), style: "bodyText" },
-                  { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 8, 0, 2] },
+                  { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 6, 0, 2] },
                   { text: pdfText(report.purchase_decision), style: "bodyText" }
                 ],
                 fillColor: "#FFFDFB",
-                margin: [14, 12, 14, 12]
+                margin: [12, 10, 12, 10]
               }
             ]
           ]
@@ -926,74 +900,101 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
           paddingTop: () => 0,
           paddingBottom: () => 0
         },
-        margin: [0, 0, 0, 14]
+        margin: [0, 0, 0, 12]
       },
-      ...pdfSectionTitle(
-        "Mapa 9 Stref Bagua na Rzucie Nieruchomości",
-        "Siatka 9 pałaców Luo Shu pokrywa 100% obrysu lokalu. Każdy sektor został zmapowany zgodnie z orientacją igły północy."
-      ),
-      planOverlayImage
-        ? {
-            image: planOverlayImage,
-            width: 518,
-            alignment: "center",
-            margin: [0, 0, 0, 12]
-          }
-        : pdfCard(
-            "Nakładka na planie niedostępna",
-            "Wgraj plan w formacie JPG, PNG lub WEBP, aby raport wygenerował pełną nakładkę graficzną 9 stref bezpośrednio na Twoim rzucie.",
-            [],
-            "Mapa Sektorów"
-          ),
-      pdfSectorMatrix(report.sector_map),
-      ...pdfSectionTitle(
-        "Wykres Zgodności Metodologicznej",
-        "Ocena poszczególnych warstw analitycznych (Forma, Kompas, Bagua, Ergonomia, Światło)."
-      ),
-      pdfMethodScoreChart(report),
-      ...pdfSectionTitle(
-        "Najważniejsze Priorytety Działań",
-        "Kolejność wdrożenia zmian: od korekt o najwyższym wpływie do poprawek niskonakładowych."
-      ),
-      pdfCardGrid(priorityCards, 2),
-      ...pdfSectionTitle(
-        "Diagnoza Sektorów i Kierunków",
-        "Szczegółowa interpretacja 9 sektorów w powiązaniu z ich realną funkcją w lokalu."
-      ),
-      pdfCardGrid(sectorAdviceCards, 2),
-      ...pdfSectionTitle(
-        "Audyt Pomieszczeń Pokój po Pokoju",
-        "Wnioski dedykowane dla każdej strefy: atuty, ryzyka i zalecenia bezinwazyjne."
-      ),
-      pdfCardGrid(roomCards, 2),
-      ...pdfSectionTitle(
-        "Meble i Pozycja Dominująca (Command Position)",
-        "Oparcie łóżka, biurka i strefy wypoczynku względem wejścia i okien (Szkoła Formy & Ergonomia)."
-      ),
-      pdfCardGrid(furnitureCards, 2),
-      ...pdfSectionTitle("Klasyczna Szkoła Formy (Luan Tou)"),
-      pdfCardGrid(traditionalCards, 2),
-      ...pdfSectionTitle("Ergonomia, Światło i Akustyka (Standard Współczesny)"),
-      pdfCardGrid(practicalCards, 2),
-      ...pdfSectionTitle(
-        "Lista Rekomendowanych Zmian Bez Remontu",
-        "Praktyczne działania, które można wdrożyć natychmiast bez wyburzania ścian."
-      ),
+      // LARGE, PROMINENT ARCHITECTURAL PLAN OVERLAY
       {
         unbreakable: true,
-        ol: report.practical_changes.slice(0, 8).map((change) => ({
-          text: `${pdfText(change.title)} · ${pdfText(change.cost)} · ${pdfText(change.when)}`,
-          margin: [0, 0, 0, 3]
-        })),
-        style: "bodyText",
+        stack: [
+          { text: "Mapa 9 Stref Bagua na Rzucie Nieruchomości", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 4] },
+          { text: "Siatka 9 pałaców Luo Shu pokrywa 100% obrysu lokalu z orientacją względem północy.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          planOverlayImage
+            ? {
+                image: planOverlayImage,
+                width: 522,
+                alignment: "center",
+                margin: [0, 0, 0, 10]
+              }
+            : pdfCard("Podgląd planu", "Wgraj plik graficzny (JPG/PNG/WEBP) dla bezpośredniej nakładki 9 stref na rzucie."),
+          pdfSectorMatrix(report.sector_map)
+        ],
         margin: [0, 0, 0, 14]
       },
-      ...pdfSectionTitle("Rejestr Źródeł i Transparentność Metod"),
-      pdfCardGrid(sourceCards, 2),
+
+      // PAGE 2: PRIORITY ACTIONS & ROOM-BY-ROOM AUDIT (Clean Page Break)
       {
-        text: pdfText(report.disclaimer),
-        style: "mutedText",
-        margin: [0, 10, 0, 0]
+        pageBreak: "before",
+        unbreakable: true,
+        stack: [
+          { text: "Najważniejsze Priorytety Działań", style: "sectionTitle", keepWithNext: true, margin: [0, 0, 0, 3] },
+          { text: "Kolejność wdrożenia: od korekt o najwyższym wpływie na regenerację do poprawek niskonakładowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          pdfCardGrid(priorityCards, 2)
+        ],
+        margin: [0, 0, 0, 14]
+      },
+      {
+        unbreakable: true,
+        stack: [
+          { text: "Audyt Pomieszczeń Pokój po Pokoju", style: "sectionTitle", keepWithNext: true, margin: [0, 8, 0, 3] },
+          { text: "Konkretne wnioski dla każdej strefy: atuty, ryzyka i zalecenia aranżacyjne.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          pdfCardGrid(roomCards, 2)
+        ],
+        margin: [0, 0, 0, 14]
+      },
+
+      // PAGE 3: FURNITURE & FORM SCHOOL (Clean Page Break - No Split Headers!)
+      {
+        pageBreak: "before",
+        unbreakable: true,
+        stack: [
+          { text: "Meble i Pozycja Dominująca (Command Position)", style: "sectionTitle", keepWithNext: true, margin: [0, 0, 0, 3] },
+          { text: "Oparcie łóżka (Czarny Żółw), biurka, sofy i kuchni względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          pdfCardGrid(furnitureCards, 2)
+        ],
+        margin: [0, 0, 0, 14]
+      },
+      {
+        unbreakable: true,
+        stack: [
+          { text: "Szkoła Formy & Ergonomia Współczesna", style: "sectionTitle", keepWithNext: true, margin: [0, 8, 0, 3] },
+          { text: "Połączenie klasycznych zasad 4 Niebiańskich Zwierząt ze standardami doświetlenia i akustyki.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          pdfCardGrid([...traditionalCards, ...practicalCards], 2)
+        ],
+        margin: [0, 0, 0, 14]
+      },
+
+      // PAGE 4: PRACTICAL CHANGES, SOURCES & DISCLAIMER (Clean Page Break)
+      {
+        pageBreak: "before",
+        unbreakable: true,
+        stack: [
+          { text: "Lista Rekomendowanych Zmian Bez Remontu", style: "sectionTitle", keepWithNext: true, margin: [0, 0, 0, 3] },
+          { text: "Natychmiastowe działania o wysokim zwrocie z inwestycji bez prac wyburzeniowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          {
+            ol: report.practical_changes.slice(0, 8).map((change) => ({
+              text: `${pdfText(change.title)} · Koszt: ${pdfText(change.cost)} · Termin: ${pdfText(change.when)}`,
+              margin: [0, 0, 0, 3]
+            })),
+            style: "bodyText",
+            margin: [0, 0, 0, 14]
+          }
+        ],
+        margin: [0, 0, 0, 14]
+      },
+      {
+        unbreakable: true,
+        stack: [
+          { text: "Wykres Metod i Rejestr Źródeł", style: "sectionTitle", keepWithNext: true, margin: [0, 6, 0, 3] },
+          { text: "Pełna transparentność metodologiczna i poziomy pewności rekomendacji.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          pdfMethodScoreChart(report),
+          pdfCardGrid(sourceCards, 2),
+          {
+            text: pdfText(report.disclaimer),
+            style: "mutedText",
+            margin: [0, 10, 0, 0]
+          }
+        ],
+        margin: [0, 0, 0, 14]
       }
     ]
   };
