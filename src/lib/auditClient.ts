@@ -1,7 +1,7 @@
 import type { AuditApiResponse, AuditFilePayload, AuditReport, AuditRequestPayload } from "../auditTypes";
 import { hasSupabaseConfig, supabase } from "./supabase";
 
-const MAX_FILE_BYTES = 6 * 1024 * 1024;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_MIME_TYPES = new Set([
   "application/pdf",
   "image/png",
@@ -37,7 +37,7 @@ export function validateAuditFiles(files: File[]) {
 
   const tooLarge = files.find((file) => file.size > MAX_FILE_BYTES);
   if (tooLarge) {
-    return `Plik ${tooLarge.name} przekracza 6 MB. Na start przyjmujemy lżejsze plany.`;
+    return `Plik ${tooLarge.name} przekracza 10 MB. Prosimy o dodanie pliku do 10 MB.`;
   }
 
   return null;
@@ -157,69 +157,137 @@ type ReportPdfOptions = {
   northAngleDeg?: number | null;
 };
 
-type SectorKey = "nw" | "n" | "ne" | "w" | "center" | "e" | "sw" | "s" | "se";
+type SectorDirectionCode = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" | "CENTER";
 
-const sectorGrid: SectorKey[][] = [
-  ["nw", "n", "ne"],
-  ["w", "center", "e"],
-  ["sw", "s", "se"]
-];
-
-const sectorFallback: Record<SectorKey, { direction: string; sector: string; element: string; current_use: string }> = {
-  nw: { direction: "Północny zachód", sector: "pomocni ludzie", element: "metal", current_use: "do odczytu" },
-  n: { direction: "Północ", sector: "kariera i przepływ", element: "woda", current_use: "do odczytu" },
-  ne: { direction: "Północny wschód", sector: "wiedza i decyzje", element: "ziemia", current_use: "do odczytu" },
-  w: { direction: "Zachód", sector: "kreatywność", element: "metal", current_use: "do odczytu" },
-  center: { direction: "Centrum", sector: "równowaga domu", element: "ziemia", current_use: "do odczytu" },
-  e: { direction: "Wschód", sector: "rodzina i rozwój", element: "drzewo", current_use: "do odczytu" },
-  sw: { direction: "Południowy zachód", sector: "relacje", element: "ziemia", current_use: "do odczytu" },
-  s: { direction: "Południe", sector: "widoczność", element: "ogień", current_use: "do odczytu" },
-  se: { direction: "Południowy wschód", sector: "zasoby", element: "drzewo", current_use: "do odczytu" }
-};
-
-const sectorOverlayColors: Record<SectorKey, string> = {
-  nw: "rgba(173, 126, 54, 0.27)",
-  n: "rgba(66, 105, 125, 0.27)",
-  ne: "rgba(139, 117, 76, 0.27)",
-  w: "rgba(182, 163, 127, 0.28)",
-  center: "rgba(205, 162, 70, 0.32)",
-  e: "rgba(93, 132, 91, 0.28)",
-  sw: "rgba(165, 126, 91, 0.28)",
-  s: "rgba(184, 96, 70, 0.27)",
-  se: "rgba(82, 126, 94, 0.28)"
-};
-
-function pdfSectorKey(direction: string | null | undefined): SectorKey | null {
-  const value = String(direction ?? "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
-
-  if (!value) return null;
-  if (value.includes("centrum") || value.includes("srodek")) return "center";
-  if (value.includes("polnoc") && value.includes("zach")) return "nw";
-  if (value.includes("polnoc") && value.includes("wsch")) return "ne";
-  if (value.includes("polnoc")) return "n";
-  if (value.includes("polud") && value.includes("zach")) return "sw";
-  if (value.includes("polud") && value.includes("wsch")) return "se";
-  if (value.includes("polud")) return "s";
-  if (value.includes("zach")) return "w";
-  if (value.includes("wsch")) return "e";
-
-  return null;
+interface CompassSectorMeta {
+  code: SectorDirectionCode;
+  direction: string;
+  sector: string;
+  element: string;
+  trigram: string;
+  colorBg: string;
+  colorBorder: string;
+  colorText: string;
 }
 
-function pdfSectorByKey(sectors: AuditReport["sector_map"]) {
-  const byKey = new Map<SectorKey, AuditReport["sector_map"][number]>();
+const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta> = {
+  N: {
+    code: "N",
+    direction: "Północ",
+    sector: "Kariera i Droga Życiowa",
+    element: "Woda",
+    trigram: "Kan (坎)",
+    colorBg: "rgba(74, 109, 124, 0.20)",
+    colorBorder: "#4A6D7C",
+    colorText: "#1F3B44"
+  },
+  NE: {
+    code: "NE",
+    direction: "Północny wschód",
+    sector: "Wiedza i Samorozwój",
+    element: "Ziemia",
+    trigram: "Gen (艮)",
+    colorBg: "rgba(185, 149, 86, 0.20)",
+    colorBorder: "#B99556",
+    colorText: "#634718"
+  },
+  E: {
+    code: "E",
+    direction: "Wschód",
+    sector: "Zdrowie i Rodzina",
+    element: "Drewno",
+    trigram: "Zhen (震)",
+    colorBg: "rgba(82, 126, 88, 0.20)",
+    colorBorder: "#527E58",
+    colorText: "#25482A"
+  },
+  SE: {
+    code: "SE",
+    direction: "Południowy wschód",
+    sector: "Obfitość i Finanse",
+    element: "Drewno",
+    trigram: "Xun (巽)",
+    colorBg: "rgba(70, 120, 85, 0.20)",
+    colorBorder: "#467855",
+    colorText: "#20462C"
+  },
+  S: {
+    code: "S",
+    direction: "Południe",
+    sector: "Sława i Reputacja",
+    element: "Ogień",
+    trigram: "Li (離)",
+    colorBg: "rgba(194, 101, 74, 0.20)",
+    colorBorder: "#C2654A",
+    colorText: "#722E1A"
+  },
+  SW: {
+    code: "SW",
+    direction: "Południowy zachód",
+    sector: "Relacje i Partnerstwo",
+    element: "Ziemia",
+    trigram: "Kun (坤)",
+    colorBg: "rgba(175, 125, 85, 0.20)",
+    colorBorder: "#AF7D55",
+    colorText: "#5E3A1E"
+  },
+  W: {
+    code: "W",
+    direction: "Zachód",
+    sector: "Kreatywność i Dzieci",
+    element: "Metal",
+    trigram: "Dui (兌)",
+    colorBg: "rgba(148, 158, 153, 0.20)",
+    colorBorder: "#949E99",
+    colorText: "#3E4844"
+  },
+  NW: {
+    code: "NW",
+    direction: "Północny zachód",
+    sector: "Pomocni Ludzie i Mentorzy",
+    element: "Metal",
+    trigram: "Qian (乾)",
+    colorBg: "rgba(180, 150, 100, 0.20)",
+    colorBorder: "#B49664",
+    colorText: "#5C441E"
+  },
+  CENTER: {
+    code: "CENTER",
+    direction: "Centrum",
+    sector: "Serce Domu i Równowaga",
+    element: "Ziemia",
+    trigram: "Tai Qi (太極)",
+    colorBg: "rgba(205, 162, 70, 0.24)",
+    colorBorder: "#CDA246",
+    colorText: "#6A4D12"
+  }
+};
 
-  sectors.forEach((sector) => {
-    const key = pdfSectorKey(sector.direction);
-    if (key && !byKey.has(key)) {
-      byKey.set(key, sector);
-    }
-  });
+/**
+ * Mathematically maps each cell of the 3x3 orthogonal grid covering the dwelling
+ * to its exact, unique compass direction based on the verified North angle.
+ */
+function getCellCompassSector(colIndex: number, rowIndex: number, northAngleDeg: number): CompassSectorMeta {
+  const dx = colIndex - 1; // -1 (left), 0 (center), 1 (right)
+  const dy = rowIndex - 1; // -1 (top), 0 (center), 1 (bottom)
 
-  return byKey;
+  if (dx === 0 && dy === 0) {
+    return COMPASS_SECTOR_DEFINITIONS.CENTER;
+  }
+
+  // Screen angle: Up is 0°, Right is 90°, Down is 180°, Left is 270°
+  const planAngleDeg = ((Math.atan2(dx, -dy) * 180 / Math.PI) + 360) % 360;
+  // True geographic bearing relative to confirmed North
+  const bearing = ((planAngleDeg - northAngleDeg) + 360) % 360;
+
+  if (bearing >= 337.5 || bearing < 22.5) return COMPASS_SECTOR_DEFINITIONS.N;
+  if (bearing < 67.5) return COMPASS_SECTOR_DEFINITIONS.NE;
+  if (bearing < 112.5) return COMPASS_SECTOR_DEFINITIONS.E;
+  if (bearing < 157.5) return COMPASS_SECTOR_DEFINITIONS.SE;
+  if (bearing < 202.5) return COMPASS_SECTOR_DEFINITIONS.S;
+  if (bearing < 247.5) return COMPASS_SECTOR_DEFINITIONS.SW;
+  if (bearing < 292.5) return COMPASS_SECTOR_DEFINITIONS.W;
+  return COMPASS_SECTOR_DEFINITIONS.NW;
 }
 
 function pdfConfidenceLabel(value: AuditReport["confidence"]) {
@@ -261,258 +329,218 @@ function loadImageElement(src: string) {
   });
 }
 
-function wrappedCanvasLines(context: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines = 2) {
-  const words = pdfText(text, "").split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let current = "";
-
-  words.forEach((word) => {
-    const next = current ? `${current} ${word}` : word;
-    if (context.measureText(next).width <= maxWidth || !current) {
-      current = next;
-      return;
-    }
-
-    lines.push(current);
-    current = word;
-  });
-
-  if (current) {
-    lines.push(current);
-  }
-
-  if (lines.length <= maxLines) {
-    return lines;
-  }
-
-  const result = lines.slice(0, maxLines);
-  const lastIndex = result.length - 1;
-  while (result[lastIndex].length > 4 && context.measureText(`${result[lastIndex]}...`).width > maxWidth) {
-    result[lastIndex] = result[lastIndex].slice(0, -1).trim();
-  }
-  result[lastIndex] = `${result[lastIndex]}...`;
-  return result;
-}
-
-function drawCenteredCanvasLabel({
-  context,
-  x,
-  y,
-  width,
-  direction,
-  sector,
-  element
-}: {
-  context: CanvasRenderingContext2D;
-  x: number;
-  y: number;
-  width: number;
-  direction: string;
-  sector: string;
-  element: string;
-}) {
-  context.save();
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-
-  const maxTextWidth = Math.max(82, width - 20);
-  context.font = "700 18px Arial, sans-serif";
-  const sectorLines = wrappedCanvasLines(context, sector, maxTextWidth, 2);
-  context.font = "700 12px Arial, sans-serif";
-  const directionLines = wrappedCanvasLines(context, direction, maxTextWidth, 1);
-  context.font = "500 11px Arial, sans-serif";
-  const elementLines = wrappedCanvasLines(context, element, maxTextWidth, 1);
-  const lines = [...directionLines, ...sectorLines, ...elementLines];
-  const lineHeight = 17;
-  const boxHeight = lines.length * lineHeight + 16;
-  const boxWidth = Math.min(width - 10, Math.max(96, Math.max(...lines.map((line) => context.measureText(line).width)) + 24));
-  const left = x - boxWidth / 2;
-  const top = y - boxHeight / 2;
-
-  context.fillStyle = "rgba(255, 253, 250, 0.9)";
-  context.strokeStyle = "rgba(16, 34, 31, 0.33)";
-  context.lineWidth = 1.5;
-  context.beginPath();
-  context.rect(left, top, boxWidth, boxHeight);
-  context.fill();
-  context.stroke();
-
-  let textY = top + 16;
-  lines.forEach((line, lineIndex) => {
-    context.font = lineIndex === 0 ? "700 12px Arial, sans-serif" : lineIndex === lines.length - 1 ? "500 11px Arial, sans-serif" : "700 18px Arial, sans-serif";
-    context.fillStyle = lineIndex === 0 ? "#9d6a18" : lineIndex === lines.length - 1 ? "#53625b" : "#10221f";
-    context.fillText(line, x, textY);
-    textY += lineHeight;
-  });
-
-  context.restore();
-}
-
-function rotatedPoint(localX: number, localY: number, centerX: number, centerY: number, angleRad: number) {
-  const cos = Math.cos(angleRad);
-  const sin = Math.sin(angleRad);
-
-  return {
-    x: centerX + localX * cos - localY * sin,
-    y: centerY + localX * sin + localY * cos
-  };
-}
-
-function drawNorthArrow(context: CanvasRenderingContext2D, width: number, height: number, angleRad: number, northAngleDeg: number) {
-  const x = width - 82;
-  const y = 74;
-
-  context.save();
-  context.fillStyle = "rgba(255, 253, 250, 0.92)";
-  context.strokeStyle = "rgba(16, 34, 31, 0.34)";
-  context.lineWidth = 1.5;
-  context.beginPath();
-  context.rect(x - 48, y - 48, 96, 96);
-  context.fill();
-  context.stroke();
-
-  context.translate(x, y + 4);
-  context.rotate(angleRad);
-  context.strokeStyle = "#10221f";
-  context.fillStyle = "#10221f";
-  context.lineWidth = 5;
-  context.lineCap = "round";
-  context.beginPath();
-  context.moveTo(0, 28);
-  context.lineTo(0, -22);
-  context.stroke();
-  context.beginPath();
-  context.moveTo(0, -34);
-  context.lineTo(-11, -13);
-  context.lineTo(11, -13);
-  context.closePath();
-  context.fill();
-  context.restore();
-
-  context.save();
-  context.textAlign = "center";
-  context.fillStyle = "#10221f";
-  context.font = "700 18px Arial, sans-serif";
-  context.fillText("N", x, y - 58);
-  context.font = "500 12px Arial, sans-serif";
-  context.fillStyle = "#53625b";
-  context.fillText(`${Math.round(northAngleDeg)}°`, x, y + 58);
-  context.restore();
-}
-
+/**
+ * Creates a high-resolution, architectural Bagua 9-sector overlay image.
+ * The 3x3 grid covers 100% of the floor plan footprint from wall to wall.
+ */
 async function createPlanSectorOverlayImage(
   file: File | null | undefined,
-  report: AuditReport,
+  _report: AuditReport,
   northAngleDeg = 0
-) {
+): Promise<string | null> {
   if (!file || !canUsePlanImageInPdf(file)) {
     return null;
   }
 
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImageElement(dataUrl);
-  const maxSide = 1180;
-  const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
-  const width = Math.max(600, Math.round((image.naturalWidth || image.width) * scale));
-  const height = Math.max(600, Math.round((image.naturalHeight || image.height) * scale));
+
+  const targetWidth = 1200;
+  const aspectRatio = (image.naturalHeight || image.height) / (image.naturalWidth || image.width);
+  const targetHeight = Math.round(targetWidth * (aspectRatio || 0.75));
+
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
 
-  const context = canvas.getContext("2d");
-  if (!context) return null;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
 
-  context.fillStyle = "#fffdfa";
-  context.fillRect(0, 0, width, height);
-  context.drawImage(image, 0, 0, width, height);
-  context.fillStyle = "rgba(255, 253, 250, 0.12)";
-  context.fillRect(0, 0, width, height);
+  // Background and floor plan rendering
+  ctx.fillStyle = "#FAF8F5";
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
+  ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
 
-  const angleRad = northAngleDeg * Math.PI / 180;
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const initialGridWidth = width * 0.82;
-  const initialGridHeight = height * 0.82;
-  const availableWidth = width * 0.91;
-  const availableHeight = height * 0.91;
-  const rotatedWidth = initialGridWidth * Math.abs(Math.cos(angleRad)) + initialGridHeight * Math.abs(Math.sin(angleRad));
-  const rotatedHeight = initialGridWidth * Math.abs(Math.sin(angleRad)) + initialGridHeight * Math.abs(Math.cos(angleRad));
-  const fitScale = Math.min(1, availableWidth / rotatedWidth, availableHeight / rotatedHeight);
-  const gridWidth = initialGridWidth * fitScale;
-  const gridHeight = initialGridHeight * fitScale;
-  const cellWidth = gridWidth / 3;
-  const cellHeight = gridHeight / 3;
-  const sectors = pdfSectorByKey(report.sector_map);
+  // Soft architectural veil for maximum plan readability
+  ctx.fillStyle = "rgba(250, 248, 245, 0.08)";
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
 
-  sectorGrid.forEach((row, rowIndex) => {
-    row.forEach((key, columnIndex) => {
-      const sector = sectors.get(key) ?? sectorFallback[key];
-      const localX = -gridWidth / 2 + columnIndex * cellWidth;
-      const localY = -gridHeight / 2 + rowIndex * cellHeight;
+  // Full dwelling 3x3 grid dimensions (covering the entire footprint from wall to wall)
+  const pad = 12;
+  const gridX = pad;
+  const gridY = pad;
+  const gridW = targetWidth - pad * 2;
+  const gridH = targetHeight - pad * 2;
+  const cellW = gridW / 3;
+  const cellH = gridH / 3;
 
-      context.save();
-      context.translate(centerX, centerY);
-      context.rotate(angleRad);
-      context.fillStyle = sectorOverlayColors[key];
-      context.strokeStyle = "rgba(255, 253, 250, 0.92)";
-      context.lineWidth = 4;
-      context.fillRect(localX, localY, cellWidth, cellHeight);
-      context.strokeRect(localX, localY, cellWidth, cellHeight);
-      context.restore();
+  // Draw each of the 9 sectors
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      const cellX = gridX + col * cellW;
+      const cellY = gridY + row * cellH;
+      const sector = getCellCompassSector(col, row, northAngleDeg);
 
-      const labelCenter = rotatedPoint(localX + cellWidth / 2, localY + cellHeight / 2, centerX, centerY, angleRad);
-      drawCenteredCanvasLabel({
-        context,
-        x: labelCenter.x,
-        y: labelCenter.y,
-        width: Math.min(cellWidth, 240),
-        direction: sector.direction,
-        sector: sector.sector,
-        element: sector.element
-      });
-    });
-  });
+      // Translucent tint per element
+      ctx.fillStyle = sector.colorBg;
+      ctx.fillRect(cellX, cellY, cellW, cellH);
 
-  context.save();
-  context.strokeStyle = "rgba(16, 34, 31, 0.62)";
-  context.lineWidth = 5;
-  context.translate(centerX, centerY);
-  context.rotate(angleRad);
-  context.strokeRect(-gridWidth / 2, -gridHeight / 2, gridWidth, gridHeight);
-  context.restore();
+      // Crisp cell border with warm gold accent
+      ctx.strokeStyle = "rgba(196, 148, 63, 0.55)";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(cellX, cellY, cellW, cellH);
 
-  drawNorthArrow(context, width, height, angleRad, northAngleDeg);
+      // Centered Luxury Badge in each cell
+      const badgeW = Math.min(cellW - 16, 260);
+      const badgeH = 52;
+      const badgeX = cellX + (cellW - badgeW) / 2;
+      const badgeY = cellY + (cellH - badgeH) / 2;
 
-  return canvas.toDataURL("image/jpeg", 0.9);
+      ctx.save();
+      // Badge background pill
+      ctx.fillStyle = "rgba(255, 253, 250, 0.94)";
+      ctx.strokeStyle = "rgba(196, 148, 63, 0.7)";
+      ctx.lineWidth = 1.5;
+      ctx.shadowColor = "rgba(16, 34, 31, 0.12)";
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 2;
+      ctx.beginPath();
+      ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Badge Text - Line 1 (Direction + Element)
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = sector.colorText;
+      ctx.font = "bold 11px Arial, sans-serif";
+      ctx.fillText(
+        `${sector.direction.toUpperCase()} (${sector.code}) · ${sector.element.toUpperCase()}`,
+        badgeX + badgeW / 2,
+        badgeY + 9
+      );
+
+      // Badge Text - Line 2 (Sector Life Domain)
+      ctx.fillStyle = "#10221F";
+      ctx.font = "bold 13px Arial, sans-serif";
+      ctx.fillText(sector.sector, badgeX + badgeW / 2, badgeY + 27);
+      ctx.restore();
+    }
+  }
+
+  // Outer double luxury border around whole floor plan
+  ctx.strokeStyle = "#10221F";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(gridX, gridY, gridW, gridH);
+
+  // Compass Rose / North Indicator Card in top right
+  drawNorthCompassWidget(ctx, targetWidth, northAngleDeg);
+
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
+function drawNorthCompassWidget(ctx: CanvasRenderingContext2D, canvasWidth: number, northAngleDeg: number) {
+  const boxW = 88;
+  const boxH = 94;
+  const boxX = canvasWidth - boxW - 24;
+  const boxY = 24;
+
+  ctx.save();
+  // Card box
+  ctx.fillStyle = "rgba(255, 253, 250, 0.96)";
+  ctx.strokeStyle = "rgba(196, 148, 63, 0.8)";
+  ctx.lineWidth = 2;
+  ctx.shadowColor = "rgba(16, 34, 31, 0.16)";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 3;
+  ctx.beginPath();
+  ctx.roundRect(boxX, boxY, boxW, boxH, 10);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  const centerX = boxX + boxW / 2;
+  const centerY = boxY + 44;
+  const angleRad = (northAngleDeg * Math.PI) / 180;
+
+  // Dial needle
+  ctx.save();
+  ctx.translate(centerX, centerY);
+  ctx.rotate(angleRad);
+
+  // North needle (Dark green / ink)
+  ctx.fillStyle = "#10221F";
+  ctx.beginPath();
+  ctx.moveTo(0, -25);
+  ctx.lineTo(-7, 0);
+  ctx.lineTo(7, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // South needle (Brass gold)
+  ctx.fillStyle = "#C49544";
+  ctx.beginPath();
+  ctx.moveTo(0, 25);
+  ctx.lineTo(-7, 0);
+  ctx.lineTo(7, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Center pin
+  ctx.fillStyle = "#FAF8F5";
+  ctx.beginPath();
+  ctx.arc(0, 0, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // Label N
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#10221F";
+  ctx.font = "bold 13px Arial, sans-serif";
+  ctx.fillText("N", centerX, boxY + 14);
+
+  // Degree readout
+  ctx.fillStyle = "#7A6E5D";
+  ctx.font = "bold 11px Arial, sans-serif";
+  ctx.fillText(`${Math.round(northAngleDeg)}°`, centerX, boxY + 80);
+  ctx.restore();
+}
+
+/**
+ * Editorial Card block with unbreakable table layout to prevent page break splitting.
+ */
 function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = "") {
   const stack: any[] = [];
 
   if (eyebrow) {
-    stack.push({ text: eyebrow, style: "cardEyebrow" });
+    stack.push({ text: eyebrow.toUpperCase(), style: "cardEyebrow" });
   }
 
   stack.push({ text: title, style: "cardTitle" });
-  stack.push({ text: body, style: "bodyText", margin: [0, 4, 0, bullets.length > 0 ? 8 : 0] });
+  stack.push({ text: body, style: "bodyText", margin: [0, 3, 0, bullets.length > 0 ? 6 : 0] });
 
   if (bullets.length > 0) {
     stack.push({
       ul: bullets,
-      style: "bodyText",
+      style: "bulletText",
       margin: [0, 2, 0, 0]
     });
   }
 
   return {
+    unbreakable: true,
     table: {
+      dontBreakRows: true,
       widths: ["*"],
-      body: [[{ stack, margin: [13, 11, 13, 12] }]]
+      body: [[{ stack, margin: [14, 12, 14, 12] }]]
     },
     layout: {
-      fillColor: () => "#fffdfa",
-      hLineColor: () => "#d8cdb8",
-      vLineColor: () => "#d8cdb8",
+      fillColor: () => "#FFFDFB",
+      hLineColor: () => "#E0D7C6",
+      vLineColor: () => "#E0D7C6",
       paddingLeft: () => 0,
       paddingRight: () => 0,
       paddingTop: () => 0,
@@ -522,46 +550,56 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
   };
 }
 
+/**
+ * Numbered Action Card with unbroken layout and contrast badge.
+ */
 function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], index: number) {
   return {
+    unbreakable: true,
     table: {
+      dontBreakRows: true,
       widths: ["*"],
-      body: [[{
-        columns: [
+      body: [
+        [
           {
-            width: 25,
-            table: {
-              widths: ["*"],
-              body: [[{ text: String(index), style: "priorityBadge", margin: [0, 5, 0, 5] }]]
-            },
-            layout: {
-              fillColor: () => "#10221f",
-              hLineColor: () => "#10221f",
-              vLineColor: () => "#10221f"
-            }
-          },
-          {
-            width: "*",
-            stack: [
-              { text: pdfText(action.method), style: "cardEyebrow" },
-              { text: pdfText(action.title), style: "cardTitle" },
-              { text: pdfText(action.why), style: "bodyText", margin: [0, 4, 0, 7] },
+            columns: [
               {
-                text: `${pdfText(action.impact, "wpływ")} · ${pdfText(action.effort, "wysiłek")} · pewność ${pdfConfidenceLabel(action.confidence)}`,
-                style: "mutedText"
+                width: 26,
+                table: {
+                  dontBreakRows: true,
+                  widths: ["*"],
+                  body: [[{ text: String(index), style: "priorityBadge", margin: [0, 4, 0, 4] }]]
+                },
+                layout: {
+                  fillColor: () => "#10221F",
+                  hLineColor: () => "#10221F",
+                  vLineColor: () => "#10221F"
+                }
+              },
+              {
+                width: "*",
+                stack: [
+                  { text: pdfText(action.method).toUpperCase(), style: "cardEyebrow" },
+                  { text: pdfText(action.title), style: "cardTitle" },
+                  { text: pdfText(action.why), style: "bodyText", margin: [0, 3, 0, 6] },
+                  {
+                    text: `${pdfText(action.impact, "wpływ")} · ${pdfText(action.effort, "wysiłek")} · pewność ${pdfConfidenceLabel(action.confidence)}`,
+                    style: "mutedText"
+                  }
+                ],
+                margin: [10, 0, 0, 0]
               }
             ],
-            margin: [8, 0, 0, 0]
+            columnGap: 2,
+            margin: [14, 12, 14, 12]
           }
-        ],
-        columnGap: 2,
-        margin: [12, 11, 12, 12]
-      }]]
+        ]
+      ]
     },
     layout: {
-      fillColor: () => "#fffdfa",
-      hLineColor: () => "#d8cdb8",
-      vLineColor: () => "#d8cdb8",
+      fillColor: () => "#FFFDFB",
+      hLineColor: () => "#E0D7C6",
+      vLineColor: () => "#E0D7C6",
       paddingLeft: () => 0,
       paddingRight: () => 0,
       paddingTop: () => 0,
@@ -573,21 +611,11 @@ function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], 
 
 function pdfSectionTitle(title: string, subtitle?: string) {
   return [
-    { text: title, style: "sectionTitle", margin: [0, 18, 0, subtitle ? 4 : 10] },
-    ...(subtitle ? [{ text: subtitle, style: "mutedText", margin: [0, 0, 0, 10] }] : [])
+    { text: title, style: "sectionTitle", keepWithNext: true, margin: [0, 18, 0, subtitle ? 3 : 8] },
+    ...(subtitle
+      ? [{ text: subtitle, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 10] }]
+      : [])
   ];
-}
-
-function pdfTableLayout() {
-  return {
-    fillColor: (rowIndex: number) => (rowIndex === 0 ? "#10221f" : rowIndex % 2 === 0 ? "#fbf7ef" : "#ffffff"),
-    hLineColor: () => "#d8cdb8",
-    vLineColor: () => "#d8cdb8",
-    paddingLeft: () => 7,
-    paddingRight: () => 7,
-    paddingTop: () => 6,
-    paddingBottom: () => 7
-  };
 }
 
 function pdfCardGrid(cards: any[], columns = 2) {
@@ -595,84 +623,118 @@ function pdfCardGrid(cards: any[], columns = 2) {
   const widths = Array.from({ length: columns }, () => "*");
 
   for (let index = 0; index < cards.length; index += columns) {
-    rows.push(widths.map((_, columnIndex) => {
-      const card = cards[index + columnIndex];
-      return card ? { stack: [card], margin: columnIndex === 0 ? [0, 0, 5, 0] : [5, 0, 0, 0] } : { text: "" };
-    }));
+    rows.push(
+      widths.map((_, columnIndex) => {
+        const card = cards[index + columnIndex];
+        return card
+          ? { stack: [card], margin: columnIndex === 0 ? [0, 0, 5, 0] : [5, 0, 0, 0] }
+          : { text: "" };
+      })
+    );
   }
 
   return {
     table: {
+      dontBreakRows: true,
       widths,
       body: rows
     },
     layout: "noBorders",
-    margin: [0, 0, 0, 2]
+    margin: [0, 0, 0, 4]
   };
 }
 
-function pdfProgressBar(value: number, width = 210, color = "#9d6a18") {
+function pdfProgressBar(value: number, width = 220, color = "#9D742F") {
   const safeValue = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
-  const fillWidth = Math.round(width * safeValue / 100);
+  const fillWidth = Math.round((width * safeValue) / 100);
 
   return {
     canvas: [
-      { type: "rect", x: 0, y: 0, w: width, h: 7, r: 3.5, color: "#e7ddca" },
-      { type: "rect", x: 0, y: 0, w: fillWidth, h: 7, r: 3.5, color }
+      { type: "rect", x: 0, y: 0, w: width, h: 6, r: 3, color: "#E7DDCA" },
+      { type: "rect", x: 0, y: 0, w: fillWidth, h: 6, r: 3, color }
     ],
-    margin: [0, 6, 0, 0]
+    margin: [0, 4, 0, 0]
   };
 }
 
 function pdfMethodScoreChart(report: AuditReport) {
   return {
+    unbreakable: true,
     table: {
-      widths: ["*", 42],
-      body: report.method_scores.slice(0, 8).map((item) => ([
+      dontBreakRows: true,
+      widths: ["*", 48],
+      body: report.method_scores.slice(0, 8).map((item) => [
         {
           stack: [
             { text: pdfText(item.method), style: "tableStrong" },
-            pdfProgressBar(item.score, 220, item.score >= 80 ? "#6b8761" : item.score >= 68 ? "#c59642" : "#c87952"),
-            { text: pdfText(item.signal), style: "mutedText", margin: [0, 4, 0, 0] }
+            pdfProgressBar(
+              item.score,
+              220,
+              item.score >= 80 ? "#527E58" : item.score >= 68 ? "#C49544" : "#C2654A"
+            ),
+            { text: pdfText(item.signal), style: "mutedText", margin: [0, 3, 0, 0] }
           ],
-          margin: [0, 0, 0, 8]
+          margin: [0, 0, 0, 6]
         },
         { text: `${item.score}/100`, alignment: "right", style: "tableStrong", margin: [0, 2, 0, 0] }
-      ]))
+      ])
     },
     layout: "noBorders",
-    margin: [0, 2, 0, 8]
+    margin: [0, 2, 0, 10]
   };
 }
 
 function pdfSectorMatrix(sectors: AuditReport["sector_map"]) {
-  const byKey = pdfSectorByKey(sectors);
+  const byCode = new Map<string, AuditReport["sector_map"][number]>();
+  sectors.forEach((sec) => {
+    const raw = String(sec.direction || "").toLowerCase();
+    if (raw.includes("północny zach") || raw.includes("nw")) byCode.set("NW", sec);
+    else if (raw.includes("północny wsch") || raw.includes("ne")) byCode.set("NE", sec);
+    else if (raw.includes("północ") || raw.includes("n")) byCode.set("N", sec);
+    else if (raw.includes("południowy zach") || raw.includes("sw")) byCode.set("SW", sec);
+    else if (raw.includes("południowy wsch") || raw.includes("se")) byCode.set("SE", sec);
+    else if (raw.includes("południe") || raw.includes("s")) byCode.set("S", sec);
+    else if (raw.includes("zachód") || raw.includes("w")) byCode.set("W", sec);
+    else if (raw.includes("wschód") || raw.includes("e")) byCode.set("E", sec);
+    else if (raw.includes("centrum")) byCode.set("CENTER", sec);
+  });
+
+  const matrixLayout: SectorDirectionCode[][] = [
+    ["NW", "N", "NE"],
+    ["W", "CENTER", "E"],
+    ["SW", "S", "SE"]
+  ];
 
   return {
+    unbreakable: true,
     table: {
+      dontBreakRows: true,
       widths: ["*", "*", "*"],
-      body: sectorGrid.map((row) => row.map((key) => {
-        const sector = byKey.get(key) ?? sectorFallback[key];
-        return {
-          stack: [
-            { text: pdfText(sector.direction), style: "matrixDirection" },
-            { text: pdfText(sector.sector, "sektor"), style: "matrixTitle" },
-            { text: pdfText(sector.element, "element"), style: "matrixMeta" },
-            { text: pdfText(sector.current_use, "do potwierdzenia"), style: "matrixUse" }
-          ],
-          margin: [9, 8, 9, 9]
-        };
-      }))
+      body: matrixLayout.map((row) =>
+        row.map((code) => {
+          const def = COMPASS_SECTOR_DEFINITIONS[code];
+          const item = byCode.get(code);
+          return {
+            stack: [
+              { text: `${def.direction.toUpperCase()} (${def.code})`, style: "matrixDirection" },
+              { text: item?.sector || def.sector, style: "matrixTitle" },
+              { text: `Żywioł: ${item?.element || def.element}`, style: "matrixMeta" },
+              { text: item?.current_use || "Strefa funkcjonalna", style: "matrixUse" }
+            ],
+            margin: [8, 8, 8, 8]
+          };
+        })
+      )
     },
     layout: {
       fillColor: (rowIndex: number, _node: unknown, columnIndex: number) => {
-        if (rowIndex === 1 && columnIndex === 1) return "#efe5d3";
-        return (rowIndex + columnIndex) % 2 === 0 ? "#fbf7ef" : "#fffdfa";
+        if (rowIndex === 1 && columnIndex === 1) return "#F4EBD9";
+        return (rowIndex + columnIndex) % 2 === 0 ? "#FBF8F2" : "#FFFDFB";
       },
-      hLineColor: () => "#d8cdb8",
-      vLineColor: () => "#d8cdb8"
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8"
     },
-    margin: [0, 0, 0, 12]
+    margin: [0, 0, 0, 14]
   };
 }
 
@@ -699,45 +761,60 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     }
   };
 
+  const northAngle = Number(options.northAngleDeg ?? 0);
   const planOverlayImage = await createPlanSectorOverlayImage(
     options.planFile,
     report,
-    Number(options.northAngleDeg ?? 0)
-  ).catch(() => null);
+    northAngle
+  ).catch((err) => {
+    console.error("Błąd tworzenia nakładki rzutu:", err);
+    return null;
+  });
 
-  const roomCards = report.room_recommendations.slice(0, 14).map((room) =>
+  const roomCards = report.room_recommendations.slice(0, 12).map((room) =>
     pdfCard(
       pdfText(room.room),
       pdfText(room.diagnosis),
       [
-        ...pdfList(room.strengths, "mocne strony do potwierdzenia").map((item) => `Plus: ${item}`),
-        ...pdfList(room.risks, "ryzyka do potwierdzenia").map((item) => `Ryzyko: ${item}`),
-        ...pdfList(room.recommendations, "uzupełnij oznaczenia i funkcję").map((item) => `Rada: ${item}`)
-      ].slice(0, 10),
+        ...pdfList(room.strengths, "mocne strony").map((item) => `Atut: ${item}`),
+        ...pdfList(room.risks, "ryzyka").map((item) => `Ryzyko: ${item}`),
+        ...pdfList(room.recommendations, "rekomendacje").map((item) => `Rada: ${item}`)
+      ].slice(0, 8),
       `${pdfText(room.function)} · ${pdfText(room.method)}`
     )
   );
 
-  const furnitureCards = report.furniture_recommendations.slice(0, 14).map((item) =>
+  const furnitureCards = report.furniture_recommendations.slice(0, 12).map((item) =>
     pdfCard(
       pdfText(item.item),
       `${pdfText(item.assessment)}\n\nOgraniczenie praktyczne: ${pdfText(item.practical_limit)}`,
-      pdfList(item.recommendations, "doprecyzuj kierunek osoby korzystającej z mebla").slice(0, 7),
+      pdfList(item.recommendations, "doprecyzuj ustawienie mebla").slice(0, 6),
       `${pdfText(item.orientation_role)} · ${pdfText(item.direction)}`
     )
   );
 
-  const traditionalCards = report.traditional_analysis.slice(0, 8).map((section) =>
-    pdfCard(pdfText(section.title), pdfText(section.body), pdfList(section.bullets, "wniosek do pogłębienia"), "warstwa tradycyjna")
+  const traditionalCards = report.traditional_analysis.slice(0, 6).map((section) =>
+    pdfCard(
+      pdfText(section.title),
+      pdfText(section.body),
+      pdfList(section.bullets, "wniosek do pogłębienia"),
+      "Szkoła Formy & Tradycja"
+    )
   );
 
-  const practicalCards = report.practical_analysis.slice(0, 8).map((section) =>
-    pdfCard(pdfText(section.title), pdfText(section.body), pdfList(section.bullets, "wniosek do pogłębienia"), "warstwa praktyczna")
+  const practicalCards = report.practical_analysis.slice(0, 6).map((section) =>
+    pdfCard(
+      pdfText(section.title),
+      pdfText(section.body),
+      pdfList(section.bullets, "wniosek do pogłębienia"),
+      "Ergonomia & Architektura Wnętrz"
+    )
   );
 
   const priorityCards = report.priority_actions.slice(0, 8).map((action, index) =>
     pdfNumberedActionCard(action, index + 1)
   );
+
   const sectorAdviceCards = report.sector_map.slice(0, 9).map((sector) =>
     pdfCard(
       pdfText(sector.direction),
@@ -746,129 +823,178 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       `${pdfText(sector.sector)} · ${pdfText(sector.element)}`
     )
   );
+
   const sourceCards = report.source_ledger.slice(0, 8).map((source) =>
-    pdfCard(pdfText(source.source), pdfText(source.used_for), [`pewność: ${pdfConfidenceLabel(source.confidence)}`], "źródło")
+    pdfCard(
+      pdfText(source.source),
+      pdfText(source.used_for),
+      [`Pewność metody: ${pdfConfidenceLabel(source.confidence)}`],
+      "Rejestr Źródeł"
+    )
   );
-  const planFile = options.planFile ?? null;
-  const mapFallbackText = planFile && !canUsePlanImageInPdf(planFile)
-    ? "Nakładka 9 stref może zostać narysowana bezpośrednio na planie, gdy pierwszy wgrany plik jest obrazem JPG, PNG albo WEBP. Przy PDF/HEIC raport pokazuje macierz sektorów, ale nie osadza skanu jako tła."
-    : "Dodaj plan w formacie JPG, PNG albo WEBP, aby raport PDF mógł narysować 9 stref bezpośrednio na skanie.";
 
   const docDefinition: any = {
     pageSize: "A4",
-    pageMargins: [42, 46, 42, 48],
+    pageMargins: [38, 44, 38, 44],
     defaultStyle: {
       font: "Roboto",
-      fontSize: 9.6,
-      color: "#10221f",
-      lineHeight: 1.2
+      fontSize: 9.4,
+      color: "#10221F",
+      lineHeight: 1.25
     },
+    header: () => ({
+      columns: [
+        { text: "PLAN HARMONII · CERTYFIKOWANY AUDYT PRZESTRZENNY", fontSize: 7.5, bold: true, color: "#C49544", characterSpacing: 0.8 },
+        { text: "AI FENG SHUI & ARCHITEKTURA", alignment: "right", fontSize: 7.5, color: "#7A6E5D" }
+      ],
+      margin: [38, 16, 38, 0]
+    }),
     footer: (currentPage: number, pageCount: number) => ({
       columns: [
-        { text: "Plan Harmonii", color: "#6b786c", fontSize: 8 },
-        { text: `${currentPage}/${pageCount}`, alignment: "right", color: "#6b786c", fontSize: 8 }
+        { text: "Plan Harmonii · www.e-fengshui.pl", color: "#7A6E5D", fontSize: 8 },
+        { text: `Strona ${currentPage} z ${pageCount}`, alignment: "right", color: "#7A6E5D", fontSize: 8 }
       ],
-      margin: [42, 0, 42, 22]
+      margin: [38, 0, 38, 16]
     }),
     styles: {
-      kicker: { color: "#9d6a18", bold: true, fontSize: 9, characterSpacing: 1.5 },
-      title: { fontSize: 30, bold: true, lineHeight: 1.02, margin: [0, 7, 0, 10] },
-      subtitle: { fontSize: 11, color: "#41524b", lineHeight: 1.35, margin: [0, 0, 0, 16] },
-      score: { fontSize: 33, bold: true, color: "#10221f", lineHeight: 0.98 },
-      scoreLabel: { color: "#6b786c", bold: true, fontSize: 8, characterSpacing: 1.2 },
-      sectionTitle: { fontSize: 18, bold: true, color: "#10221f" },
-      cardTitle: { fontSize: 12.5, bold: true, color: "#10221f" },
-      cardEyebrow: { fontSize: 8, bold: true, color: "#9d6a18", characterSpacing: 0.6, margin: [0, 0, 0, 3] },
-      priorityBadge: { alignment: "center", color: "#fffdfa", bold: true, fontSize: 10 },
-      bodyText: { fontSize: 9.4, color: "#32463f", lineHeight: 1.22 },
-      mutedText: { fontSize: 9.2, color: "#66756e", lineHeight: 1.25 },
-      tableHead: { color: "#fffdfa", bold: true, fontSize: 8.2 },
-      tableStrong: { bold: true, color: "#10221f", fontSize: 8.8 },
-      tableText: { color: "#32463f", fontSize: 8.5, lineHeight: 1.15 },
-      matrixDirection: { color: "#9d6a18", bold: true, fontSize: 7.8, alignment: "center" },
-      matrixTitle: { color: "#10221f", bold: true, fontSize: 9, alignment: "center", margin: [0, 3, 0, 2] },
-      matrixMeta: { color: "#66756e", fontSize: 7.5, alignment: "center" },
-      matrixUse: { color: "#32463f", fontSize: 7.5, alignment: "center", margin: [0, 5, 0, 0] }
+      kicker: { color: "#C49544", bold: true, fontSize: 8.5, characterSpacing: 1.2 },
+      title: { fontSize: 26, bold: true, color: "#10221F", lineHeight: 1.05, margin: [0, 4, 0, 8] },
+      subtitle: { fontSize: 10, color: "#41524B", lineHeight: 1.35, margin: [0, 0, 0, 14] },
+      scoreLabel: { color: "#7A6E5D", bold: true, fontSize: 7.8, characterSpacing: 1 },
+      sectionTitle: { fontSize: 16, bold: true, color: "#10221F" },
+      cardTitle: { fontSize: 11.5, bold: true, color: "#10221F" },
+      cardEyebrow: { fontSize: 7.5, bold: true, color: "#C49544", characterSpacing: 0.5, margin: [0, 0, 0, 2] },
+      priorityBadge: { alignment: "center", color: "#FFFDFB", bold: true, fontSize: 10 },
+      bodyText: { fontSize: 9, color: "#2D3E38", lineHeight: 1.25 },
+      bulletText: { fontSize: 8.6, color: "#3B4E48", lineHeight: 1.2 },
+      mutedText: { fontSize: 8.5, color: "#66756E", lineHeight: 1.25 },
+      tableStrong: { bold: true, color: "#10221F", fontSize: 8.5 },
+      matrixDirection: { color: "#C49544", bold: true, fontSize: 7.5, alignment: "center" },
+      matrixTitle: { color: "#10221F", bold: true, fontSize: 8.8, alignment: "center", margin: [0, 2, 0, 2] },
+      matrixMeta: { color: "#66756E", fontSize: 7.2, alignment: "center" },
+      matrixUse: { color: "#2D3E38", fontSize: 7.2, alignment: "center", margin: [0, 4, 0, 0] }
     },
     content: [
-      { text: "PLAN HARMONII", style: "kicker" },
-      { text: "Raport analizy przestrzeni", style: "title" },
+      { text: "PLAN HARMONII · RAPORT AUDYTOWY", style: "kicker" },
+      { text: "Analiza Układu Przestrzennego & Feng Shui", style: "title" },
       {
-        text: "Pełny raport łączy oznaczenia planu, kierunki, sektory, meble, funkcje pomieszczeń oraz praktyczne ograniczenia układu. Rekomendacje nie zakładają zmian fizycznie niewykonalnych.",
+        text: "Raport łączy tradycyjną Szkołę Formy (Luan Tou), siatkę 9 stref Bagua i orientację kompasową z nowoczesną ergonomią, akustyką i doświetleniem. Rekomendacje nie zakładają zmian fizycznie niewykonalnych.",
         style: "subtitle"
       },
+      // Executive Overview Table with Unbreakable Layout and No-Wrap Score
       {
+        unbreakable: true,
         table: {
-          widths: [132, "*"],
-          body: [[
-            {
-              stack: [
-                { text: "WYNIK", style: "scoreLabel" },
-                { text: `${report.score}/100`, style: "score" },
-                { text: `Pewność: ${pdfConfidenceLabel(report.confidence)}`, style: "mutedText" }
-              ],
-              fillColor: "#f7eddb",
-              margin: [14, 13, 14, 14]
-            },
-            {
-              stack: [
-                { text: "Wniosek główny", style: "cardEyebrow" },
-                { text: pdfText(report.executive_summary), style: "bodyText" },
-                { text: "Decyzja", style: "cardEyebrow", margin: [0, 10, 0, 3] },
-                { text: pdfText(report.purchase_decision), style: "bodyText" }
-              ],
-              fillColor: "#fffdfa",
-              margin: [15, 13, 15, 14]
-            }
-          ]]
+          dontBreakRows: true,
+          widths: [145, "*"],
+          body: [
+            [
+              {
+                stack: [
+                  { text: "WYNIK POTENCJAŁU", style: "scoreLabel" },
+                  {
+                    text: [
+                      { text: `${report.score}`, fontSize: 32, bold: true, color: "#10221F" },
+                      { text: " / 100", fontSize: 16, bold: true, color: "#7A6E5D" }
+                    ],
+                    noWrap: true,
+                    margin: [0, 4, 0, 4]
+                  },
+                  { text: `Pewność: ${pdfConfidenceLabel(report.confidence)}`, style: "mutedText" }
+                ],
+                fillColor: "#F7EDDB",
+                margin: [14, 12, 14, 12]
+              },
+              {
+                stack: [
+                  { text: "PODSUMOWANIE STRATEGICZNE", style: "cardEyebrow" },
+                  { text: pdfText(report.executive_summary), style: "bodyText" },
+                  { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 8, 0, 2] },
+                  { text: pdfText(report.purchase_decision), style: "bodyText" }
+                ],
+                fillColor: "#FFFDFB",
+                margin: [14, 12, 14, 12]
+              }
+            ]
+          ]
         },
         layout: {
-          hLineColor: () => "#d1b47a",
-          vLineColor: () => "#d1b47a",
+          hLineColor: () => "#D1B47A",
+          vLineColor: () => "#D1B47A",
           paddingLeft: () => 0,
           paddingRight: () => 0,
           paddingTop: () => 0,
           paddingBottom: () => 0
         },
-        margin: [0, 0, 0, 8]
+        margin: [0, 0, 0, 14]
       },
       ...pdfSectionTitle(
-        "Mapa 9 stref na skanie",
-        "Siatka sektorów jest nakładana na pierwszy wgrany obraz planu i obracana zgodnie z zatwierdzoną północą."
+        "Mapa 9 Stref Bagua na Rzucie Nieruchomości",
+        "Siatka 9 pałaców Luo Shu pokrywa 100% obrysu lokalu. Każdy sektor został zmapowany zgodnie z orientacją igły północy."
       ),
       planOverlayImage
-        ? { image: planOverlayImage, width: 500, alignment: "center", margin: [0, 0, 0, 10] }
-        : pdfCard("Nakładka na skanie niedostępna", mapFallbackText, [], "mapa sektorów"),
+        ? {
+            image: planOverlayImage,
+            width: 518,
+            alignment: "center",
+            margin: [0, 0, 0, 12]
+          }
+        : pdfCard(
+            "Nakładka na planie niedostępna",
+            "Wgraj plan w formacie JPG, PNG lub WEBP, aby raport wygenerował pełną nakładkę graficzną 9 stref bezpośrednio na Twoim rzucie.",
+            [],
+            "Mapa Sektorów"
+          ),
       pdfSectorMatrix(report.sector_map),
-      ...pdfSectionTitle("Wykres metod", "Szybki odczyt, które warstwy analizy są najmocniejsze i gdzie potrzeba danych."),
+      ...pdfSectionTitle(
+        "Wykres Zgodności Metodologicznej",
+        "Ocena poszczególnych warstw analitycznych (Forma, Kompas, Bagua, Ergonomia, Światło)."
+      ),
       pdfMethodScoreChart(report),
-      ...pdfSectionTitle("Najważniejsze priorytety", "Kolejność prac: od decyzji o największym wpływie do korekt drobnych."),
+      ...pdfSectionTitle(
+        "Najważniejsze Priorytety Działań",
+        "Kolejność wdrożenia zmian: od korekt o najwyższym wpływie do poprawek niskonakładowych."
+      ),
       pdfCardGrid(priorityCards, 2),
-      ...pdfSectionTitle("Kierunki i sektory", "Mapa 9 sektorów jest czytana razem z realną funkcją przestrzeni, nie mechanicznie."),
-      ...report.directional_insights.slice(0, 6).map((item) =>
-        pdfCard(pdfText(item.title), `${pdfText(item.meaning)}\n\nRekomendacja: ${pdfText(item.recommendation)}`, [], `${pdfText(item.direction)} · pewność ${pdfConfidenceLabel(item.confidence)}`)
+      ...pdfSectionTitle(
+        "Diagnoza Sektorów i Kierunków",
+        "Szczegółowa interpretacja 9 sektorów w powiązaniu z ich realną funkcją w lokalu."
       ),
       pdfCardGrid(sectorAdviceCards, 2),
-      ...pdfSectionTitle("Pomieszczenia", "Każda oznaczona przestrzeń dostaje osobny wniosek: funkcja, ryzyka i konkretne korekty."),
-      ...roomCards,
-      ...pdfSectionTitle("Meble i kierunki osób", "Łóżko, biurko, sofa, stół i kuchenka są oceniane przez kierunek osoby korzystającej oraz realne ograniczenia układu."),
-      ...furnitureCards,
-      ...pdfSectionTitle("Warstwa tradycyjna"),
-      ...traditionalCards,
-      ...pdfSectionTitle("Warstwa praktyczna"),
-      ...practicalCards,
-      ...pdfSectionTitle("Zmiany bez remontu"),
+      ...pdfSectionTitle(
+        "Audyt Pomieszczeń Pokój po Pokoju",
+        "Wnioski dedykowane dla każdej strefy: atuty, ryzyka i zalecenia bezinwazyjne."
+      ),
+      pdfCardGrid(roomCards, 2),
+      ...pdfSectionTitle(
+        "Meble i Pozycja Dominująca (Command Position)",
+        "Oparcie łóżka, biurka i strefy wypoczynku względem wejścia i okien (Szkoła Formy & Ergonomia)."
+      ),
+      pdfCardGrid(furnitureCards, 2),
+      ...pdfSectionTitle("Klasyczna Szkoła Formy (Luan Tou)"),
+      pdfCardGrid(traditionalCards, 2),
+      ...pdfSectionTitle("Ergonomia, Światło i Akustyka (Standard Współczesny)"),
+      pdfCardGrid(practicalCards, 2),
+      ...pdfSectionTitle(
+        "Lista Rekomendowanych Zmian Bez Remontu",
+        "Praktyczne działania, które można wdrożyć natychmiast bez wyburzania ścian."
+      ),
       {
+        unbreakable: true,
         ol: report.practical_changes.slice(0, 8).map((change) => ({
           text: `${pdfText(change.title)} · ${pdfText(change.cost)} · ${pdfText(change.when)}`,
-          margin: [0, 0, 0, 4]
+          margin: [0, 0, 0, 3]
         })),
         style: "bodyText",
-        margin: [0, 0, 0, 12]
+        margin: [0, 0, 0, 14]
       },
-      ...pdfSectionTitle("Źródła i ograniczenia"),
+      ...pdfSectionTitle("Rejestr Źródeł i Transparentność Metod"),
       pdfCardGrid(sourceCards, 2),
-      { text: pdfText(report.disclaimer), style: "mutedText" }
+      {
+        text: pdfText(report.disclaimer),
+        style: "mutedText",
+        margin: [0, 10, 0, 0]
+      }
     ]
   };
 
