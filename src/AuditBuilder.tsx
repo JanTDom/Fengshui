@@ -40,6 +40,7 @@ import {
   persistAuditIntake,
   validateAuditFiles
 } from "./lib/auditClient";
+import { triggerBrandConfetti } from "./lib/confetti";
 import type { PlanMarker } from "./auditTypes";
 
 const purposeOptions = [
@@ -1088,6 +1089,7 @@ export function AuditBuilder({
       });
       setPersistenceMessage(persistence.reason);
       setStatus("ready");
+      triggerBrandConfetti();
     } catch (submitError) {
       setStatus("idle");
       setError(submitError instanceof Error ? submitError.message : "Coś poszło nie tak podczas audytu.");
@@ -1905,9 +1907,11 @@ export function AuditBuilder({
                   type="button"
                   className="secondary-button"
                   onClick={() => {
-                    downloadReportPdf(report, { planFile: files[0] ?? null, northAngleDeg: northAngle }).catch(() => {
-                      setError("Nie udało się przygotować PDF. Pobierz JSON albo spróbuj ponownie.");
-                    });
+                    downloadReportPdf(report, { planFile: files[0] ?? null, northAngleDeg: northAngle })
+                      .then(() => triggerBrandConfetti())
+                      .catch(() => {
+                        setError("Nie udało się przygotować PDF. Pobierz JSON albo spróbuj ponownie.");
+                      });
                   }}
                 >
                   <Download size={17} />

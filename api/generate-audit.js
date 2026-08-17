@@ -2,12 +2,12 @@ export const config = {
   maxDuration: 60
 };
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.7-flash";
 const FALLBACK_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-3.1-flash-lite",
-  "gemini-3-flash-preview"
+  "gemini-3.7-flash",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
 ];
 const MAX_TOTAL_INLINE_BYTES = 12 * 1024 * 1024;
 const SUPPORTED_MIME_TYPES = new Set([
