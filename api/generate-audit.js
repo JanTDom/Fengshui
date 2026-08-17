@@ -1,5 +1,3 @@
-import { inferMimeType } from "../src/lib/fileValidation.js";
-
 const MODEL = "gemini-3.7-flash";
 const FALLBACK_MODELS = [
   "gemini-2.5-flash",
@@ -16,6 +14,19 @@ const SUPPORTED_MIME_TYPES = new Set([
   "image/heif"
 ]);
 const SUPPORTED_FORMAT_LABEL = "PDF, JPG, PNG, WEBP, HEIC albo HEIF";
+
+export function inferMimeType(fileName, fallback = "") {
+  const extension = String(fileName || "").split(".").pop()?.toLowerCase();
+
+  if (extension === "pdf") return "application/pdf";
+  if (extension === "png") return "image/png";
+  if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
+  if (extension === "webp") return "image/webp";
+  if (extension === "heic") return "image/heic";
+  if (extension === "heif") return "image/heif";
+
+  return fallback;
+}
 
 const methodDefaults = [
   { method: "Szkoła Formy (Luan Tou)", score: 86, signal: "Oparcie wezgłowia, wejście i ciągi komunikacyjne" },
