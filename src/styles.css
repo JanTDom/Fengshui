@@ -3781,16 +3781,17 @@ body {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  min-height: 290px;
-  aspect-ratio: 4 / 3;
+  min-height: 520px;
+  aspect-ratio: 16 / 11;
   overflow: hidden;
-  border: 1px solid var(--line-strong);
-  border-radius: 7px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 12px;
   background:
-    linear-gradient(90deg, rgba(16, 34, 31, 0.07) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(16, 34, 31, 0.07) 1px, transparent 1px),
-    #fffdfa;
-  background-size: 32px 32px;
+    linear-gradient(90deg, rgba(16, 34, 31, 0.04) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(16, 34, 31, 0.04) 1px, transparent 1px),
+    #FFFDFB;
+  background-size: 28px 28px;
+  box-shadow: 0 10px 30px rgba(16, 34, 31, 0.06);
 }
 
 .scan-preview img,
@@ -3950,61 +3951,112 @@ body {
   background: var(--sage);
 }
 
-.plan-marker {
+.plan-marker-wrapper {
   position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.plan-marker {
+  position: relative;
   z-index: 4;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-width: 26px;
-  height: 26px;
-  padding: 0 8px;
-  max-width: 110px;
-  transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px)));
+  gap: 5px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 9px;
+  max-width: 120px;
   border: 2px solid #FFFFFF;
   border-radius: 999px;
   background: var(--ink);
   color: #FFFFFF;
-  box-shadow: 0 4px 14px rgba(16, 34, 31, 0.3);
-  font-size: 0.68rem;
+  box-shadow: 0 4px 14px rgba(16, 34, 31, 0.35);
+  font-size: 0.70rem;
   font-weight: 800;
   letter-spacing: 0.02em;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
+.plan-marker:active {
+  cursor: grabbing;
+}
+
 .plan-marker:hover {
-  transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px))) scale(1.1);
-  box-shadow: 0 6px 18px rgba(16, 34, 31, 0.4);
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(16, 34, 31, 0.45);
 }
 
 .plan-marker.selected {
   outline: 3px solid #C49544;
   outline-offset: 2px;
-  transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px))) scale(1.15);
-  box-shadow: 0 8px 22px rgba(196, 148, 63, 0.45);
+  transform: scale(1.12);
+  box-shadow: 0 8px 24px rgba(196, 148, 63, 0.5);
 }
 
 .plan-marker.room {
-  background: #3A6351;
+  background: #2D5A46;
 }
 
 .plan-marker.fixed {
-  background: #345B73;
+  background: #2B536D;
 }
 
 .plan-marker.furniture {
+  background: #BF532C;
+}
+
+.marker-floating-actions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 32px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 8px;
-  background: #C4623C;
-  color: #FFFFFF;
-  border: 2px solid #FFFFFF;
-  box-shadow: 0 4px 14px rgba(16, 34, 31, 0.3);
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: rgba(16, 34, 31, 0.95);
+  border: 1px solid rgba(196, 148, 63, 0.7);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  z-index: 25;
+  white-space: nowrap;
+  animation: fadeInPop 0.15s ease-out;
+}
+
+@keyframes fadeInPop {
+  from { opacity: 0; transform: translateX(-50%) translateY(-4px) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.marker-floating-actions .action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFDFB;
+  font-size: 0.65rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.marker-floating-actions .action-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.marker-floating-actions .action-btn.delete:hover {
+  background: #E5484D;
 }
 
 .furniture-marker-shape {
@@ -4020,8 +4072,8 @@ body {
 }
 
 .marker-label {
-  font-weight: 600;
-  max-width: 65px;
+  font-weight: 700;
+  max-width: 70px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

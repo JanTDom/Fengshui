@@ -325,7 +325,7 @@ function loadImageElement(src: string) {
 
 /**
  * Creates an elegant, high-clarity architectural Bagua 9-sector overlay.
- * Floor plan remains 100% clearly visible in the center with discreet quadrant corner tags.
+ * Floor plan remains 100% clearly visible with discreet quadrant corner tags.
  */
 async function createPlanSectorOverlayImage(
   file: File | null | undefined,
@@ -339,7 +339,7 @@ async function createPlanSectorOverlayImage(
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImageElement(dataUrl);
 
-  const targetWidth = 1400;
+  const targetWidth = 1200;
   const aspectRatio = (image.naturalHeight || image.height) / (image.naturalWidth || image.width);
   const targetHeight = Math.round(targetWidth * (aspectRatio || 0.75));
 
@@ -371,7 +371,7 @@ async function createPlanSectorOverlayImage(
       const cellY = gridY + row * cellH;
       const sector = getCellCompassSector(col, row, northAngleDeg);
 
-      // Subtle element tint (very light so plan details are sharp)
+      // Subtle element tint
       ctx.fillStyle = sector.colorBg;
       ctx.fillRect(cellX, cellY, cellW, cellH);
 
@@ -384,25 +384,25 @@ async function createPlanSectorOverlayImage(
       ctx.restore();
 
       // Compact architectural tag in top-left of the cell (leaving rooms and furniture clear!)
-      const tagW = Math.min(cellW - 20, 210);
-      const tagH = 26;
-      const tagX = cellX + 10;
-      const tagY = cellY + 10;
+      const tagW = Math.min(cellW - 16, 190);
+      const tagH = 24;
+      const tagX = cellX + 8;
+      const tagY = cellY + 8;
 
       ctx.save();
       ctx.fillStyle = "rgba(255, 253, 250, 0.92)";
       ctx.strokeStyle = "rgba(196, 148, 63, 0.8)";
       ctx.lineWidth = 1;
       ctx.shadowColor = "rgba(16, 34, 31, 0.1)";
-      ctx.shadowBlur = 6;
+      ctx.shadowBlur = 4;
       ctx.beginPath();
-      ctx.roundRect(tagX, tagY, tagW, tagH, 5);
+      ctx.roundRect(tagX, tagY, tagW, tagH, 4);
       ctx.fill();
       ctx.stroke();
 
       // Tag Text
       ctx.fillStyle = sector.colorText;
-      ctx.font = "bold 11px Arial, sans-serif";
+      ctx.font = "bold 10.5px Arial, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(
@@ -422,29 +422,29 @@ async function createPlanSectorOverlayImage(
   // Discreet Compass widget in corner
   drawNorthCompassWidget(ctx, targetWidth, northAngleDeg);
 
-  return canvas.toDataURL("image/jpeg", 0.94);
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 function drawNorthCompassWidget(ctx: CanvasRenderingContext2D, canvasWidth: number, northAngleDeg: number) {
-  const boxW = 84;
-  const boxH = 90;
-  const boxX = canvasWidth - boxW - 20;
-  const boxY = 20;
+  const boxW = 76;
+  const boxH = 82;
+  const boxX = canvasWidth - boxW - 16;
+  const boxY = 16;
 
   ctx.save();
   ctx.fillStyle = "rgba(255, 253, 250, 0.96)";
   ctx.strokeStyle = "rgba(196, 148, 63, 0.85)";
   ctx.lineWidth = 1.5;
   ctx.shadowColor = "rgba(16, 34, 31, 0.15)";
-  ctx.shadowBlur = 8;
+  ctx.shadowBlur = 6;
   ctx.beginPath();
-  ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+  ctx.roundRect(boxX, boxY, boxW, boxH, 6);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
 
   const centerX = boxX + boxW / 2;
-  const centerY = boxY + 42;
+  const centerY = boxY + 38;
   const angleRad = (northAngleDeg * Math.PI) / 180;
 
   ctx.save();
@@ -454,25 +454,25 @@ function drawNorthCompassWidget(ctx: CanvasRenderingContext2D, canvasWidth: numb
   // North needle
   ctx.fillStyle = "#10221F";
   ctx.beginPath();
-  ctx.moveTo(0, -24);
-  ctx.lineTo(-7, 0);
-  ctx.lineTo(7, 0);
+  ctx.moveTo(0, -22);
+  ctx.lineTo(-6, 0);
+  ctx.lineTo(6, 0);
   ctx.closePath();
   ctx.fill();
 
   // South needle
   ctx.fillStyle = "#C49544";
   ctx.beginPath();
-  ctx.moveTo(0, 24);
-  ctx.lineTo(-7, 0);
-  ctx.lineTo(7, 0);
+  ctx.moveTo(0, 22);
+  ctx.lineTo(-6, 0);
+  ctx.lineTo(6, 0);
   ctx.closePath();
   ctx.fill();
 
   // Center dot
   ctx.fillStyle = "#FAF8F5";
   ctx.beginPath();
-  ctx.arc(0, 0, 3, 0, Math.PI * 2);
+  ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
@@ -480,12 +480,12 @@ function drawNorthCompassWidget(ctx: CanvasRenderingContext2D, canvasWidth: numb
   ctx.save();
   ctx.textAlign = "center";
   ctx.fillStyle = "#10221F";
-  ctx.font = "bold 12px Arial, sans-serif";
-  ctx.fillText("N", centerX, boxY + 14);
+  ctx.font = "bold 11px Arial, sans-serif";
+  ctx.fillText("N", centerX, boxY + 12);
 
   ctx.fillStyle = "#7A6E5D";
-  ctx.font = "bold 10px Arial, sans-serif";
-  ctx.fillText(`${Math.round(northAngleDeg)}°`, centerX, boxY + 77);
+  ctx.font = "bold 9.5px Arial, sans-serif";
+  ctx.fillText(`${Math.round(northAngleDeg)}°`, centerX, boxY + 70);
   ctx.restore();
 }
 
@@ -497,13 +497,13 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
   }
 
   stack.push({ text: title, style: "cardTitle" });
-  stack.push({ text: body, style: "bodyText", margin: [0, 3, 0, bullets.length > 0 ? 5 : 0] });
+  stack.push({ text: body, style: "bodyText", margin: [0, 2, 0, bullets.length > 0 ? 4 : 0] });
 
   if (bullets.length > 0) {
     stack.push({
       ul: bullets,
       style: "bulletText",
-      margin: [0, 2, 0, 0]
+      margin: [0, 1, 0, 0]
     });
   }
 
@@ -512,7 +512,7 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
     table: {
       dontBreakRows: true,
       widths: ["*"],
-      body: [[{ stack, margin: [13, 11, 13, 11] }]]
+      body: [[{ stack, margin: [10, 8, 10, 8] }]]
     },
     layout: {
       fillColor: () => "#FFFDFB",
@@ -523,7 +523,7 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
       paddingTop: () => 0,
       paddingBottom: () => 0
     },
-    margin: [0, 0, 0, 8]
+    margin: [0, 0, 0, 6]
   };
 }
 
@@ -538,11 +538,11 @@ function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], 
           {
             columns: [
               {
-                width: 26,
+                width: 22,
                 table: {
                   dontBreakRows: true,
                   widths: ["*"],
-                  body: [[{ text: String(index), style: "priorityBadge", margin: [0, 4, 0, 4] }]]
+                  body: [[{ text: String(index), style: "priorityBadge", margin: [0, 3, 0, 3] }]]
                 },
                 layout: {
                   fillColor: () => "#10221F",
@@ -555,17 +555,17 @@ function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], 
                 stack: [
                   { text: pdfText(action.method).toUpperCase(), style: "cardEyebrow" },
                   { text: pdfText(action.title), style: "cardTitle" },
-                  { text: pdfText(action.why), style: "bodyText", margin: [0, 3, 0, 5] },
+                  { text: pdfText(action.why), style: "bodyText", margin: [0, 2, 0, 4] },
                   {
                     text: `Wpływ: ${pdfText(action.impact, "wysoki")} · Wysiłek: ${pdfText(action.effort, "niski")} · Pewność: ${pdfConfidenceLabel(action.confidence)}`,
                     style: "mutedText"
                   }
                 ],
-                margin: [10, 0, 0, 0]
+                margin: [8, 0, 0, 0]
               }
             ],
             columnGap: 2,
-            margin: [13, 11, 13, 11]
+            margin: [10, 8, 10, 8]
           }
         ]
       ]
@@ -579,7 +579,7 @@ function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], 
       paddingTop: () => 0,
       paddingBottom: () => 0
     },
-    margin: [0, 0, 0, 8]
+    margin: [0, 0, 0, 6]
   };
 }
 
@@ -592,7 +592,7 @@ function pdfCardGrid(cards: any[], columns = 2) {
       widths.map((_, columnIndex) => {
         const card = cards[index + columnIndex];
         return card
-          ? { stack: [card], margin: columnIndex === 0 ? [0, 0, 4, 0] : [4, 0, 0, 0] }
+          ? { stack: [card], margin: columnIndex === 0 ? [0, 0, 3, 0] : [3, 0, 0, 0] }
           : { text: "" };
       })
     );
@@ -610,16 +610,16 @@ function pdfCardGrid(cards: any[], columns = 2) {
   };
 }
 
-function pdfProgressBar(value: number, width = 220, color = "#9D742F") {
+function pdfProgressBar(value: number, width = 180, color = "#9D742F") {
   const safeValue = Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
   const fillWidth = Math.round((width * safeValue) / 100);
 
   return {
     canvas: [
-      { type: "rect", x: 0, y: 0, w: width, h: 6, r: 3, color: "#E7DDCA" },
-      { type: "rect", x: 0, y: 0, w: fillWidth, h: 6, r: 3, color }
+      { type: "rect", x: 0, y: 0, w: width, h: 5, r: 2.5, color: "#E7DDCA" },
+      { type: "rect", x: 0, y: 0, w: fillWidth, h: 5, r: 2.5, color }
     ],
-    margin: [0, 4, 0, 0]
+    margin: [0, 3, 0, 0]
   };
 }
 
@@ -628,25 +628,25 @@ function pdfMethodScoreChart(report: AuditReport) {
     unbreakable: true,
     table: {
       dontBreakRows: true,
-      widths: ["*", 48],
+      widths: ["*", 42],
       body: report.method_scores.slice(0, 8).map((item) => [
         {
           stack: [
             { text: pdfText(item.method), style: "tableStrong" },
             pdfProgressBar(
               item.score,
-              220,
+              180,
               item.score >= 80 ? "#527E58" : item.score >= 68 ? "#C49544" : "#C2654A"
             ),
-            { text: pdfText(item.signal), style: "mutedText", margin: [0, 3, 0, 0] }
+            { text: pdfText(item.signal), style: "mutedText", margin: [0, 2, 0, 0] }
           ],
-          margin: [0, 0, 0, 5]
+          margin: [0, 0, 0, 4]
         },
-        { text: `${item.score}/100`, alignment: "right", style: "tableStrong", margin: [0, 2, 0, 0] }
+        { text: `${item.score}/100`, alignment: "right", style: "tableStrong", margin: [0, 1, 0, 0] }
       ])
     },
     layout: "noBorders",
-    margin: [0, 2, 0, 8]
+    margin: [0, 2, 0, 6]
   };
 }
 
@@ -687,7 +687,7 @@ function pdfSectorMatrix(sectors: AuditReport["sector_map"]) {
               { text: `Żywioł: ${item?.element || def.element}`, style: "matrixMeta" },
               { text: item?.current_use || "Strefa funkcjonalna", style: "matrixUse" }
             ],
-            margin: [7, 7, 7, 7]
+            margin: [5, 4, 5, 4]
           };
         })
       )
@@ -700,7 +700,7 @@ function pdfSectorMatrix(sectors: AuditReport["sector_map"]) {
       hLineColor: () => "#D8CDB8",
       vLineColor: () => "#D8CDB8"
     },
-    margin: [0, 0, 0, 10]
+    margin: [0, 0, 0, 8]
   };
 }
 
@@ -737,7 +737,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     return null;
   });
 
-  const roomCards = report.room_recommendations.slice(0, 10).map((room) =>
+  const roomCards = report.room_recommendations.slice(0, 8).map((room) =>
     pdfCard(
       pdfText(room.room),
       pdfText(room.diagnosis),
@@ -745,12 +745,12 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         ...pdfList(room.strengths, "atuty").map((item) => `Atut: ${item}`),
         ...pdfList(room.risks, "ryzyka").map((item) => `Ryzyko: ${item}`),
         ...pdfList(room.recommendations, "rekomendacje").map((item) => `Porada: ${item}`)
-      ].slice(0, 7),
+      ].slice(0, 6),
       `${pdfText(room.function)} · ${pdfText(room.method)}`
     )
   );
 
-  // Robust deduplication of furniture recommendations by canonical key
+  // Canonical deduplication of furniture items
   const seenFurniture = new Set<string>();
   const deduplicatedFurniture = report.furniture_recommendations.filter((item) => {
     const raw = String(item.item || "").toLowerCase();
@@ -767,16 +767,16 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     return true;
   });
 
-  const furnitureCards = deduplicatedFurniture.slice(0, 8).map((item) =>
+  const furnitureCards = deduplicatedFurniture.slice(0, 6).map((item) =>
     pdfCard(
       pdfText(item.item),
       `${pdfText(item.assessment)}\n\nOgraniczenie praktyczne: ${pdfText(item.practical_limit)}`,
-      pdfList(item.recommendations, "ustawienie mebla").slice(0, 5),
+      pdfList(item.recommendations, "ustawienie mebla").slice(0, 4),
       `${pdfText(item.orientation_role)} · ${pdfText(item.direction)}`
     )
   );
 
-  const traditionalCards = report.traditional_analysis.slice(0, 4).map((section) =>
+  const traditionalCards = report.traditional_analysis.slice(0, 2).map((section) =>
     pdfCard(
       pdfText(section.title),
       pdfText(section.body),
@@ -785,7 +785,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     )
   );
 
-  const practicalCards = report.practical_analysis.slice(0, 4).map((section) =>
+  const practicalCards = report.practical_analysis.slice(0, 2).map((section) =>
     pdfCard(
       pdfText(section.title),
       pdfText(section.body),
@@ -794,11 +794,11 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     )
   );
 
-  const priorityCards = report.priority_actions.slice(0, 6).map((action, index) =>
+  const priorityCards = report.priority_actions.slice(0, 4).map((action, index) =>
     pdfNumberedActionCard(action, index + 1)
   );
 
-  const sourceCards = report.source_ledger.slice(0, 6).map((source) =>
+  const sourceCards = report.source_ledger.slice(0, 4).map((source) =>
     pdfCard(
       pdfText(source.source),
       pdfText(source.used_for),
@@ -809,47 +809,47 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
 
   const docDefinition: any = {
     pageSize: "A4",
-    pageMargins: [36, 42, 36, 42],
+    pageMargins: [34, 38, 34, 38],
     defaultStyle: {
       font: "Roboto",
-      fontSize: 9.2,
+      fontSize: 8.8,
       color: "#10221F",
-      lineHeight: 1.25
+      lineHeight: 1.22
     },
     header: () => ({
       columns: [
-        { text: "PLAN HARMONII · CERTYFIKOWANY AUDYT PRZESTRZENNY", fontSize: 7.5, bold: true, color: "#C49544", characterSpacing: 0.8 },
-        { text: "AI FENG SHUI & ARCHITEKTURA", alignment: "right", fontSize: 7.5, color: "#7A6E5D" }
+        { text: "PLAN HARMONII · CERTYFIKOWANY AUDYT PRZESTRZENNY", fontSize: 7.2, bold: true, color: "#C49544", characterSpacing: 0.8 },
+        { text: "AI FENG SHUI & ARCHITEKTURA", alignment: "right", fontSize: 7.2, color: "#7A6E5D" }
       ],
-      margin: [36, 16, 36, 0]
+      margin: [34, 14, 34, 0]
     }),
     footer: (currentPage: number, pageCount: number) => ({
       columns: [
-        { text: "Plan Harmonii · www.e-fengshui.pl", color: "#7A6E5D", fontSize: 8 },
-        { text: `Strona ${currentPage} z ${pageCount}`, alignment: "right", color: "#7A6E5D", fontSize: 8 }
+        { text: "Plan Harmonii · www.e-fengshui.pl", color: "#7A6E5D", fontSize: 7.8 },
+        { text: `Strona ${currentPage} z ${pageCount}`, alignment: "right", color: "#7A6E5D", fontSize: 7.8 }
       ],
-      margin: [36, 0, 36, 16]
+      margin: [34, 0, 34, 14]
     }),
     styles: {
-      kicker: { color: "#C49544", bold: true, fontSize: 8.5, characterSpacing: 1.2 },
-      title: { fontSize: 24, bold: true, color: "#10221F", lineHeight: 1.05, margin: [0, 3, 0, 6] },
-      subtitle: { fontSize: 9.6, color: "#41524B", lineHeight: 1.35, margin: [0, 0, 0, 12] },
-      scoreLabel: { color: "#7A6E5D", bold: true, fontSize: 7.8, characterSpacing: 1 },
-      sectionTitle: { fontSize: 15, bold: true, color: "#10221F" },
-      cardTitle: { fontSize: 11.2, bold: true, color: "#10221F" },
-      cardEyebrow: { fontSize: 7.5, bold: true, color: "#C49544", characterSpacing: 0.5, margin: [0, 0, 0, 2] },
-      priorityBadge: { alignment: "center", color: "#FFFDFB", bold: true, fontSize: 10 },
-      bodyText: { fontSize: 8.8, color: "#2D3E38", lineHeight: 1.25 },
-      bulletText: { fontSize: 8.4, color: "#3B4E48", lineHeight: 1.2 },
-      mutedText: { fontSize: 8.2, color: "#66756E", lineHeight: 1.25 },
-      tableStrong: { bold: true, color: "#10221F", fontSize: 8.5 },
-      matrixDirection: { color: "#C49544", bold: true, fontSize: 7.5, alignment: "center" },
-      matrixTitle: { color: "#10221F", bold: true, fontSize: 8.5, alignment: "center", margin: [0, 2, 0, 2] },
-      matrixMeta: { color: "#66756E", fontSize: 7, alignment: "center" },
-      matrixUse: { color: "#2D3E38", fontSize: 7, alignment: "center", margin: [0, 3, 0, 0] }
+      kicker: { color: "#C49544", bold: true, fontSize: 8, characterSpacing: 1.1 },
+      title: { fontSize: 21, bold: true, color: "#10221F", lineHeight: 1.05, margin: [0, 2, 0, 4] },
+      subtitle: { fontSize: 9, color: "#41524B", lineHeight: 1.3, margin: [0, 0, 0, 8] },
+      scoreLabel: { color: "#7A6E5D", bold: true, fontSize: 7.5, characterSpacing: 0.8 },
+      sectionTitle: { fontSize: 13.5, bold: true, color: "#10221F" },
+      cardTitle: { fontSize: 10.5, bold: true, color: "#10221F" },
+      cardEyebrow: { fontSize: 7.2, bold: true, color: "#C49544", characterSpacing: 0.4, margin: [0, 0, 0, 2] },
+      priorityBadge: { alignment: "center", color: "#FFFDFB", bold: true, fontSize: 9.5 },
+      bodyText: { fontSize: 8.3, color: "#2D3E38", lineHeight: 1.2 },
+      bulletText: { fontSize: 7.9, color: "#3B4E48", lineHeight: 1.18 },
+      mutedText: { fontSize: 7.8, color: "#66756E", lineHeight: 1.2 },
+      tableStrong: { bold: true, color: "#10221F", fontSize: 8.2 },
+      matrixDirection: { color: "#C49544", bold: true, fontSize: 7, alignment: "center" },
+      matrixTitle: { color: "#10221F", bold: true, fontSize: 8, alignment: "center", margin: [0, 1, 0, 1] },
+      matrixMeta: { color: "#66756E", fontSize: 6.8, alignment: "center" },
+      matrixUse: { color: "#2D3E38", fontSize: 6.8, alignment: "center", margin: [0, 2, 0, 0] }
     },
     content: [
-      // PAGE 1: TITLE, SCORE, AND PROMINENT PLAN OVERLAY
+      // 1. HEADER & EXECUTIVE SUMMARY (Fluid, No Hard Page Breaks)
       { text: "PLAN HARMONII · RAPORT AUDYTOWY", style: "kicker" },
       { text: "Analiza Układu Przestrzennego & Feng Shui", style: "title" },
       {
@@ -860,7 +860,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         unbreakable: true,
         table: {
           dontBreakRows: true,
-          widths: [145, "*"],
+          widths: [130, "*"],
           body: [
             [
               {
@@ -868,26 +868,26 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                   { text: "WYNIK POTENCJAŁU", style: "scoreLabel" },
                   {
                     text: [
-                      { text: `${report.score}`, fontSize: 32, bold: true, color: "#10221F" },
-                      { text: " / 100", fontSize: 16, bold: true, color: "#7A6E5D" }
+                      { text: `${report.score}`, fontSize: 28, bold: true, color: "#10221F" },
+                      { text: " / 100", fontSize: 14, bold: true, color: "#7A6E5D" }
                     ],
                     noWrap: true,
-                    margin: [0, 4, 0, 4]
+                    margin: [0, 2, 0, 2]
                   },
                   { text: `Pewność: ${pdfConfidenceLabel(report.confidence)}`, style: "mutedText" }
                 ],
                 fillColor: "#F7EDDB",
-                margin: [12, 10, 12, 10]
+                margin: [10, 8, 10, 8]
               },
               {
                 stack: [
                   { text: "PODSUMOWANIE STRATEGICZNE", style: "cardEyebrow" },
                   { text: pdfText(report.executive_summary), style: "bodyText" },
-                  { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 6, 0, 2] },
+                  { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 4, 0, 1] },
                   { text: pdfText(report.purchase_decision), style: "bodyText" }
                 ],
                 fillColor: "#FFFDFB",
-                margin: [12, 10, 12, 10]
+                margin: [10, 8, 10, 8]
               }
             ]
           ]
@@ -900,101 +900,97 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
           paddingTop: () => 0,
           paddingBottom: () => 0
         },
-        margin: [0, 0, 0, 12]
+        margin: [0, 0, 0, 10]
       },
-      // LARGE, PROMINENT ARCHITECTURAL PLAN OVERLAY
+
+      // 2. PLAN OVERLAY (Centered, proportional height)
       {
         unbreakable: true,
         stack: [
-          { text: "Mapa 9 Stref Bagua na Rzucie Nieruchomości", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 4] },
-          { text: "Siatka 9 pałaców Luo Shu pokrywa 100% obrysu lokalu z orientacją względem północy.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          { text: "Mapa 9 Stref Bagua na Rzucie Nieruchomości", style: "sectionTitle", keepWithNext: true, margin: [0, 2, 0, 2] },
+          { text: "Siatka 9 pałaców Luo Shu pokrywa 100% obrysu lokalu z orientacją względem północy.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           planOverlayImage
             ? {
                 image: planOverlayImage,
-                width: 522,
+                width: 440,
                 alignment: "center",
-                margin: [0, 0, 0, 10]
+                margin: [0, 0, 0, 8]
               }
-            : pdfCard("Podgląd planu", "Wgraj plik graficzny (JPG/PNG/WEBP) dla bezpośredniej nakładki 9 stref na rzucie."),
+            : pdfCard("Podgląd planu", "Wgraj plik graficzny dla bezpośredniej nakładki 9 stref na rzucie."),
           pdfSectorMatrix(report.sector_map)
         ],
-        margin: [0, 0, 0, 14]
+        margin: [0, 0, 0, 10]
       },
 
-      // PAGE 2: PRIORITY ACTIONS & ROOM-BY-ROOM AUDIT (Clean Page Break)
+      // 3. PRIORITY ACTIONS
       {
-        pageBreak: "before",
         unbreakable: true,
         stack: [
-          { text: "Najważniejsze Priorytety Działań", style: "sectionTitle", keepWithNext: true, margin: [0, 0, 0, 3] },
-          { text: "Kolejność wdrożenia: od korekt o najwyższym wpływie na regenerację do poprawek niskonakładowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          { text: "Najważniejsze Priorytety Działań", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Kolejność wdrożenia: od korekt o najwyższym wpływie na regenerację do poprawek niskonakładowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfCardGrid(priorityCards, 2)
         ],
-        margin: [0, 0, 0, 14]
+        margin: [0, 0, 0, 10]
       },
+
+      // 4. ROOM-BY-ROOM AUDIT
       {
         unbreakable: true,
         stack: [
-          { text: "Audyt Pomieszczeń Pokój po Pokoju", style: "sectionTitle", keepWithNext: true, margin: [0, 8, 0, 3] },
-          { text: "Konkretne wnioski dla każdej strefy: atuty, ryzyka i zalecenia aranżacyjne.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          { text: "Audyt Pomieszczeń Pokój po Pokoju", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Konkretne wnioski dla każdej strefy: atuty, ryzyka i zalecenia aranżacyjne.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfCardGrid(roomCards, 2)
         ],
-        margin: [0, 0, 0, 14]
+        margin: [0, 0, 0, 10]
       },
 
-      // PAGE 3: FURNITURE & FORM SCHOOL (Clean Page Break - No Split Headers!)
+      // 5. FURNITURE & COMMAND POSITION
       {
-        pageBreak: "before",
         unbreakable: true,
         stack: [
-          { text: "Meble i Pozycja Dominująca (Command Position)", style: "sectionTitle", keepWithNext: true, margin: [0, 0, 0, 3] },
-          { text: "Oparcie łóżka (Czarny Żółw), biurka, sofy i kuchni względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          { text: "Meble i Pozycja Dominująca (Command Position)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Oparcie łóżka (Czarny Żółw), biurka, sofy i kuchni względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfCardGrid(furnitureCards, 2)
         ],
-        margin: [0, 0, 0, 14]
-      },
-      {
-        unbreakable: true,
-        stack: [
-          { text: "Szkoła Formy & Ergonomia Współczesna", style: "sectionTitle", keepWithNext: true, margin: [0, 8, 0, 3] },
-          { text: "Połączenie klasycznych zasad 4 Niebiańskich Zwierząt ze standardami doświetlenia i akustyki.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
-          pdfCardGrid([...traditionalCards, ...practicalCards], 2)
-        ],
-        margin: [0, 0, 0, 14]
+        margin: [0, 0, 0, 10]
       },
 
-      // PAGE 4: PRACTICAL CHANGES, SOURCES & DISCLAIMER (Clean Page Break)
+      // 6. FORM SCHOOL & ERGONOMICS
       {
-        pageBreak: "before",
         unbreakable: true,
         stack: [
-          { text: "Lista Rekomendowanych Zmian Bez Remontu", style: "sectionTitle", keepWithNext: true, margin: [0, 0, 0, 3] },
-          { text: "Natychmiastowe działania o wysokim zwrocie z inwestycji bez prac wyburzeniowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+          { text: "Szkoła Formy & Ergonomia Współczesna", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Połączenie klasycznych zasad 4 Niebiańskich Zwierząt ze standardami doświetlenia i akustyki.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
+          pdfCardGrid([...traditionalCards, ...practicalCards], 2)
+        ],
+        margin: [0, 0, 0, 10]
+      },
+
+      // 7. PRACTICAL CHANGES & METHOD LEDGER
+      {
+        unbreakable: true,
+        stack: [
+          { text: "Lista Rekomendowanych Zmian Bez Remontu", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Natychmiastowe działania o wysokim zwrocie z inwestycji bez prac wyburzeniowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           {
-            ol: report.practical_changes.slice(0, 8).map((change) => ({
+            ol: report.practical_changes.slice(0, 6).map((change) => ({
               text: `${pdfText(change.title)} · Koszt: ${pdfText(change.cost)} · Termin: ${pdfText(change.when)}`,
-              margin: [0, 0, 0, 3]
+              margin: [0, 0, 0, 2.5]
             })),
             style: "bodyText",
-            margin: [0, 0, 0, 14]
-          }
-        ],
-        margin: [0, 0, 0, 14]
-      },
-      {
-        unbreakable: true,
-        stack: [
-          { text: "Wykres Metod i Rejestr Źródeł", style: "sectionTitle", keepWithNext: true, margin: [0, 6, 0, 3] },
-          { text: "Pełna transparentność metodologiczna i poziomy pewności rekomendacji.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 8] },
+            margin: [0, 0, 0, 8]
+          },
+          { text: "Wykres Metod i Rejestr Źródeł", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Pełna transparentność metodologiczna i poziomy pewności rekomendacji.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfMethodScoreChart(report),
           pdfCardGrid(sourceCards, 2),
           {
             text: pdfText(report.disclaimer),
             style: "mutedText",
-            margin: [0, 10, 0, 0]
+            margin: [0, 8, 0, 0]
           }
         ],
-        margin: [0, 0, 0, 14]
+        margin: [0, 0, 0, 10]
       }
     ]
   };

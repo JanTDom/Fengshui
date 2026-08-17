@@ -25,7 +25,9 @@ import {
   Maximize2,
   MousePointer2,
   RotateCcw,
+  RotateCw,
   Sparkles,
+  Trash2,
   UserRound,
   X
 } from "lucide-react";
@@ -544,6 +546,7 @@ export function AuditBuilder({
   const [furnitureOrientationRole, setFurnitureOrientationRole] = useState(defaultFurnitureOrientationRole("Łóżko"));
   const [planMarkers, setPlanMarkers] = useState<PlanMarker[]>([]);
   const [selectedPlanMarkerId, setSelectedPlanMarkerId] = useState<string | null>(null);
+  const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
   const [report, setReport] = useState<AuditReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "reading" | "generating" | "saving" | "ready">("idle");
@@ -924,14 +927,14 @@ export function AuditBuilder({
   }
 
   function handlePlanMarkerClick(marker: PlanMarker) {
-    const isSameMarkerKind = marker.category === annotationMode && marker.label === selectedMarkerLabel;
-
-    if (scanTool === "marker" && !isSameMarkerKind) {
-      createPlanMarkerAtPercent(marker.xPercent, marker.yPercent);
-      return;
-    }
-
     handlePlanMarkerSelect(marker);
+  }
+
+  function handleMarkerPointerDown(marker: PlanMarker, event: PointerEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    handlePlanMarkerSelect(marker);
+    setDraggingMarkerId(marker.id);
+    (event.currentTarget.parentElement as HTMLElement)?.setPointerCapture(event.pointerId);
   }
 
   function handleScanClick(event: MouseEvent<HTMLDivElement>) {
@@ -950,6 +953,21 @@ export function AuditBuilder({
   }
 
   function handleScanPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (draggingMarkerId) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const xPercent = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+      const yPercent = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+
+      setPlanMarkers((current) =>
+        current.map((marker) =>
+          marker.id === draggingMarkerId
+            ? { ...marker, xPercent: Number(xPercent.toFixed(2)), yPercent: Number(yPercent.toFixed(2)) }
+            : marker
+        )
+      );
+      return;
+    }
+
     if (scanTool === "north" && isDraggingScanNorth) {
       setNorthFromClientPoint(event.clientX, event.clientY, event.currentTarget);
     }
@@ -960,6 +978,7 @@ export function AuditBuilder({
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     setIsDraggingScanNorth(false);
+    setDraggingMarkerId(null);
   }
 
   function removePlanMarker(markerId: string) {
@@ -1423,42 +1442,83 @@ export function AuditBuilder({
                   {planMarkers.map((marker, index) => {
                     const markerCode = markerDisplayCode(marker, planMarkers, index);
                     const stackOffset = markerStackOffset(marker, planMarkers);
+                    const isSelected = marker.id === selectedPlanMarkerId;
 
                     return (
-                      <button
+                      <div
                         key={marker.id}
-                        type="button"
-                        className={`plan-marker ${marker.category}${marker.id === selectedPlanMarkerId ? " selected" : ""}`}
+                        className={`plan-marker-wrapper${isSelected ? " selected" : ""}`}
                         style={{
                           left: `${marker.xPercent}%`,
                           top: `${marker.yPercent}%`,
-                          "--marker-facing": `${marker.facingDeg ?? 0}deg`,
-                          "--marker-offset-x": `${stackOffset.x}px`,
-                          "--marker-offset-y": `${stackOffset.y}px`,
-                          zIndex: 4 + stackOffset.stackIndex
-                        } as CSSProperties}
-                        title={`${markerCode}: ${markerDetailText(marker)}. Kliknij, aby edytować marker.`}
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handlePlanMarkerClick(marker);
+                          zIndex: isSelected ? 20 : 4 + stackOffset.stackIndex
                         }}
-                        aria-label={`${markerCode}: ${markerDetailText(marker)}. Edytuj marker.`}
                       >
-                        {marker.category === "furniture" ? (
-                          <>
-                            <span className="furniture-marker-shape">
-                              {renderFurnitureSymbol(marker.label)}
-                            </span>
-                            <span className="marker-code">{markerCode}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="marker-code">{markerCode}</span>
-                            <span className="marker-label">{markerShortLabel(marker)}</span>
-                          </>
-                        )}
-                      </button>
+                        <button
+                          type="button"
+                          className={`plan-marker ${marker.category}${isSelected ? " selected" : ""}`}
+                          style={{
+                            "--marker-facing": `${marker.facingDeg ?? 0}deg`,
+                            "--marker-offset-x": `${stackOffset.x}px`,
+                            "--marker-offset-y": `${stackOffset.y}px`
+                          } as CSSProperties}
+                          title={`${markerCode}: ${markerDetailText(marker)}. Kliknij, aby wybrać i edytować.`}
+                          onPointerDown={(event) => handleMarkerPointerDown(marker, event)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handlePlanMarkerClick(marker);
+                          }}
+                          aria-label={`${markerCode}: ${markerDetailText(marker)}. Edytuj marker.`}
+                        >
+                          {marker.category === "furniture" ? (
+                            <>
+                              <span className="furniture-marker-shape">
+                                {renderFurnitureSymbol(marker.label)}
+                              </span>
+                              <span className="marker-code">{markerCode}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="marker-code">{markerCode}</span>
+                              <span className="marker-label">{markerShortLabel(marker)}</span>
+                            </>
+                          )}
+                        </button>
+
+                        {isSelected ? (
+                          <div
+                            className="marker-floating-actions"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {marker.category === "furniture" ? (
+                              <button
+                                type="button"
+                                className="action-btn rotate"
+                                title="Obróć mebel o 45°"
+                                onClick={() => {
+                                  const newDeg = (((marker.facingDeg ?? 0) + 45) % 360);
+                                  setPlanMarkers((current) =>
+                                    current.map((m) => (m.id === marker.id ? { ...m, facingDeg: newDeg } : m))
+                                  );
+                                  setFurnitureDirection(newDeg);
+                                }}
+                              >
+                                <RotateCw size={13} />
+                                <span>{marker.facingDeg ?? 0}°</span>
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              className="action-btn delete"
+                              title="Usuń ten marker"
+                              onClick={() => removePlanMarker(marker.id)}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
                     );
                   })}
                 </div>
