@@ -2107,7 +2107,7 @@ export function AuditBuilder({
 
               <section className="rich-report-section compact">
                 <div className="rich-report-heading">
-                  <span>Ź</span>
+                  <span>07</span>
                   <h3>Źródła i standardy</h3>
                   <p>Wynik pokazuje, z których warstw wiedzy korzysta raport i gdzie pewność jest niższa.</p>
                 </div>

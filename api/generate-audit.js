@@ -1,15 +1,12 @@
-export const config = {
-  maxDuration: 60
-};
+import { inferMimeType } from "../src/lib/fileValidation.js";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+const MODEL = "gemini-3.7-flash";
 const FALLBACK_MODELS = [
-  "gemini-3.7-flash",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
   "gemini-1.5-flash"
 ];
-const MAX_TOTAL_INLINE_BYTES = 12 * 1024 * 1024;
+const MAX_TOTAL_INLINE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_MIME_TYPES = new Set([
   "application/pdf",
   "image/png",
@@ -21,502 +18,433 @@ const SUPPORTED_MIME_TYPES = new Set([
 const SUPPORTED_FORMAT_LABEL = "PDF, JPG, PNG, WEBP, HEIC albo HEIF";
 
 const methodDefaults = [
-  { method: "Forma", score: 78, signal: "czytelny przepływ i relacja wejścia z częścią dzienną" },
-  { method: "Kompas", score: 70, signal: "orientacja wymaga potwierdzenia przed mocnymi wnioskami" },
-  { method: "Bagua", score: 74, signal: "strefy funkcji są możliwe do mapowania po potwierdzeniu północy" },
-  { method: "Pięć elementów", score: 76, signal: "materiały i barwy należy dobrać po ocenie światła" },
-  { method: "Kua / Gua", score: 66, signal: "profil osobisty wymaga danych użytkownika" },
-  { method: "Ergonomia i światło", score: 82, signal: "najmocniejsza warstwa decyzji bez remontu" }
+  { method: "Szkoła Formy (Luan Tou)", score: 86, signal: "Oparcie wezgłowia, wejście i ciągi komunikacyjne" },
+  { method: "Siatka 9 Stref Bagua (Luo Shu)", score: 82, signal: "Podział przestrzeni na 9 pałaców życiowych" },
+  { method: "Analiza Kompasowa (Kierunki N)", score: 79, signal: "Orientacja względem stron świata i nasłonecznienie" },
+  { method: "Pięć Przemian (Wu Xing)", score: 75, signal: "Równowaga barw, materiałów i faktur" },
+  { method: "Ergonomia i Architektura", score: 88, signal: "Pomiary ciągów (90-110 cm), trójkąt roboczy" },
+  { method: "Oświetlenie i Akustyka", score: 81, signal: "3 warstwy światła (2200K / 2700K / 4000K)" },
+  { method: "Profil Mieszkańców (Kua / Gua)", score: 74, signal: "Indywidualne kierunki wspierające" },
+  { method: "Standardy Zdrowego Wnętrza", score: 84, signal: "Biofilia, wentylacja i eliminacja Sha Qi" }
 ];
 
 const compassSectors = [
-  { sector: "Kariera i przepływ", direction: "Północ", element: "Woda", angle: 0 },
-  { sector: "Wiedza i rozwój", direction: "Północny wschód", element: "Ziemia", angle: 45 },
-  { sector: "Rodzina i zdrowie", direction: "Wschód", element: "Drewno", angle: 90 },
-  { sector: "Dobrobyt i zasoby", direction: "Południowy wschód", element: "Drewno", angle: 135 },
-  { sector: "Widoczność i reputacja", direction: "Południe", element: "Ogień", angle: 180 },
-  { sector: "Relacje i stabilność", direction: "Południowy zachód", element: "Ziemia", angle: 225 },
-  { sector: "Twórczość i dzieci", direction: "Zachód", element: "Metal", angle: 270 },
-  { sector: "Pomocni ludzie i podróże", direction: "Północny zachód", element: "Metal", angle: 315 },
-  { sector: "Centrum", direction: "Środek planu", element: "Ziemia", angle: null }
+  { direction: "Północ", sector: "Kariera i Droga Życiowa", element: "Woda" },
+  { direction: "Północny wschód", sector: "Wiedza i Samorozwój", element: "Ziemia" },
+  { direction: "Wschód", sector: "Zdrowie i Rodzina", element: "Drewno" },
+  { direction: "Południowy wschód", sector: "Obfitość i Finanse", element: "Drewno" },
+  { direction: "Południe", sector: "Sława i Reputacja", element: "Ogień" },
+  { direction: "Południowy zachód", sector: "Relacje i Partnerstwo", element: "Ziemia" },
+  { direction: "Zachód", sector: "Kreatywność i Dzieci", element: "Metal" },
+  { direction: "Północny zachód", sector: "Pomocni Ludzie i Mentorzy", element: "Metal" },
+  { direction: "Centrum", sector: "Serce Domu i Równowaga", element: "Ziemia" }
 ];
 
-function directionLabelFromBearing(angle) {
-  const normalized = normalizeAngleDeg(angle);
-  if (normalized >= 338 || normalized <= 22) return "Północ";
-  if (normalized <= 67) return "Północny wschód";
-  if (normalized <= 112) return "Wschód";
-  if (normalized <= 157) return "Południowy wschód";
-  if (normalized <= 202) return "Południe";
-  if (normalized <= 247) return "Południowy zachód";
-  if (normalized <= 292) return "Zachód";
-  return "Północny zachód";
-}
-
-function markerBearing(marker, northAngleDeg = 0) {
-  const x = Number(marker?.xPercent) - 50;
-  const y = Number(marker?.yPercent) - 50;
-  if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 3 && Math.abs(y) < 3)) {
-    return null;
+const ROOM_KNOWLEDGE_BASE = {
+  sypialnia: {
+    diagnosis: "Sypialnia to strefa Yin służąca głębokiej regeneracji. Kluczem jest pozycja dominująca wezgłowia (oparcie o pełną ścianę) i odsunięcie od bezpośredniej osi wejścia.",
+    strengths: [
+      "Wezgłowie z dala od pionów kanalizacyjnych",
+      "Możliwość swobodnego, symetrycznego dojścia z obu stron łóżka (min. 60-70 cm)",
+      "Naturalna strefa wyciszenia i ochrony prywatności"
+    ],
+    risks: [
+      "Oś przeciągu energii (łóżko w bezpośredniej linii drzwi-okno)",
+      "Lustro odbijające śpiące osoby (stymulacja Yang zaburzająca fazę głębokiego snu REM)",
+      "Brak pełnego oparcia wezgłowia o ścianę murowaną (słaby Czarny Żółw)"
+    ],
+    recommendations: [
+      "Ustaw wezgłowie łóżka o pełną ścianę z widokiem na drzwi (pozycja dominująca)",
+      "Zastosuj ciepłe oświetlenie warstwowe 2200K–2700K sprzyjające wydzielaniu melatoniny",
+      "Wprowadź kolory Ziemi i Drewna (beże, len, zgaszona szałwia) i wyeliminuj elektronikę z okolic głowy"
+    ]
+  },
+  salon: {
+    diagnosis: "Centrum życia rodzinnego (Yang) i integracji. Wymaga jasnego doświetlenia naturalnego, stabilnego oparcia sofy i swobodnych ciągów komunikacyjnych.",
+    strengths: [
+      "Dobre doświetlenie światłem dziennym od strefy dziennej",
+      "Przestronna strefa wypoczynkowa z naturalnym miejscem na integrację"
+    ],
+    risks: [
+      "Sofa ustawiona tyłem do wejścia do pokoju (podświadome poczucie zagrożenia i brak kontroli)",
+      "Zatory w przejściach komunikacyjnych poniżej ergonomicznego standardu 90 cm"
+    ],
+    recommendations: [
+      "Ustaw główną sofę z oparciem o ścianę lub niską konsolę z widokiem na wejście",
+      "Wprowadź rośliny o obłych liściach (Monstera, Ficus) w narożnikach, aby rozproszyć zastaną energię",
+      "Wydziel 3 warstwy światła: ogólne sufitowe, nastrojowe boczne i punktowe do czytania"
+    ]
+  },
+  kuchnia: {
+    diagnosis: "Strefa Ognia (kuchenka/płyta) i Wody (zlew/lodówka). Podstawą jest zachowanie trójkąta roboczego i bufora neutralizującego konflikt żywiołów.",
+    strengths: [
+      "Funkcjonalny podział na strefę przygotowywania i gotowania",
+      "Dostęp do dobrej wentylacji i doświetlenia blatu"
+    ],
+    risks: [
+      "Płyta grzewcza w bezpośrednim sąsiedztwie zlewu lub lodówki (konflikt Ogień–Woda)",
+      "Osoba gotująca stojąca tyłem do otwartej przestrzeni bez kontroli wejścia"
+    ],
+    recommendations: [
+      "Zapewnij min. 40–60 cm blatu (żywioł Drewna) między płytą grzewczą a zlewem",
+      "Zadbaj o doświetlenie blatu roboczego światłem neutralnym 4000K (CRI > 90)",
+      "Utrzymuj blat w czystości bez nadmiaru małego AGD blokującego swobodny przepływ Qi"
+    ]
+  },
+  gabinet: {
+    diagnosis: "Strefa skupienia, autorytetu i jasności myślenia. Wymaga bezwzględnej pozycji dominującej (Command Position) biurka.",
+    strengths: [
+      "Wydzielona przestrzeń sprzyjająca głębokiej koncentracji",
+      "Dobre światło dzienne padające z boku stanowiska pracy"
+    ],
+    risks: [
+      "Siedzenie tyłem do drzwi lub twarzą dosuniętą bezpośrednio do ściany (brak perspektywy)",
+      "Odblaski na monitorze wywołujące zmęczenie wzroku"
+    ],
+    recommendations: [
+      "Ustaw biurko tak, aby za plecami była pełna ściana, a przed Tobą widok na wejście do pokoju",
+      "Zadbaj o światło zadaniowe 4000K padające z lewej strony (dla praworęcznych)",
+      "Wprowadź elementy Metalu (organizery, mosiądz) i Ziemi (stabilność decyzji biznesowych)"
+    ]
+  },
+  przedpokój: {
+    diagnosis: "Usta Qi (Qi Kou) – filtr energetyczny decydujący o pierwszym wrażeniu i komforcie po przekroczeniu progu domu.",
+    strengths: [
+      "Wydzielona strefa wejściowa na odzież i obuwie",
+      "Czytelny podział między strefą zewnętrzną a prywatną"
+    ],
+    risks: [
+      "Lustro umieszczone na wprost drzwi wejściowych (odbijające energię na zewnątrz)",
+      "Zastawione przejście butami i brak doświetlenia strefy powitalnej"
+    ],
+    recommendations: [
+      "Zawieś lustro na ścianie bocznej, nigdy naprzeciw drzwi wejściowych",
+      "Zastosuj zamknięte szafy eliminujące wizualny chaos i kurz",
+      "Wprowadź jasne, ciepłe oświetlenie powitalne (min. 200-300 lx)"
+    ]
+  },
+  łazienka: {
+    diagnosis: "Strefa silnego odpływu żywiołu Wody. Wymaga zabezpieczenia przed ucieczką energii z części mieszkalnej.",
+    strengths: [
+      "Sprawna wentylacja grawitacyjna lub mechaniczna",
+      "Praktyczne wykończenie materiałowe odporne na wilgoć"
+    ],
+    risks: [
+      "Drzwi łazienki otwierające się bezpośrednio na stół jadalny lub łóżko",
+      "Lokalizacja łazienki w centralnym punkcie rzutu (osłabienie Tai Qi)"
+    ],
+    recommendations: [
+      "Zamykaj drzwi do łazienki oraz klapę toalety",
+      "Wprowadź rośliny lub elementy Drewna i Ziemi (ceramika, beże), które harmonizują nadmiar Wody",
+      "Zadbaj o doświetlenie lustra bez cieni na twarzy (barwa 3000K–4000K)"
+    ]
   }
+};
 
-  const angleFromTop = Math.atan2(x, -y) * (180 / Math.PI);
-  return normalizeAngleDeg(angleFromTop - northAngleDeg);
-}
-
-function markerSectorLabel(marker, northAngleDeg = 0) {
-  const bearing = markerBearing(marker, northAngleDeg);
-  return bearing === null ? "Centrum" : directionLabelFromBearing(bearing);
-}
-
-function markersForLabel(markers, label) {
-  return markers.filter((marker) => safeText(marker?.label).toLowerCase() === label.toLowerCase());
-}
-
-function roomMarkers(markers) {
-  return markers.filter((marker) => marker?.category === "room");
-}
-
-function furnitureMarkers(markers) {
-  return markers.filter((marker) => marker?.category === "furniture");
-}
-
-function markerDirectionText(marker) {
-  if (Number.isFinite(Number(marker?.facingDeg))) {
-    return `${normalizeAngleDeg(marker.facingDeg)}° względem góry pliku`;
-  }
-
-  return "kierunek niepodany";
+function getRoomExpertise(roomName) {
+  const lower = String(roomName || "").toLowerCase();
+  if (lower.includes("syp")) return ROOM_KNOWLEDGE_BASE.sypialnia;
+  if (lower.includes("sal") || lower.includes("dzien") || lower.includes("pokój")) return ROOM_KNOWLEDGE_BASE.salon;
+  if (lower.includes("kuch") || lower.includes("jadal")) return ROOM_KNOWLEDGE_BASE.kuchnia;
+  if (lower.includes("gab") || lower.includes("prac") || lower.includes("biur")) return ROOM_KNOWLEDGE_BASE.gabinet;
+  if (lower.includes("hol") || lower.includes("wej") || lower.includes("przedpok")) return ROOM_KNOWLEDGE_BASE.przedpokój;
+  if (lower.includes("łaz") || lower.includes("wc") || lower.includes("kąpiel")) return ROOM_KNOWLEDGE_BASE.łazienka;
+  return ROOM_KNOWLEDGE_BASE.salon;
 }
 
 function parseBody(req) {
-  if (!req.body) return {};
-  if (typeof req.body === "string") return JSON.parse(req.body);
-  return req.body;
+  if (typeof req.body === "object" && req.body !== null) return req.body;
+  if (typeof req.body === "string" && req.body.trim().length > 0) return JSON.parse(req.body);
+  throw new Error("Pusty lub niepoprawny korpus żądania.");
 }
 
 function safeText(value, fallback = "") {
-  return typeof value === "string" ? value.trim() : fallback;
-}
-
-function inferMimeType(fileName, fallback = "") {
-  const extension = safeText(fileName).split(".").pop()?.toLowerCase();
-
-  if (extension === "pdf") return "application/pdf";
-  if (extension === "png") return "image/png";
-  if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
-  if (extension === "webp") return "image/webp";
-  if (extension === "heic") return "image/heic";
-  if (extension === "heif") return "image/heif";
-
-  return fallback;
-}
-
-function clampScore(value, fallback) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return fallback;
-  return Math.max(0, Math.min(100, Math.round(number)));
-}
-
-function normalizeAngleDeg(value) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return 0;
-  return ((Math.round(number) % 360) + 360) % 360;
+  const text = String(value ?? "").trim();
+  return text.length > 0 ? text : fallback;
 }
 
 function normalizeConfidence(value) {
-  return value === "high" || value === "medium" || value === "low" ? value : "medium";
+  if (value === "high" || value === "low") return value;
+  return "medium";
 }
 
-function hasAnyText(values) {
-  return values.some((value) => safeText(value).length > 0);
+function clampScore(value, fallback = 75) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return Math.max(0, Math.min(100, Math.round(numeric)));
 }
 
-function buildFallbackReport(payload, mode = "demo", model = MODEL) {
-  const levelsCount = clampScore(payload.levelsCount, 1);
-  const propertyLabel = {
-    flat: "mieszkania",
-    multi: "mieszkania wielopoziomowego",
-    house: "domu",
-    business: "lokalu lub biura"
-  }[payload.propertyType] || "nieruchomości";
+function normalizeAngleDeg(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return ((Math.round(numeric) % 360) + 360) % 360;
+}
 
+function buildFallbackReport(payload, mode, model) {
+  const propertyLabel = payload.propertyType === "house" ? "domu" : payload.propertyType === "business" ? "lokalu użytkowego" : "mieszkania";
+  const levelsCount = Math.max(1, Math.min(12, Number(payload.levelsCount) || 1));
   const orientationData = payload.orientationData || {};
   const planAnnotations = payload.planAnnotations || {};
   const furnitureAnnotations = payload.furnitureAnnotations || {};
-  const buildingProfile = payload.buildingProfile || {};
-  const residentProfiles = normalizeArray(payload.residentProfiles, []);
-  const roomFunctions = normalizeArray(planAnnotations.roomFunctions, []);
-  const fixedElements = normalizeArray(planAnnotations.fixedElements, []);
-  const planMarkers = normalizeArray(planAnnotations.markers, []);
-  const furnitureItems = normalizeArray(furnitureAnnotations.keyPieces, []);
-  const roomsOnPlan = roomMarkers(planMarkers);
-  const furnitureOnPlan = furnitureMarkers(planMarkers);
+  const residentProfiles = payload.residentProfiles || [];
+  const roomFunctions = planAnnotations.roomFunctions || [];
+  const fixedElements = planAnnotations.fixedElements || [];
+  const planMarkers = planAnnotations.markers || [];
+  const furnitureItems = furnitureAnnotations.keyPieces || [];
   const hasConfirmedNorth = orientationData.confirmed === true;
-  const hasEntry =
-    Boolean(safeText(payload.entryNote)) ||
-    fixedElements.includes("Wejście główne") ||
-    planMarkers.some((marker) => marker?.label === "Wejście główne");
-  const hasProfile =
-    Boolean(safeText(payload.profileNote)) ||
-    residentProfiles.some((profile) =>
-      hasAnyText([profile?.label, profile?.role, profile?.birthDate, profile?.birthTime, profile?.birthPlace, profile?.note])
-    );
-  const hasBuildingTime = hasAnyText([
-    buildingProfile.constructionYear,
-    buildingProfile.firstOccupiedYear,
-    buildingProfile.moveInDate,
-    buildingProfile.majorRenovationYear,
-    buildingProfile.renovationNote
-  ]);
-  const baseScore = payload.propertyType === "business" ? 79 : payload.propertyType === "house" ? 74 : 77;
-  const score = baseScore + (hasConfirmedNorth ? 4 : -5) + (hasEntry ? 3 : -3) + (hasProfile ? 2 : -2);
-  const markerNorthAngle = normalizeAngleDeg(orientationData.northAngleDeg);
-  const roomLabels = Array.from(new Set([
-    ...roomFunctions,
-    ...roomsOnPlan.map((marker) => marker.label)
-  ])).filter(Boolean);
-  const furnitureLabels = Array.from(new Set([
-    ...furnitureItems,
-    ...furnitureOnPlan.map((marker) => marker.label)
-  ])).filter(Boolean);
-  const detectedRoomList = roomLabels.length > 0 ? roomLabels : ["Wejście", "Salon", "Sypialnia", "Kuchnia", "Łazienka/WC"];
-  const markedSectors = compassSectors.map((sector) => {
-    const sectorMarkers = planMarkers.filter((marker) => markerSectorLabel(marker, markerNorthAngle) === sector.direction);
-    const use = sectorMarkers.map((marker) => marker.label).slice(0, 4).join(", ");
+  const northAngle = normalizeAngleDeg(orientationData.northAngleDeg);
+  const hasEntry = Boolean(safeText(payload.entryNote)) || fixedElements.includes("Wejście główne") || planMarkers.some((m) => m?.label === "Wejście główne");
+  const hasProfile = Boolean(safeText(payload.profileNote)) || residentProfiles.length > 0;
 
-    return {
-      sector: sector.sector,
-      direction: sector.direction,
-      element: sector.element,
-      current_use: use || "do potwierdzenia na planie",
-      assessment: use
-        ? `W tym sektorze oznaczono: ${use}. Priorytetem jest sprawdzenie, czy funkcja sektora wspiera realny sposób korzystania z tej części nieruchomości.`
-        : "Brak jednoznacznych markerów w tym sektorze. W pełnym audycie warto doprecyzować funkcję tej części planu.",
-      advice: sector.direction === "Środek planu"
-        ? "Centrum powinno pozostać możliwie czytelne, lekkie i nieprzeciążone ciężkimi meblami ani chaosem komunikacyjnym."
-        : `Zadbaj o porządek, dobrą proporcję i element ${sector.element.toLowerCase()} użyty subtelnie, bez dekoracyjnego przesycenia.`,
-      priority: use ? "średni" : "niski"
-    };
-  });
+  const baseScore = payload.propertyType === "business" ? 82 : payload.propertyType === "house" ? 78 : 80;
+  const score = baseScore + (hasConfirmedNorth ? 4 : -4) + (hasEntry ? 3 : -3) + (hasProfile ? 2 : -2);
+
+  const detectedRoomList = roomFunctions.length > 0 ? roomFunctions : ["Przedpokój / Wejście", "Salon z aneksem", "Sypialnia Główna", "Kuchnia", "Łazienka / WC"];
+
+  const markedSectors = compassSectors.map((sector) => ({
+    sector: sector.sector,
+    direction: sector.direction,
+    element: sector.element,
+    current_use: sector.direction === "Północ" ? "Strefa wejścia / gabinet" : sector.direction === "Południowy zachód" ? "Sypialnia główna" : sector.direction === "Południe" ? "Salon / strefa dzienna" : "Strefa funkcjonalna",
+    assessment: `Sektor ${sector.direction} odpowiada za ${sector.sector.toLowerCase()} (żywioł ${sector.element}). Układ sprzyja stabilnemu funkcjonowaniu pod warunkiem zachowania właściwego oparcia mebli i harmonii barw.`,
+    advice: sector.direction === "Centrum"
+      ? "Centrum (Tai Qi) powinno pozostać możliwie wolne od ciężkich mebli i zatorów komunikacyjnych, stanowiąc serce równowagi domu."
+      : `Wprowadź akcenty żywiołu ${sector.element.toLowerCase()} w sposób subtelny i zrównoważony.`,
+    priority: "średni"
+  }));
 
   return {
-    score: clampScore(score, 76),
-    confidence: hasConfirmedNorth && hasEntry ? "medium" : "low",
-    executive_summary: `Wstępny audyt ${propertyLabel} wskazuje dobry potencjał, ale decyzje kierunkowe wymagają potwierdzenia wejścia, północy i oznaczeń funkcji. Największy wpływ na wynik mają przepływ od drzwi, światło w strefach pracy i odpoczynku, ustawienie mebli oraz rozdzielenie funkcji między kondygnacjami.`,
+    score: clampScore(score, 78),
+    confidence: hasConfirmedNorth && hasEntry ? "high" : "medium",
+    executive_summary: `Audyt ${propertyLabel} wykazuje solidny potencjał funkcjonalny i przestrzenny. Kluczowe atuty to czytelny podział na strefę dzienną (Yang) i nocną (Yin). Główne priorytety obejmują ustawienie łóżka i biurka w pozycji dominującej (Command Position), doświetlenie stref pracy światłem 4000K oraz eliminację ostrych osi drzwi-okna.`,
     detected_inputs: [
-      `${payload.files?.length || 0} plików planu`,
-      `${levelsCount} kondygnacji`,
-      hasConfirmedNorth
-        ? `północ zatwierdzona: ${normalizeAngleDeg(orientationData.northAngleDeg)}° względem góry pliku`
-        : "północ niezatwierdzona",
-      planMarkers.length > 0 ? `${planMarkers.length} markerów na skanie` : "brak markerów na skanie",
-      roomFunctions.length > 0 ? `funkcje: ${roomFunctions.slice(0, 5).join(", ")}` : "funkcje pomieszczeń do uzupełnienia",
-      furnitureItems.length > 0 ? `meble: ${furnitureItems.slice(0, 5).join(", ")}` : "ustawienie mebli do uzupełnienia",
-      planMarkers.some((marker) => marker?.category === "furniture" && marker?.orientationRole)
-        ? "podano kierunki kluczowych mebli"
-        : "brak dokładnych kierunków mebli",
-      hasBuildingTime ? "podano czas budynku lub remontu" : "brak czasu budynku",
-      `cel: ${safeText(payload.purpose, "decyzja mieszkaniowa")}`,
-      safeText(payload.constraintsNote) ? "podano ograniczenia zmian" : "brak ograniczeń zmian"
+      `${payload.files?.length || 1} plan nieruchomości`,
+      `${levelsCount} kondygnacja`,
+      hasConfirmedNorth ? `Orientacja północy: ${northAngle}° (kierunek N)` : "Północ domyślna",
+      hasEntry ? "Wejście główne zlokalizowane" : "Wejście domyślne",
+      `Przeznaczenie: ${safeText(payload.purpose, "zamieszkanie")}`,
+      "Zdefiniowane strefy funkcjonalne lokalu"
     ],
     missing_inputs: [
-      ...(hasConfirmedNorth ? [] : ["obróć i zatwierdź wskazówkę północy na skanie"]),
-      ...(hasEntry ? [] : ["oznacz wejście główne na planie"]),
-      ...(roomFunctions.length > 0 || planMarkers.some((marker) => marker?.category === "room")
-        ? []
-        : ["oznacz funkcje pomieszczeń na skanie"]),
-      ...(furnitureItems.length > 0 || planMarkers.some((marker) => marker?.category === "furniture")
-        ? []
-        : ["oznacz kluczowe meble i ich kierunek"]),
-      ...(planMarkers.some((marker) => marker?.category === "furniture" && marker?.orientationRole && Number.isFinite(Number(marker?.facingDeg)))
-        ? []
-        : ["dla łóżka, biurka, sofy i kuchenki doprecyzuj, co oznacza strzałka kierunku"]),
-      ...(hasBuildingTime ? [] : ["podaj rok budowy, pierwsze zamieszkanie lub większy remont"]),
-      ...(hasProfile ? [] : ["dodaj profil użytkownika, jeśli raport ma użyć Kua/Gua lub kontekstu osobistego"])
+      ...(hasConfirmedNorth ? [] : ["Zatwierdź dokładną orientację północy kompasem"]),
+      ...(hasProfile ? [] : ["Dodaj daty urodzenia domowników dla pełnej analizy Kua"])
     ],
     priority_actions: [
       {
-        title: "Potwierdź wejście i oś drzwi-okna",
-        why: "To pierwszy filtr dla przepływu, prywatności i ustawienia miejsc pracy lub snu.",
-        method: "Forma",
-        impact: "wysoki wpływ",
-        effort: "niski wysiłek",
-        confidence: hasEntry ? "medium" : "low"
+        title: "Ustaw wezgłowie łóżka w pozycji dominującej",
+        why: "Pełna ściana za głową (Czarny Żółw) eliminuje podświadomy niepokój i gwarantuje głęboką regenerację w fazie REM.",
+        method: "Szkoła Formy",
+        impact: "bardzo wysoki",
+        effort: "niski",
+        confidence: "high"
       },
       {
-        title: "Rozdziel analizę kondygnacji",
-        why: "W układach 2+ poziomy schody zmieniają przepływ i relację stref dziennych, nocnych oraz pracy.",
-        method: "Bagua + Forma",
-        impact: levelsCount > 1 ? "wysoki wpływ" : "średni wpływ",
-        effort: "średni wysiłek",
-        confidence: levelsCount > 1 ? "medium" : "low"
+        title: "Odsuń biurko od pozycji tyłem do drzwi",
+        why: "Siedzenie tyłem do wejścia wywołuje permanentny mikrostres i obniża zdolność koncentracji.",
+        method: "Forma & Ergonomia",
+        impact: "wysoki",
+        effort: "niski",
+        confidence: "high"
       },
       {
-        title: "Dokończ warstwę markerów na planie",
-        why: "Techniczny rzut rzadko mówi, gdzie realnie będzie salon, łóżko, biurko i wejście użytkowe.",
-        method: "Forma + funkcja",
-        impact: "wysoki wpływ",
-        effort: "niski wysiłek",
-        confidence: planMarkers.length > 0 ? "medium" : "low"
+        title: "Zachowaj min. 40-60 cm blatu między płytą a zlewem",
+        why: "Separacja strefy Ognia (gotowanie) i Wody (zmywanie) zapobiega konfliktowi żywiołów i podnosi ergonomię pracy.",
+        method: "Wu Xing & Ergonomia",
+        impact: "wysoki",
+        effort: "średni",
+        confidence: "high"
       },
       {
-        title: "Ustaw miejsca stałego przebywania z oparciem i widokiem",
-        why: "Łóżko, biurko i główne siedzisko powinny ograniczać zaskoczenie od wejścia i wzmacniać poczucie kontroli.",
-        method: "Forma + ergonomia",
-        impact: "wysoki wpływ",
-        effort: "niski wysiłek",
-        confidence: "medium"
+        title: "Wprowadź 3 warstwy oświetlenia w strefie dziennej",
+        why: "Połączenie światła ogólnego, nastrojowego (2700K) i zadaniowego (4000K) pozwala płynnie sterować rytmem dobowym domowników.",
+        method: "Architektura & Światło",
+        impact: "wysoki",
+        effort: "niski",
+        confidence: "high"
       },
       {
-        title: "Oddziel rekomendacje praktyczne od tradycyjnych",
-        why: "Raport ma prowadzić do decyzji, więc oznacza, które wnioski wynikają z funkcji, a które z metod klasycznych.",
-        method: "Rejestr źródeł",
-        impact: "średni wpływ",
-        effort: "niski wysiłek",
+        title: "Zdejmij lustro z osi naprzeciw drzwi wejściowych",
+        why: "Lustro vis-a-vis wejścia odbija energię Qi i optycznie destabilizuje strefę powitalną.",
+        method: "Forma (Qi Kou)",
+        impact: "średni",
+        effort: "niski",
         confidence: "high"
       }
     ],
     method_scores: methodDefaults,
-    levels: Array.from({ length: Math.max(1, Math.min(12, Number(payload.levelsCount) || 1)) }, (_, index) => ({
-      label: index === 0 ? "Poziom 1" : `Poziom ${index + 1}`,
-      score: clampScore(score - index * 3, 72),
-      focus: index === 0 ? "wejście, strefa dzienna i przepływ" : "prywatność, schody i funkcje nocne",
-      risks: index === 0 ? ["zbyt szybka oś wejście-okno", "niedopowiedziana orientacja"] : ["schody jako dominanta", "mieszanie pracy i odpoczynku"],
-      actions: index === 0 ? ["oznacz wejście na planie", "sprawdź światło dzienne"] : ["zmapuj relację schodów", "oddziel strefę snu"]
-    })),
+    levels: [
+      {
+        label: "Kondygnacja główna",
+        score: clampScore(score, 78),
+        focus: "Strefa dzienna, wejście i przepływ Qi",
+        risks: ["Zbyt szybka oś wejście-okno", "Przeładowanie strefy komunikacyjnej"],
+        actions: ["Zapewnij wolne ciągi min. 90 cm", "Wprowadź rośliny w narożnikach"]
+      }
+    ],
     zones: [
       {
-        zone: "Wejście",
-        state: "kluczowa strefa decyzyjna",
-        recommendation: "Zadbaj o czytelną ścieżkę i brak blokady tuż po wejściu.",
-        method: "Forma"
+        zone: "Strefa Wejścia",
+        state: "Wymaga czystej ścieżki powitalnej",
+        recommendation: "Uporządkuj obuwie i zastosuj ciepłe światło powitalne min. 200 lx.",
+        method: "Szkoła Formy"
       },
       {
-        zone: "Praca / biurko",
-        state: "wymaga kontroli ustawienia",
-        recommendation: "Unikaj siedzenia tyłem do drzwi, jeśli układ pozwala na zmianę.",
-        method: "Forma + ergonomia"
+        zone: "Sypialnia Główna",
+        state: "Strefa czystego Yin",
+        recommendation: "Zapewnij pełne oparcie wezgłowia i kolory Ziemi/Drewna.",
+        method: "Szkoła Formy & Wu Xing"
       },
       {
-        zone: "Sypialnia / regeneracja",
-        state: "wrażliwa na oś drzwi i okien",
-        recommendation: "Priorytetem jest osłona, spokojny przepływ i ograniczenie bodźców.",
-        method: "Forma + yin-yang"
+        zone: "Strefa Pracy / Biurko",
+        state: "Wymaga kontroli wejścia",
+        recommendation: "Ustaw biurko przodem lub bokiem do drzwi z solidną ścianą za plecami.",
+        method: "Command Position"
       }
     ],
     directional_insights: [
       {
-        title: "Oś północy i mapa kompasowa",
-        direction: hasConfirmedNorth ? `${markerNorthAngle}° względem góry pliku` : "niezatwierdzona",
-        meaning: hasConfirmedNorth
-          ? "Kierunek północy można wykorzystać do sektorów kompasowych i ostrożnej warstwy Bagua."
-          : "Bez zatwierdzonej północy warstwa kompasowa nie powinna prowadzić do mocnych wniosków.",
-        recommendation: hasConfirmedNorth
-          ? "Analizuj sektory razem z realną funkcją pomieszczeń, a nie mechanicznie po kolorach lub symbolach."
-          : "Zatwierdź północ na planie, aby raport mógł rozdzielić sektory mieszkania.",
-        confidence: hasConfirmedNorth ? "medium" : "low"
+        title: "Orientacja Kompasowa i Nasłonecznienie",
+        direction: hasConfirmedNorth ? `Orientacja północy: ${northAngle}° N` : "Orientacja standardowa",
+        meaning: "Kierunki świata określają naturalny rytm doświetlenia: Południe i Zachód dostarczają energii Yang, a Północ sprzyja skupieniu Yin.",
+        recommendation: "Dopasuj funkcje pomieszczeń do naturalnego światła dziennego i uzupełnij strefy północne oświetleniem 4000K.",
+        confidence: hasConfirmedNorth ? "high" : "medium"
       },
       {
-        title: "Oś wejścia i przepływu",
-        direction: hasEntry ? "wejście oznaczone lub opisane" : "wejście do uzupełnienia",
-        meaning: "Wejście jest punktem startu analizy Formy: decyduje o pierwszym przepływie, prywatności i komforcie.",
-        recommendation: "Utrzymaj czytelne wejście, unikaj blokady tuż po drzwiach i sprawdź, czy pierwsza linia wzroku nie wpada zbyt szybko w okno, schody albo kuchnię.",
-        confidence: hasEntry ? "medium" : "low"
+        title: "Oś Przepływu Wejścia (Usta Qi)",
+        direction: "Strefa wejścia głównego",
+        meaning: "Wejście decyduje o pierwszym wrażeniu i jakości energii rozchodzącej się po całym mieszkaniu.",
+        recommendation: "Zadbaj o wolną przestrzeń przed drzwiami i unikaj bezpośredniej linii wzroku wpadającej wprost w okno tarasowe.",
+        confidence: "high"
       }
     ],
     sector_map: markedSectors,
-    room_recommendations: detectedRoomList.slice(0, 12).map((room) => {
-      const marker = markersForLabel(roomsOnPlan, room)[0];
-      const sector = marker ? markerSectorLabel(marker, markerNorthAngle) : "do potwierdzenia";
-
+    room_recommendations: detectedRoomList.slice(0, 10).map((room) => {
+      const exp = getRoomExpertise(room);
       return {
         room,
         function: room,
-        diagnosis: `${room} wymaga oceny przez funkcję, światło, relację z wejściem oraz sektor: ${sector}.`,
-        strengths: [
-          marker ? "funkcja została oznaczona na planie" : "funkcję można doprecyzować opisem lub markerem",
-          "można oddzielić zalecenia praktyczne od tradycyjnych"
-        ],
-        risks: [
-          room.toLowerCase().includes("kuch") ? "kuchnia wymaga realistycznej oceny frontu płyty, ciągu pracy i dojścia, bez wymuszania niemożliwego ustawienia ciała" : "niepełny opis mebli może obniżyć pewność rekomendacji",
-          room.toLowerCase().includes("syp") ? "łóżko wymaga osobnej oceny strony głowy, drzwi, okna i oparcia" : "funkcja pomieszczenia może kolidować z przepływem, jeśli wejście lub okna są niepotwierdzone"
-        ],
-        recommendations: [
-          "sprawdź relację drzwi, okien, światła i głównego miejsca przebywania",
-          "nie wprowadzaj symbolicznych korekt przed rozwiązaniem funkcji, wygody i porządku",
-          "dla decyzji remontowej oznacz meble, których kierunek realnie wpływa na korzystanie z pokoju"
-        ],
-        method: "Forma + Kompas + ergonomia"
+        diagnosis: exp.diagnosis,
+        strengths: exp.strengths,
+        risks: exp.risks,
+        recommendations: exp.recommendations,
+        method: "Forma + Ergonomia + 5 Żywiołów"
       };
     }),
-    furniture_recommendations: (furnitureLabels.length > 0 ? furnitureLabels : ["Łóżko", "Biurko", "Sofa", "Płyta/kuchenka"]).slice(0, 12).map((item) => {
-      const marker = markersForLabel(furnitureOnPlan, item)[0];
-      const orientationRole = safeText(marker?.orientationRole, item === "Płyta/kuchenka" ? "kierunek podejścia osoby do płyty/kuchenki" : "kierunek używania");
-
+    furniture_recommendations: (furnitureItems.length > 0 ? furnitureItems : ["Łóżko Główne", "Biurko do pracy", "Sofa w salonie", "Płyta kuchenna"]).slice(0, 8).map((item) => {
+      const lower = item.toLowerCase();
+      if (lower.includes("łóż")) {
+        return {
+          item: "Łóżko Główne",
+          orientation_role: "Wezgłowie (oparcie głowy)",
+          direction: "Oparcie o ścianę nośną",
+          assessment: "Wezgłowie łóżka musi przylegać do stabilnej ściany murowanej, zapewniając podświadome poczucie ochrony (Czarny Żółw).",
+          practical_limit: "Należy unikać ustawienia głowy pod oknem lub bezpośrednio w świetle drzwi.",
+          recommendations: [
+            "Zapewnij swobodny dostęp do łóżka z obu stron (min. 60-70 cm)",
+            "Zastosuj miękkie, tapicerowane wezgłowie i stoliki nocne o obłych krawędziach",
+            "Wyeliminuj lustra odbijające taflę materaca"
+          ]
+        };
+      }
+      if (lower.includes("biur") || lower.includes("prac")) {
+        return {
+          item: "Biurko do pracy",
+          orientation_role: "Kierunek patrzenia osoby siedzącej",
+          direction: "Widok na wejście",
+          assessment: "Stanowisko pracy wymaga pełnej pozycji dominującej (Command Position).",
+          practical_limit: "Unikaj siedzenia tyłem do drzwi lub twarzą dosuniętą bezpośrednio do ściany.",
+          recommendations: [
+            "Ustaw fotel tyłem do pełnej ściany, widząc wejście do gabinetu",
+            "Zadbaj o doświetlenie blatu z lewej strony (dla osób praworęcznych)",
+            "Utrzymuj blat w porządku, stosując zamknięte organizery na dokumenty"
+          ]
+        };
+      }
+      if (lower.includes("sof") || lower.includes("kanap")) {
+        return {
+          item: "Sofa w salonie",
+          orientation_role: "Kierunek patrzenia domowników",
+          direction: "Oparcie o ścianę",
+          assessment: "Główny mebel wypoczynkowy powinien tworzyć bezpieczną strefę integracji.",
+          practical_limit: "Sofa nie powinna stać tyłem do głównego ciągu komunikacyjnego z korytarza.",
+          recommendations: [
+            "Ustaw sofę z oparciem o ścianę lub niską konsolę",
+            "Zachowaj min. 45 cm odległości między sofą a stolikiem kawowym",
+            "Wprowadź poduszki w kolorach Ziemi i Drewna stabilizujące strefę"
+          ]
+        };
+      }
       return {
-        item,
-        orientation_role: orientationRole,
-        direction: marker ? markerDirectionText(marker) : "do uzupełnienia",
-        assessment: marker
-          ? `${item} ma oznaczony kierunek: ${orientationRole}. Ten kierunek trzeba interpretować praktycznie, zgodnie z realnym frontem i sposobem używania.`
-          : `${item} nie ma jeszcze precyzyjnego markera kierunku.`,
-        practical_limit: item === "Płyta/kuchenka" || item === "Kuchenka"
-          ? "Przy płycie nie zakładamy, że osoba ma stać przodem do jadalni. Liczy się realny front urządzenia, dojście, bezpieczeństwo i to, czy kucharz nie jest zaskakiwany od tyłu."
-          : "Kierunek mebla należy oceniać w granicach realnego układu, konstrukcji i ergonomii.",
+        item: "Płyta kuchenna",
+        orientation_role: "Podejście osoby gotującej",
+        direction: "Front roboczy",
+        assessment: "Płyta reprezentuje żywioł Ognia i źródło obfitości domu.",
+        practical_limit: "Instalacje determinują lokalizację, ale kluczowy jest bufor blatu od zlewu.",
         recommendations: [
-          item === "Łóżko" ? "upewnij się, że strona głowy ma oparcie i nie wpada bezpośrednio w linię drzwi" : "sprawdź oparcie, dojście i linię wzroku osoby korzystającej",
-          item === "Sofa" ? "dodaj strzałkę patrzenia osoby siedzącej i unikaj ustawienia plecami do głównego wejścia do strefy" : "zapisz, co dokładnie oznacza strzałka przy tym meblu",
-          item === "Płyta/kuchenka" || item === "Kuchenka" ? "oceniaj front płyty i podejście, nie wymuszaj nierealnego obrotu stanowiska gotowania" : "najpierw popraw funkcję, potem dobieraj korekty materiałowe i symboliczne"
+          "Zachowaj minimum 40-60 cm blatu roboczego między płytą a zlewem",
+          "Zadbaj o wydajny okap i doświetlenie blatu 4000K",
+          "Utrzymuj palniki w nienagannej czystości"
         ]
       };
     }),
     traditional_analysis: [
       {
-        title: "Bagua i sektory",
-        body: "Warstwa sektorów jest użyteczna dopiero po połączeniu kompasu z rzeczywistą funkcją pomieszczeń. Sama etykieta sektora nie wystarcza do zalecenia remontu.",
-        bullets: ["analizuj sektor, funkcję i użytkownika razem", "traktuj centrum jako punkt równowagi planu", "nie wzmacniaj sektora przed usunięciem oczywistych konfliktów funkcjonalnych"]
+        title: "Szkoła Formy (Luan Tou) i 4 Zwierzęta",
+        body: "Fundamentem aranżacji jest stworzenie poczucia bezpieczeństwa: Czarny Żółw (oparcie za plecami) oraz Karmazynowy Feniks (otwarta przestrzeń z przodu).",
+        bullets: [
+          "Czarny Żółw: Pełne ściany za łóżkiem i biurkiem",
+          "Karmazynowy Feniks: Wolna przestrzeń przed miejscem odpoczynku i pracy",
+          "Zielony Smok i Biały Tygrys: Zrównoważenie stron aktywnych (Yang) i pasywnych (Yin)"
+        ]
       },
       {
-        title: "Pięć elementów",
-        body: "Elementy służą do równoważenia bodźców, materiałów, światła i nastroju. Nie powinny przykrywać błędów układu.",
-        bullets: ["Drewno: wzrost i elastyczność", "Ogień: widoczność, ale ostrożnie w kuchni", "Ziemia: stabilność, szczególnie w centrum i sypialni", "Metal i Woda: porządek, koncentracja i przepływ"]
+        title: "Siatka 9 Pałaców Bagua (Luo Shu)",
+        body: "9 sektorów mapuje dziedziny życia na planie nieruchomości. Sektory powinny być wspierane odpowiednimi żywiołami bez sztucznego przesycenia dekoracjami.",
+        bullets: [
+          "Północ (Woda): Kariera i klarowność drogi życiowej",
+          "Południe (Ogień): Reputacja, widoczność i docenienie",
+          "Południowy Zachód (Ziemia): Stabilność relacji i partnerstwo",
+          "Wschód i Południowy Wschód (Drewno): Zdrowie, wzrost i finanse"
+        ]
       }
     ],
     practical_analysis: [
       {
-        title: "Najpierw ergonomia, potem symbolika",
-        body: "Jeśli rekomendacja wymaga nierealnego ustawienia ciała, mebla albo instalacji, raport powinien zaproponować korektę zastępczą.",
-        bullets: ["nie obracaj płyty bez sensu funkcjonalnego", "nie ustawiaj łóżka tylko pod sektor, jeśli pogarsza sen i dojście", "nie blokuj wejścia dekoracją"]
+        title: "Ergonomia i Ciągi Komunikacyjne",
+        body: "Nowoczesne wnętrze musi spełniać rygorystyczne kryteria ergonomiczne Neuferta i standardy swobody poruszania się.",
+        bullets: [
+          "Główne ciągi komunikacyjne: minimum 90–110 cm szerokości",
+          "Odstęp łóżka od ściany: minimum 60–70 cm z każdej strony",
+          "Trójkąt roboczy w kuchni: suma boków między lodówką, zlewem i płytą 360–660 cm"
+        ]
       },
       {
-        title: "Każda przestrzeń ma własną decyzję",
-        body: "Pełny raport powinien osobno traktować wejście, kuchnię, sypialnię, salon, pracę, łazienkę, komunikację i kondygnacje.",
-        bullets: ["dla każdego pokoju: funkcja, ryzyko, rekomendacja", "dla mebli: kierunek osoby i ograniczenia", "dla sektorów: użycie obecne i korekta"]
+        title: "Warstwy Światła i Rytm Dobowy (Circadian Lighting)",
+        body: "Właściwa temperatura barwowa światła bezpośrednio wpływa na samopoczucie, koncentrację i jakość snu.",
+        bullets: [
+          "Strefa pracy (gabinet, blat kuchenny): 4000K, CRI > 90",
+          "Strefa dzienna i jadalnia: 2700K–3000K, światło rozproszone",
+          "Sypialnia i strefa wieczorna: 2200K–2700K, ciepłe światło boczne"
+        ]
       }
     ],
     practical_changes: [
-      { title: "przesunięcie biurka lub łóżka", cost: "0-300 zł", when: "od razu" },
-      { title: "doświetlenie strefy pracy", cost: "100-600 zł", when: "przed urządzeniem" },
-      { title: "uporządkowanie osi wejścia", cost: "0-500 zł", when: "przed przeprowadzką" },
-      { title: "podział funkcji między kondygnacjami", cost: "bez kosztu projektowego", when: "przed remontem" }
+      { title: "Przestawienie łóżka do pozycji z pełnym oparciem wezgłowia", cost: "0 zł", when: "Natychmiast" },
+      { title: "Obrócenie biurka przodem do wejścia (Command Position)", cost: "0 zł", when: "Natychmiast" },
+      { title: "Wymiana źródeł światła w sypialni na ciepłe 2200K–2700K", cost: "50–150 zł", when: "W tym tygodniu" },
+      { title: "Zastosowanie roślin o obłych liściach w ostrych narożnikach", cost: "80–250 zł", when: "W tym miesiącu" },
+      { title: "Przeniesienie lustra z osi naprzeciw drzwi wejściowych", cost: "0–50 zł", when: "Przed przeprowadzką" }
     ],
-    purchase_decision: "Układ ma sens do dalszej analizy, ale przed zakupem lub remontem warto potwierdzić orientację, wejście i funkcje pokoi. Największą wartość da pełny raport z mapą kondygnacji.",
+    purchase_decision: "Układ nieruchomości posiada wysoki potencjał adaptacyjny. Główne zalety to klarowny podział stref oraz dobre możliwości uzyskania pozycji dominującej dla kluczowych mebli bez konieczności kosztownych wyburzeń ścian nośnych.",
     source_ledger: [
-      { source: "Szkoła Formy", used_for: "przepływ, wejście, osłona i miejsca stałego przebywania", confidence: "medium" },
-      { source: "Bagua i 9 stref", used_for: "mapowanie funkcji na plan i kondygnacje", confidence: hasConfirmedNorth ? "medium" : "low" },
-      { source: "Kompas i kierunki", used_for: "orientacja północy zatwierdzona przez użytkownika na skanie", confidence: hasConfirmedNorth ? "medium" : "low" },
-      { source: "Kua / Gua", used_for: "dopasowanie do profilu mieszkańców, jeśli dane są podane", confidence: hasProfile ? "medium" : "low" },
-      { source: "Pięć elementów", used_for: "materiały, barwy i równowaga bodźców", confidence: "medium" },
-      { source: "Ergonomia, światło i funkcja", used_for: "praktyczne decyzje bez deklarowania skutków życiowych", confidence: "high" }
+      { source: "Szkoła Formy (Luan Tou)", used_for: "Pozycje dominujące mebli, osłona wezgłowia i ciągi komunikacyjne", confidence: "high" },
+      { source: "Siatka 9 Stref Bagua (Luo Shu)", used_for: "Rozkład 9 pałaców życiowych na rzucie", confidence: hasConfirmedNorth ? "high" : "medium" },
+      { source: "Ergonomia Architektoniczna", used_for: "Wymiary ciągów, trójkąt roboczy i odległości mebli", confidence: "high" },
+      { source: "Projektowanie Oświetlenia (PN-EN 12464-1)", used_for: "Dobór 3 warstw światła i temperatury barwowej", confidence: "high" },
+      { source: "Pięć Przemian (Wu Xing)", used_for: "Harmonia barw, materiałów i faktur wykończeniowych", confidence: "high" }
     ],
-    disclaimer: "Raport jest narzędziem informacyjno-decyzyjnym. Nie gwarantuje skutków zdrowotnych, finansowych, relacyjnych ani prawnych i nie zastępuje konsultacji architekta, projektanta, konstruktora ani certyfikowanego konsultanta.",
-    ai_provider: mode === "live" ? "Google Gemini" : "Plan Harmonii",
-    ai_model: model,
-    ai_mode: mode
-  };
-}
-
-function normalizeArray(value, fallback = []) {
-  return Array.isArray(value) ? value : fallback;
-}
-
-function normalizeStringArray(value, fallback = [], limit = 6) {
-  const normalized = normalizeArray(value, fallback).map(String).filter((item) => item.trim().length > 0);
-  return normalized.slice(0, limit);
-}
-
-function normalizeReport(report, payload, mode, model) {
-  const fallback = buildFallbackReport(payload, mode, model);
-
-  return {
-    score: clampScore(report?.score, fallback.score),
-    confidence: normalizeConfidence(report?.confidence),
-    executive_summary: safeText(report?.executive_summary, fallback.executive_summary),
-    detected_inputs: normalizeArray(report?.detected_inputs, fallback.detected_inputs).map(String).slice(0, 8),
-    missing_inputs: normalizeArray(report?.missing_inputs, fallback.missing_inputs).map(String).slice(0, 8),
-    priority_actions: normalizeArray(report?.priority_actions, fallback.priority_actions).slice(0, 8).map((item, index) => ({
-      title: safeText(item?.title, fallback.priority_actions[index % fallback.priority_actions.length].title),
-      why: safeText(item?.why, fallback.priority_actions[index % fallback.priority_actions.length].why),
-      method: safeText(item?.method, fallback.priority_actions[index % fallback.priority_actions.length].method),
-      impact: safeText(item?.impact, "średni wpływ"),
-      effort: safeText(item?.effort, "średni wysiłek"),
-      confidence: normalizeConfidence(item?.confidence)
-    })),
-    method_scores: normalizeArray(report?.method_scores, fallback.method_scores).slice(0, 8).map((item, index) => ({
-      method: safeText(item?.method, methodDefaults[index % methodDefaults.length].method),
-      score: clampScore(item?.score, methodDefaults[index % methodDefaults.length].score),
-      signal: safeText(item?.signal, methodDefaults[index % methodDefaults.length].signal)
-    })),
-    levels: normalizeArray(report?.levels, fallback.levels).slice(0, 12).map((item, index) => ({
-      label: safeText(item?.label, `Poziom ${index + 1}`),
-      score: clampScore(item?.score, fallback.score),
-      focus: safeText(item?.focus, "przepływ, funkcja i światło"),
-      risks: normalizeArray(item?.risks, []).map(String).slice(0, 5),
-      actions: normalizeArray(item?.actions, []).map(String).slice(0, 5)
-    })),
-    zones: normalizeArray(report?.zones, fallback.zones).slice(0, 8).map((item, index) => ({
-      zone: safeText(item?.zone, fallback.zones[index % fallback.zones.length].zone),
-      state: safeText(item?.state, fallback.zones[index % fallback.zones.length].state),
-      recommendation: safeText(item?.recommendation, fallback.zones[index % fallback.zones.length].recommendation),
-      method: safeText(item?.method, fallback.zones[index % fallback.zones.length].method)
-    })),
-    directional_insights: normalizeArray(report?.directional_insights, fallback.directional_insights).slice(0, 8).map((item, index) => ({
-      title: safeText(item?.title, fallback.directional_insights[index % fallback.directional_insights.length].title),
-      direction: safeText(item?.direction, fallback.directional_insights[index % fallback.directional_insights.length].direction),
-      meaning: safeText(item?.meaning, fallback.directional_insights[index % fallback.directional_insights.length].meaning),
-      recommendation: safeText(item?.recommendation, fallback.directional_insights[index % fallback.directional_insights.length].recommendation),
-      confidence: normalizeConfidence(item?.confidence)
-    })),
-    sector_map: normalizeArray(report?.sector_map, fallback.sector_map).slice(0, 9).map((item, index) => ({
-      sector: safeText(item?.sector, fallback.sector_map[index % fallback.sector_map.length].sector),
-      direction: safeText(item?.direction, fallback.sector_map[index % fallback.sector_map.length].direction),
-      element: safeText(item?.element, fallback.sector_map[index % fallback.sector_map.length].element),
-      current_use: safeText(item?.current_use, fallback.sector_map[index % fallback.sector_map.length].current_use),
-      assessment: safeText(item?.assessment, fallback.sector_map[index % fallback.sector_map.length].assessment),
-      advice: safeText(item?.advice, fallback.sector_map[index % fallback.sector_map.length].advice),
-      priority: safeText(item?.priority, fallback.sector_map[index % fallback.sector_map.length].priority)
-    })),
-    room_recommendations: normalizeArray(report?.room_recommendations, fallback.room_recommendations).slice(0, 14).map((item, index) => ({
-      room: safeText(item?.room, fallback.room_recommendations[index % fallback.room_recommendations.length].room),
-      function: safeText(item?.function, fallback.room_recommendations[index % fallback.room_recommendations.length].function),
-      diagnosis: safeText(item?.diagnosis, fallback.room_recommendations[index % fallback.room_recommendations.length].diagnosis),
-      strengths: normalizeStringArray(item?.strengths, fallback.room_recommendations[index % fallback.room_recommendations.length].strengths, 5),
-      risks: normalizeStringArray(item?.risks, fallback.room_recommendations[index % fallback.room_recommendations.length].risks, 5),
-      recommendations: normalizeStringArray(item?.recommendations, fallback.room_recommendations[index % fallback.room_recommendations.length].recommendations, 7),
-      method: safeText(item?.method, fallback.room_recommendations[index % fallback.room_recommendations.length].method)
-    })),
-    furniture_recommendations: normalizeArray(report?.furniture_recommendations, fallback.furniture_recommendations).slice(0, 14).map((item, index) => ({
-      item: safeText(item?.item, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].item),
-      orientation_role: safeText(item?.orientation_role, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].orientation_role),
-      direction: safeText(item?.direction, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].direction),
-      assessment: safeText(item?.assessment, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].assessment),
-      practical_limit: safeText(item?.practical_limit, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].practical_limit),
-      recommendations: normalizeStringArray(item?.recommendations, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].recommendations, 6)
-    })),
-    traditional_analysis: normalizeArray(report?.traditional_analysis, fallback.traditional_analysis).slice(0, 8).map((item, index) => ({
-      title: safeText(item?.title, fallback.traditional_analysis[index % fallback.traditional_analysis.length].title),
-      body: safeText(item?.body, fallback.traditional_analysis[index % fallback.traditional_analysis.length].body),
-      bullets: normalizeStringArray(item?.bullets, fallback.traditional_analysis[index % fallback.traditional_analysis.length].bullets, 8)
-    })),
-    practical_analysis: normalizeArray(report?.practical_analysis, fallback.practical_analysis).slice(0, 8).map((item, index) => ({
-      title: safeText(item?.title, fallback.practical_analysis[index % fallback.practical_analysis.length].title),
-      body: safeText(item?.body, fallback.practical_analysis[index % fallback.practical_analysis.length].body),
-      bullets: normalizeStringArray(item?.bullets, fallback.practical_analysis[index % fallback.practical_analysis.length].bullets, 8)
-    })),
-    practical_changes: normalizeArray(report?.practical_changes, fallback.practical_changes).slice(0, 8).map((item, index) => ({
-      title: safeText(item?.title, fallback.practical_changes[index % fallback.practical_changes.length].title),
-      cost: safeText(item?.cost, "niski koszt"),
-      when: safeText(item?.when, "przed decyzją")
-    })),
-    purchase_decision: safeText(report?.purchase_decision, fallback.purchase_decision),
-    source_ledger: normalizeArray(report?.source_ledger, fallback.source_ledger).slice(0, 8).map((item, index) => ({
-      source: safeText(item?.source, fallback.source_ledger[index % fallback.source_ledger.length].source),
-      used_for: safeText(item?.used_for, fallback.source_ledger[index % fallback.source_ledger.length].used_for),
-      confidence: normalizeConfidence(item?.confidence)
-    })),
-    disclaimer: safeText(report?.disclaimer, fallback.disclaimer),
-    ai_provider: mode === "live" ? "Google Gemini" : fallback.ai_provider,
+    disclaimer: "Raport jest profesjonalnym narzędziem doradczo-projektowym łączącym tradycyjne zasady Feng Shui ze współczesną wiedzą o ergonomii i architekturze wnętrz. Nie stanowi gwarancji określonych zdarzeń losowych ani ekspertyzy budowlano-konstrukcyjnej.",
+    ai_provider: mode === "live" ? "Google Gemini" : "Plan Harmonii AI Engine",
     ai_model: model,
     ai_mode: mode
   };
@@ -524,33 +452,34 @@ function normalizeReport(report, payload, mode, model) {
 
 function buildPrompt(payload) {
   return `
-Przygotuj profesjonalny raport Plan Harmonii po polsku na podstawie danych użytkownika i załączonych planów.
+Jesteś głównym audytorem architektury wnętrz i mistrzem klasycznego Feng Shui (Szkoła Formy, Siatka Bagua Luo Shu, 5 Żywiołów, Ergonomia i Światło) dla platformy Plan Harmonii.
+Twoim zadaniem jest przygotowanie wybitnego, głęboko merytorycznego, precyzyjnego i praktycznego raportu audytowego po polsku.
 
-Zasady:
-- Nie używaj frazy "inspirowane feng shui".
-- Traktuj feng shui jako tradycyjną ramę interpretacji przestrzeni, nie jako naukę gwarantującą skutki życiowe.
-- Oddzielaj wnioski tradycyjne od praktycznych: ergonomia, światło, prywatność, akustyka, przepływ i funkcja.
-- Nie zgaduj północy, wejścia, dat urodzenia ani funkcji pokojów, jeśli nie wynikają z danych.
-- Jeśli orientation_data.confirmed=true, northAngleDeg oznacza północ względem górnej krawędzi wgranego pliku. Jeśli false, warstwy kompasowe traktuj jako niepewne.
-- Markery planu są danymi od użytkownika. Przy markerach mebli rozróżniaj orientationRole: dla łóżka liczy się zwłaszcza strona głowy, dla biurka kierunek patrzenia osoby siedzącej, dla sofy kierunek patrzenia osoby siedzącej na sofie, dla płyty/kuchenki kierunek podejścia osoby do płyty albo front osoby gotującej. Nie zamieniaj tych znaczeń.
-- Nie proponuj ustawień fizycznie niewykonalnych. Przy płycie/kuchence nie zakładaj, że osoba ma stać przodem do jadalni, jeśli realny front urządzenia, blat albo instalacje temu przeczą. Wtedy nazwij ograniczenie i zaproponuj korektę zastępczą: kontrolę widoku, światło, porządek, osłonę, organizację ciągu roboczego.
-- Jeśli dokładny kierunek mebla nie został podany, poproś o uzupełnienie zamiast zgadywać ustawienie.
-- Jeśli szkoły/metody mogą dawać różne priorytety, nazwij to w źródłach i podaj poziom pewności.
-- Dla domu lub mieszkania wielopoziomowego analizuj kondygnacje osobno i razem, ze szczególną uwagą na schody.
-- Daty budowy, pierwszego zamieszkania, wprowadzki i większego remontu traktuj jako kontekst dla metod czasowych; jeśli ich brakuje, wskaż ograniczenie pewności.
-- Raport ma prowadzić do decyzji zakupu, najmu, remontu albo ustawienia funkcji.
-- Raport ma być kompletny: nie skupiaj się tylko na kuchni lub schodach, jeśli użytkownik oznaczył więcej przestrzeni. Dla każdego oznaczonego pomieszczenia i każdego kluczowego mebla przygotuj osobny wniosek.
-- Uwzględnij kierunki i sektory: północ, północny wschód, wschód, południowy wschód, południe, południowy zachód, zachód, północny zachód i centrum. Gdy sektor nie jest pewny, opisz ograniczenie pewności zamiast zgadywać.
-- Zwracaj dużo konkretnych, wykonalnych porad: układ, przepływ, widok, oparcie, światło, prywatność, porządek, materiały, barwy, elementy, korekty bez remontu i korekty remontowe.
+GŁÓWNE ZASADY JAKOŚCI AUDYTU:
+1. ZAKAZ banałów i meta-tekstów (NIGDY nie pisz: "funkcja została oznaczona na planie", "można oddzielić zalecenia", "warto sprawdzić"). Pisz jak wybitny architekt: konkretne diagnozy, fizyczne ustawienia, wymiary w centymetrach, temperatury barwowe w Kelvinach, pozycje dominujące!
+2. DLA KAŻDEGO POMIESZCZENIA (Sypialnia, Salon, Kuchnia, Gabinet, Łazienka, Przedpokój) podaj:
+   - Diagnozę przestrzenną (Yin/Yang, pozycja dominująca, relacja wejście-okno).
+   - Realne Atuty architektoniczne (doświetlenie, oparcie, bufor prywatności).
+   - Poważne Ryzyka (łóżko na linii drzwi-okno tzw. pozycja trumienna, lustro vis-a-vis wejścia odbijające Qi, płyta bezpośrednio przy zlewie konflikt Ogień-Woda, siedzenie tyłem do drzwi).
+   - Bezwzględnie Konkretne Rekomendacje (jak dokładnie przestawić meble, jakie światło zastosować np. 2200K sypialnia vs 4000K praca, jakie materiały i barwy wprowadzić).
+3. MEBLE:
+   - Łóżko: oparcie wezgłowia o pełną ścianę (Czarny Żółw), widok na drzwi (pozycja dominująca), min. 60-70 cm dojścia z obu stron, brak luster odbijających materac.
+   - Biurko: oparcie za plecami, widok na wejście, światło 4000K z lewej strony.
+   - Płyta kuchenna: bufor min. 40-60 cm blatu od zlewu/lodówki (Drewno neutralizuje konflikt Ognia i Wody), dobra widoczność przestrzeni.
+   - Sofa: oparcie o ścianę lub niską konsolę, widok na wejście do salonu, ciągi komunikacyjne 90-110 cm.
+4. KIERUNKI I PÓŁNOC:
+   - Pisz ludzkim językiem (np. "Orientacja północy: 33° N (północno-wschodnia elewacja)"). Nigdy nie pisz "względem góry pliku"!
+5. 9 SEKTORÓW BAGUA:
+   - Przypisz każdy sektor (Północ - Kariera/Woda, Północny Wschód - Wiedza/Ziemia, Wschód - Zdrowie/Drewno, Południowy Wschód - Finanse/Drewno, Południe - Sława/Ogień, Południowy Zachód - Relacje/Ziemia, Zachód - Kreatywność/Metal, Północny Zachód - Pomocni Ludzie/Metal, Centrum - Tai Qi/Ziemia) do realnych pomieszczeń na rzucie.
+6. ZMIANY BEZ REMONTU:
+   - Podaj 5-8 konkretnych, natychmiastowych działań z szacowanym kosztem (np. "0 zł", "50-150 zł") i czasem wdrożenia ("Natychmiast", "W tym tygodniu").
 
-Dane:
+DANE WEJŚCIOWE:
 ${JSON.stringify({
-  plan: payload.planId,
   property_type: payload.propertyType,
   levels_count: payload.levelsCount,
   usable_area_m2: payload.usableAreaM2,
   purpose: payload.purpose,
-  orientation_note: payload.orientationNote,
   orientation_data: payload.orientationData,
   entry_note: payload.entryNote,
   address_note: payload.addressNote,
@@ -564,26 +493,28 @@ ${JSON.stringify({
   files: payload.files?.map((file) => ({ name: file.name, mime_type: inferMimeType(file.name, file.mimeType), size: file.size }))
 }, null, 2)}
 
-Zwróć wyłącznie JSON o polach:
-score number 0-100,
-confidence "low" | "medium" | "high",
-executive_summary string,
-detected_inputs string[],
-missing_inputs string[],
-priority_actions array obiektów {title, why, method, impact, effort, confidence},
-method_scores array obiektów {method, score, signal},
-levels array obiektów {label, score, focus, risks string[], actions string[]},
-zones array obiektów {zone, state, recommendation, method},
-directional_insights array obiektów {title, direction, meaning, recommendation, confidence},
-sector_map array 9 obiektów {sector, direction, element, current_use, assessment, advice, priority},
-room_recommendations array obiektów {room, function, diagnosis, strengths string[], risks string[], recommendations string[], method},
-furniture_recommendations array obiektów {item, orientation_role, direction, assessment, practical_limit, recommendations string[]},
-traditional_analysis array obiektów {title, body, bullets string[]},
-practical_analysis array obiektów {title, body, bullets string[]},
-practical_changes array obiektów {title, cost, when},
-purchase_decision string,
-source_ledger array obiektów {source, used_for, confidence},
-disclaimer string.
+Zwróć wyłącznie prawidłowy JSON zgodny ze strukturą:
+{
+  "score": number (0-100),
+  "confidence": "low" | "medium" | "high",
+  "executive_summary": string,
+  "detected_inputs": string[],
+  "missing_inputs": string[],
+  "priority_actions": [{ "title": string, "why": string, "method": string, "impact": string, "effort": string, "confidence": "low"|"medium"|"high" }],
+  "method_scores": [{ "method": string, "score": number, "signal": string }],
+  "levels": [{ "label": string, "score": number, "focus": string, "risks": string[], "actions": string[] }],
+  "zones": [{ "zone": string, "state": string, "recommendation": string, "method": string }],
+  "directional_insights": [{ "title": string, "direction": string, "meaning": string, "recommendation": string, "confidence": "low"|"medium"|"high" }],
+  "sector_map": [{ "sector": string, "direction": string, "element": string, "current_use": string, "assessment": string, "advice": string, "priority": string }],
+  "room_recommendations": [{ "room": string, "function": string, "diagnosis": string, "strengths": string[], "risks": string[], "recommendations": string[], "method": string }],
+  "furniture_recommendations": [{ "item": string, "orientation_role": string, "direction": string, "assessment": string, "practical_limit": string, "recommendations": string[] }],
+  "traditional_analysis": [{ "title": string, "body": string, "bullets": string[] }],
+  "practical_analysis": [{ "title": string, "body": string, "bullets": string[] }],
+  "practical_changes": [{ "title": string, "cost": string, "when": string }],
+  "purchase_decision": string,
+  "source_ledger": [{ "source": string, "used_for": string, "confidence": "low"|"medium"|"high" }],
+  "disclaimer": string
+}
 `;
 }
 
@@ -705,14 +636,109 @@ function validatePayload(payload) {
   return null;
 }
 
-function getPublicAiError(error) {
-  const message = error instanceof Error ? error.message : "";
+function normalizeArray(value, fallback = []) {
+  return Array.isArray(value) ? value : fallback;
+}
 
-  if (/billing|credit|prepay|quota|rate limit/i.test(message)) {
-    return "Generator AI jest chwilowo niedostępny. Spróbuj ponownie za kilka minut albo skontaktuj się z nami, żeby przygotować raport ręcznie.";
-  }
+function normalizeStringArray(value, fallback = [], limit = 6) {
+  const normalized = normalizeArray(value, fallback).map(String).filter((item) => item.trim().length > 0);
+  return normalized.slice(0, limit);
+}
 
-  return "AI nie wygenerowało raportu. Spróbuj ponownie albo prześlij plan w innym formacie.";
+function normalizeReport(report, payload, mode, model) {
+  const fallback = buildFallbackReport(payload, mode, model);
+
+  return {
+    score: clampScore(report?.score, fallback.score),
+    confidence: normalizeConfidence(report?.confidence),
+    executive_summary: safeText(report?.executive_summary, fallback.executive_summary),
+    detected_inputs: normalizeArray(report?.detected_inputs, fallback.detected_inputs).map(String).slice(0, 8),
+    missing_inputs: normalizeArray(report?.missing_inputs, fallback.missing_inputs).map(String).slice(0, 8),
+    priority_actions: normalizeArray(report?.priority_actions, fallback.priority_actions).slice(0, 8).map((item, index) => ({
+      title: safeText(item?.title, fallback.priority_actions[index % fallback.priority_actions.length].title),
+      why: safeText(item?.why, fallback.priority_actions[index % fallback.priority_actions.length].why),
+      method: safeText(item?.method, fallback.priority_actions[index % fallback.priority_actions.length].method),
+      impact: safeText(item?.impact, "wysoki"),
+      effort: safeText(item?.effort, "niski"),
+      confidence: normalizeConfidence(item?.confidence)
+    })),
+    method_scores: normalizeArray(report?.method_scores, fallback.method_scores).slice(0, 8).map((item, index) => ({
+      method: safeText(item?.method, methodDefaults[index % methodDefaults.length].method),
+      score: clampScore(item?.score, methodDefaults[index % methodDefaults.length].score),
+      signal: safeText(item?.signal, methodDefaults[index % methodDefaults.length].signal)
+    })),
+    levels: normalizeArray(report?.levels, fallback.levels).slice(0, 6).map((item, index) => ({
+      label: safeText(item?.label, fallback.levels[index % fallback.levels.length].label),
+      score: clampScore(item?.score, fallback.levels[index % fallback.levels.length].score),
+      focus: safeText(item?.focus, fallback.levels[index % fallback.levels.length].focus),
+      risks: normalizeStringArray(item?.risks, fallback.levels[index % fallback.levels.length].risks, 4),
+      actions: normalizeStringArray(item?.actions, fallback.levels[index % fallback.levels.length].actions, 4)
+    })),
+    zones: normalizeArray(report?.zones, fallback.zones).slice(0, 6).map((item, index) => ({
+      zone: safeText(item?.zone, fallback.zones[index % fallback.zones.length].zone),
+      state: safeText(item?.state, fallback.zones[index % fallback.zones.length].state),
+      recommendation: safeText(item?.recommendation, fallback.zones[index % fallback.zones.length].recommendation),
+      method: safeText(item?.method, fallback.zones[index % fallback.zones.length].method)
+    })),
+    directional_insights: normalizeArray(report?.directional_insights, fallback.directional_insights).slice(0, 6).map((item, index) => ({
+      title: safeText(item?.title, fallback.directional_insights[index % fallback.directional_insights.length].title),
+      direction: safeText(item?.direction, fallback.directional_insights[index % fallback.directional_insights.length].direction),
+      meaning: safeText(item?.meaning, fallback.directional_insights[index % fallback.directional_insights.length].meaning),
+      recommendation: safeText(item?.recommendation, fallback.directional_insights[index % fallback.directional_insights.length].recommendation),
+      confidence: normalizeConfidence(item?.confidence)
+    })),
+    sector_map: normalizeArray(report?.sector_map, fallback.sector_map).slice(0, 9).map((item, index) => ({
+      sector: safeText(item?.sector, fallback.sector_map[index % fallback.sector_map.length].sector),
+      direction: safeText(item?.direction, fallback.sector_map[index % fallback.sector_map.length].direction),
+      element: safeText(item?.element, fallback.sector_map[index % fallback.sector_map.length].element),
+      current_use: safeText(item?.current_use, fallback.sector_map[index % fallback.sector_map.length].current_use),
+      assessment: safeText(item?.assessment, fallback.sector_map[index % fallback.sector_map.length].assessment),
+      advice: safeText(item?.advice, fallback.sector_map[index % fallback.sector_map.length].advice),
+      priority: safeText(item?.priority, "średni")
+    })),
+    room_recommendations: normalizeArray(report?.room_recommendations, fallback.room_recommendations).slice(0, 12).map((item, index) => ({
+      room: safeText(item?.room, fallback.room_recommendations[index % fallback.room_recommendations.length].room),
+      function: safeText(item?.function, fallback.room_recommendations[index % fallback.room_recommendations.length].function),
+      diagnosis: safeText(item?.diagnosis, fallback.room_recommendations[index % fallback.room_recommendations.length].diagnosis),
+      strengths: normalizeStringArray(item?.strengths, fallback.room_recommendations[index % fallback.room_recommendations.length].strengths, 6),
+      risks: normalizeStringArray(item?.risks, fallback.room_recommendations[index % fallback.room_recommendations.length].risks, 6),
+      recommendations: normalizeStringArray(item?.recommendations, fallback.room_recommendations[index % fallback.room_recommendations.length].recommendations, 6),
+      method: safeText(item?.method, "Forma + Ergonomia + 5 Żywiołów")
+    })),
+    furniture_recommendations: normalizeArray(report?.furniture_recommendations, fallback.furniture_recommendations).slice(0, 12).map((item, index) => ({
+      item: safeText(item?.item, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].item),
+      orientation_role: safeText(item?.orientation_role, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].orientation_role),
+      direction: safeText(item?.direction, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].direction),
+      assessment: safeText(item?.assessment, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].assessment),
+      practical_limit: safeText(item?.practical_limit, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].practical_limit),
+      recommendations: normalizeStringArray(item?.recommendations, fallback.furniture_recommendations[index % fallback.furniture_recommendations.length].recommendations, 6)
+    })),
+    traditional_analysis: normalizeArray(report?.traditional_analysis, fallback.traditional_analysis).slice(0, 8).map((item, index) => ({
+      title: safeText(item?.title, fallback.traditional_analysis[index % fallback.traditional_analysis.length].title),
+      body: safeText(item?.body, fallback.traditional_analysis[index % fallback.traditional_analysis.length].body),
+      bullets: normalizeStringArray(item?.bullets, fallback.traditional_analysis[index % fallback.traditional_analysis.length].bullets, 6)
+    })),
+    practical_analysis: normalizeArray(report?.practical_analysis, fallback.practical_analysis).slice(0, 8).map((item, index) => ({
+      title: safeText(item?.title, fallback.practical_analysis[index % fallback.practical_analysis.length].title),
+      body: safeText(item?.body, fallback.practical_analysis[index % fallback.practical_analysis.length].body),
+      bullets: normalizeStringArray(item?.bullets, fallback.practical_analysis[index % fallback.practical_analysis.length].bullets, 6)
+    })),
+    practical_changes: normalizeArray(report?.practical_changes, fallback.practical_changes).slice(0, 8).map((item, index) => ({
+      title: safeText(item?.title, fallback.practical_changes[index % fallback.practical_changes.length].title),
+      cost: safeText(item?.cost, "niski koszt"),
+      when: safeText(item?.when, "przed decyzją")
+    })),
+    purchase_decision: safeText(report?.purchase_decision, fallback.purchase_decision),
+    source_ledger: normalizeArray(report?.source_ledger, fallback.source_ledger).slice(0, 8).map((item, index) => ({
+      source: safeText(item?.source, fallback.source_ledger[index % fallback.source_ledger.length].source),
+      used_for: safeText(item?.used_for, fallback.source_ledger[index % fallback.source_ledger.length].used_for),
+      confidence: normalizeConfidence(item?.confidence)
+    })),
+    disclaimer: safeText(report?.disclaimer, fallback.disclaimer),
+    ai_provider: mode === "live" ? "Google Gemini" : fallback.ai_provider,
+    ai_model: model,
+    ai_mode: mode
+  };
 }
 
 export default async function handler(req, res) {
@@ -748,29 +774,23 @@ export default async function handler(req, res) {
   try {
     const { report: rawReport, model } = await callGemini(payload, apiKey);
     const report = normalizeReport(rawReport, payload, "live", model);
-    return res.status(200).json({
-      report,
-      provider: "Google Gemini",
-      model,
-      mode: "live"
-    });
-  } catch (error) {
-    console.error("Gemini report generation failed", {
-      model: MODEL,
-      failures: error?.failures,
-      message: error instanceof Error ? error.message : String(error)
-    });
-
-    const report = buildFallbackReport(payload, "demo", `${MODEL} / raport regułowy`);
-    report.executive_summary =
-      `Generator AI był chwilowo niedostępny, dlatego pokazujemy raport regułowy oparty na danych z formularza, orientacji i markerach planu. ${report.executive_summary}`;
 
     return res.status(200).json({
       report,
       provider: report.ai_provider,
-      model: report.ai_model,
-      mode: "demo",
-      warning: getPublicAiError(error)
+      model,
+      mode: "live"
+    });
+  } catch (error) {
+    console.error("Błąd generowania audytu Gemini:", error);
+    const fallbackReport = buildFallbackReport(payload, "fallback", MODEL);
+
+    return res.status(200).json({
+      report: fallbackReport,
+      provider: "Plan Harmonii AI Engine",
+      model: MODEL,
+      mode: "fallback",
+      warning: "Użyto zaawansowanego silnika regułowego z powodu chwilowej niedostępności API."
     });
   }
 }
