@@ -1,0 +1,11 @@
+.env*
+.vercel
+node_modules
+dist
+qa
+design
+supabase
+AGENTS.md
+PROJEKT-PLAN-HARMONII.md
+SUPABASE-SETUP.md
+tsconfig.tsbuildinfo
