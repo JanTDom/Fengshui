@@ -1309,15 +1309,31 @@ export function AuditBuilder({
                   <strong>{activeScanLabel}</strong>
                 </div>
                 <small>{activeScanHint}</small>
-                <button
-                  type="button"
-                  className="plan-expand-button"
-                  disabled={!hasVisualPreview}
-                  onClick={() => setIsPlanExpanded((current) => !current)}
-                >
-                  {isPlanExpanded ? <X size={15} /> : <Maximize2 size={15} />}
-                  {isPlanExpanded ? "Zamknij" : "Powiększ plan"}
-                </button>
+                <div className="scan-active-actions">
+                  {planMarkers.length > 0 ? (
+                    <button
+                      type="button"
+                      className="plan-clear-button"
+                      onClick={() => {
+                        setPlanMarkers([]);
+                        setSelectedPlanMarkerId(null);
+                      }}
+                      title="Usuń wszystkie znaczniki z planu"
+                    >
+                      <Trash2 size={14} />
+                      <span>Wyczyść ({planMarkers.length})</span>
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="plan-expand-button"
+                    disabled={!hasVisualPreview}
+                    onClick={() => setIsPlanExpanded((current) => !current)}
+                  >
+                    {isPlanExpanded ? <X size={15} /> : <Maximize2 size={15} />}
+                    {isPlanExpanded ? "Zamknij" : "Powiększ plan"}
+                  </button>
+                </div>
               </div>
 
               {scanTool === "marker" ? (
@@ -1432,26 +1448,30 @@ export function AuditBuilder({
                   }
                 >
                   <div
-                    className={`north-arrow-overlay${northConfirmed ? " confirmed" : ""}`}
+                    className={`floating-north-compass${northConfirmed ? " confirmed" : ""}`}
                     style={northDialStyle}
                     aria-hidden="true"
+                    title={`Północ: ${Math.round(northAngle)}°`}
                   >
-                    <span>N</span>
+                    <div className="compass-dial">
+                      <div className="compass-arrow-needle" />
+                      <span className="compass-letter">N</span>
+                    </div>
+                    <span className="compass-deg-pill">{Math.round(northAngle)}°</span>
                   </div>
 
                   {planMarkers.map((marker, index) => {
-                    const markerCode = markerDisplayCode(marker, planMarkers, index);
                     const stackOffset = markerStackOffset(marker, planMarkers);
                     const isSelected = marker.id === selectedPlanMarkerId;
 
                     return (
                       <div
                         key={marker.id}
-                        className={`plan-marker-wrapper${isSelected ? " selected" : ""}`}
+                        className={`plan-marker-wrapper ${marker.category}${isSelected ? " selected" : ""}`}
                         style={{
                           left: `${marker.xPercent}%`,
                           top: `${marker.yPercent}%`,
-                          zIndex: isSelected ? 20 : 4 + stackOffset.stackIndex
+                          zIndex: isSelected ? 25 : 5 + stackOffset.stackIndex
                         }}
                       >
                         <button
@@ -1462,26 +1482,26 @@ export function AuditBuilder({
                             "--marker-offset-x": `${stackOffset.x}px`,
                             "--marker-offset-y": `${stackOffset.y}px`
                           } as CSSProperties}
-                          title={`${markerCode}: ${markerDetailText(marker)}. Kliknij, aby wybrać i edytować.`}
+                          title={`${marker.label}. Kliknij, aby edytować lub przeciągnąć.`}
                           onPointerDown={(event) => handleMarkerPointerDown(marker, event)}
                           onClick={(event) => {
                             event.stopPropagation();
                             handlePlanMarkerClick(marker);
                           }}
-                          aria-label={`${markerCode}: ${markerDetailText(marker)}. Edytuj marker.`}
+                          aria-label={`${marker.label}. Edytuj marker.`}
                         >
                           {marker.category === "furniture" ? (
-                            <>
+                            <span className="furniture-pin-content">
                               <span className="furniture-marker-shape">
                                 {renderFurnitureSymbol(marker.label)}
                               </span>
-                              <span className="marker-code">{markerCode}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span className="marker-code">{markerCode}</span>
                               <span className="marker-label">{markerShortLabel(marker)}</span>
-                            </>
+                            </span>
+                          ) : (
+                            <span className="pin-content">
+                              <span className="pin-dot" />
+                              <span className="marker-label">{markerShortLabel(marker)}</span>
+                            </span>
                           )}
                         </button>
 
@@ -1601,23 +1621,21 @@ export function AuditBuilder({
             </div>
 
               {planMarkers.length > 0 ? (
-                <div className="marker-legend" aria-label="Legenda markerów na planie">
-                  {planMarkers.map((marker, index) => {
-                    const markerCode = markerDisplayCode(marker, planMarkers, index);
-
-                    return (
-                      <button
-                        key={marker.id}
-                        type="button"
-                        className={marker.id === selectedPlanMarkerId ? "selected" : ""}
-                        onClick={() => handlePlanMarkerSelect(marker)}
-                      >
-                        <strong>{markerCode}</strong>
-                        <span>{marker.label}</span>
-                        <small>{marker.category === "furniture" ? markerDetailText(marker) : markerCategoryLabel(marker)}</small>
-                      </button>
-                    );
-                  })}
+                <div className="marker-legend" aria-label="Lista oznaczonych punktów na planie">
+                  {planMarkers.map((marker) => (
+                    <button
+                      key={marker.id}
+                      type="button"
+                      className={`marker-legend-item ${marker.category}${marker.id === selectedPlanMarkerId ? " selected" : ""}`}
+                      onClick={() => handlePlanMarkerSelect(marker)}
+                    >
+                      <span className="marker-legend-dot" />
+                      <strong>{marker.label}</strong>
+                      {marker.category === "furniture" && marker.facingDeg !== null ? (
+                        <small>{marker.facingDeg}°</small>
+                      ) : null}
+                    </button>
+                  ))}
                 </div>
               ) : null}
 
