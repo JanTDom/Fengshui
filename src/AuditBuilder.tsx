@@ -873,20 +873,9 @@ export function AuditBuilder({
   function handleMarkerLabelSelect(label: string) {
     setSelectedMarkerLabel(label);
     setScanTool("marker");
-
-    // If a marker of this label already exists, select it to move/rotate it instead of duplicating
-    const existing = planMarkers.find((m) => m.label === label);
-    if (existing) {
-      setSelectedPlanMarkerId(existing.id);
-      if (existing.category === "furniture") {
-        setFurnitureDirection(existing.facingDeg ?? 0);
-        setFurnitureOrientationRole(existing.orientationRole ?? defaultFurnitureOrientationRole(label));
-      }
-    } else {
-      setSelectedPlanMarkerId(null);
-      if (annotationMode === "furniture") {
-        setFurnitureOrientationRole(defaultFurnitureOrientationRole(label));
-      }
+    setSelectedPlanMarkerId(null);
+    if (annotationMode === "furniture") {
+      setFurnitureOrientationRole(defaultFurnitureOrientationRole(label));
     }
   }
 
@@ -1055,18 +1044,6 @@ function getKuaDirectionFeedback(
 
     const xPercent = Math.max(1, Math.min(99, ((clientX - rect.left) / rect.width) * 100));
     const yPercent = Math.max(1, Math.min(99, ((clientY - rect.top) / rect.height) * 100));
-
-    // If user already has a marker selected, MOVE that marker instead of duplicating it
-    if (selectedPlanMarkerId) {
-      setPlanMarkers((current) =>
-        current.map((marker) =>
-          marker.id === selectedPlanMarkerId
-            ? { ...marker, xPercent: Number(xPercent.toFixed(2)), yPercent: Number(yPercent.toFixed(2)) }
-            : marker
-        )
-      );
-      return;
-    }
 
     createPlanMarkerAtPercent(xPercent, yPercent);
   }
