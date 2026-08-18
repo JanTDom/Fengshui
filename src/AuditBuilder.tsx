@@ -1389,7 +1389,8 @@ function getKuaDirectionFeedback(
             </div>
 
             <div className="scan-workflow">
-              <div className="scan-tool-tabs" role="group" aria-label="Narzędzie pracy na skanie">
+              <div className="scan-controls-pane">
+                <div className="scan-tool-tabs" role="group" aria-label="Narzędzie pracy na skanie">
                 <button
                   type="button"
                   className={scanTool === "north" ? "selected" : ""}
@@ -1749,13 +1750,13 @@ function getKuaDirectionFeedback(
                             <span className="mirror-icon" aria-hidden="true">🪞</span>
                             <div>
                               <strong>Zasady Feng Shui dla Lustra:</strong>
-                              <p>Stożek światła na symbolu pokazuje, w którą stronę i w jaką strefę pokoju odbijana jest energia Qi.</p>
+                              <p>Stożek światła na symbolu pokazuje, w którą stronę odbijana jest energia Qi.</p>
                             </div>
                           </div>
                           <ul className="mirror-rules-list">
-                            <li><strong>Nie odbijaj wezgłowia łóżka</strong> – widok śpiącego w lustrze wywołuje niepokój podświadomości i zaburza fazę snu głębokiego.</li>
+                            <li><strong>Nie odbijaj wezgłowia łóżka</strong> – widok śpiącego w lustrze wywołuje niepokój podświadomości.</li>
                             <li><strong>Nie umieszczaj naprzeciwko drzwi wejściowych</strong> – energia wchodząca do domu zostaje natychmiast odbita na zewnątrz.</li>
-                            <li><strong>Odbijaj piękno i światło</strong> – skieruj taflę na widok za oknem, zieleń roślin lub stół jadalny (symbol obfitości).</li>
+                            <li><strong>Odbijaj piękno i światło</strong> – skieruj taflę na widok za oknem, zieleń roślin lub stół jadalny.</li>
                           </ul>
                         </div>
                       ) : null}
@@ -1767,6 +1768,67 @@ function getKuaDirectionFeedback(
                   ) : null}
                 </div>
               ) : null}
+
+              {planMarkers.length > 0 ? (
+                <div className="marker-legend" aria-label="Lista oznaczonych punktów na planie">
+                  {planMarkers.map((marker) => (
+                    <button
+                      key={marker.id}
+                      type="button"
+                      className={`marker-legend-item ${marker.category}${marker.id === selectedPlanMarkerId ? " selected" : ""}`}
+                      onClick={() => handlePlanMarkerSelect(marker)}
+                    >
+                      <span className="marker-legend-dot" />
+                      <strong>{marker.label}</strong>
+                      {marker.category === "furniture" && marker.facingDeg !== null ? (
+                        <small>{marker.facingDeg}°</small>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="annotation-actions">
+                <span className="annotation-status">
+                  {!hasVisualPreview
+                    ? "Do markerów potrzebny jest widoczny podgląd PDF, JPG, PNG albo WEBP"
+                    : planMarkers.length > 0
+                      ? `${markerCountText(planMarkers.length)} · ${selectedMarkerSummary}`
+                      : scanTool === "marker"
+                        ? "Kliknij skan, żeby dodać pierwszy marker"
+                        : "Ustaw północ na planie, a potem wybierz pomieszczenie, punkt albo mebel"}
+                </span>
+                <div className="annotation-action-buttons">
+                  <button
+                    type="button"
+                    className="ghost-button compact"
+                    disabled={!selectedPlanMarkerId}
+                    onClick={removeSelectedPlanMarker}
+                  >
+                    Usuń wybrany
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button compact"
+                    disabled={planMarkers.length === 0}
+                    onClick={undoLastPlanMarker}
+                  >
+                    Cofnij marker
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-button compact"
+                    disabled={planMarkers.length === 0}
+                    onClick={() => {
+                      setPlanMarkers([]);
+                      setSelectedPlanMarkerId(null);
+                    }}
+                  >
+                    Wyczyść
+                  </button>
+                </div>
+              </div>
+            </div>
 
             <div className="north-workspace">
               <div className="scan-preview">
@@ -2031,90 +2093,30 @@ function getKuaDirectionFeedback(
                       </div>
                     );
                   })}
-                </div>
-              </div>
-            ) : (
-              <div className="scan-preview-placeholder">
-                <FileUp size={22} />
-                <span>Po wgraniu planu tutaj pojawi się skan z nakładką północy i markerami.</span>
-              </div>
-            )}
-
-                {scanTool === "north" && hasVisualPreview ? (
-                  <div className={`north-plan-confirm${northConfirmed ? " confirmed" : ""}`}>
-                    <div>
-                      <span>{northConfirmed ? "Północ zatwierdzona" : "Ustawiasz północ"}</span>
-                      <strong>{scanDirectionLabel(northAngle)} · {northAngle}°</strong>
                     </div>
-                    <button type="button" onClick={confirmNorthDirection}>
-                      <CheckCircle2 size={17} />
-                      {northConfirmed ? "Przejdź do markerów" : "Zatwierdź północ"}
-                    </button>
                   </div>
-                ) : null}
+                ) : (
+                  <div className="scan-preview-placeholder">
+                    <FileUp size={22} />
+                    <span>Po wgraniu planu tutaj pojawi się skan z nakładką północy i markerami.</span>
+                  </div>
+                )}
               </div>
-            </div>
 
-              {planMarkers.length > 0 ? (
-                <div className="marker-legend" aria-label="Lista oznaczonych punktów na planie">
-                  {planMarkers.map((marker) => (
-                    <button
-                      key={marker.id}
-                      type="button"
-                      className={`marker-legend-item ${marker.category}${marker.id === selectedPlanMarkerId ? " selected" : ""}`}
-                      onClick={() => handlePlanMarkerSelect(marker)}
-                    >
-                      <span className="marker-legend-dot" />
-                      <strong>{marker.label}</strong>
-                      {marker.category === "furniture" && marker.facingDeg !== null ? (
-                        <small>{marker.facingDeg}°</small>
-                      ) : null}
-                    </button>
-                  ))}
+            {scanTool === "north" && hasVisualPreview ? (
+              <div className={`north-plan-confirm${northConfirmed ? " confirmed" : ""}`}>
+                <div>
+                  <span>{northConfirmed ? "Północ zatwierdzona" : "Ustawiasz północ"}</span>
+                  <strong>{scanDirectionLabel(northAngle)} · {northAngle}°</strong>
                 </div>
-              ) : null}
-
-              <div className="annotation-actions">
-                <span className="annotation-status">
-                  {!hasVisualPreview
-                    ? "Do markerów potrzebny jest widoczny podgląd PDF, JPG, PNG albo WEBP"
-                    : planMarkers.length > 0
-                      ? `${markerCountText(planMarkers.length)} · ${selectedMarkerSummary}`
-                      : scanTool === "marker"
-                        ? "Kliknij skan, żeby dodać pierwszy marker"
-                        : "Ustaw północ na planie, a potem wybierz pomieszczenie, punkt albo mebel"}
-                </span>
-                <div className="annotation-action-buttons">
-                  <button
-                    type="button"
-                    className="ghost-button compact"
-                    disabled={!selectedPlanMarkerId}
-                    onClick={removeSelectedPlanMarker}
-                  >
-                    Usuń wybrany
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button compact"
-                    disabled={planMarkers.length === 0}
-                    onClick={undoLastPlanMarker}
-                  >
-                    Cofnij marker
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-button compact"
-                    disabled={planMarkers.length === 0}
-                    onClick={() => {
-                      setPlanMarkers([]);
-                      setSelectedPlanMarkerId(null);
-                    }}
-                  >
-                    Wyczyść
-                  </button>
-                </div>
+                <button type="button" onClick={confirmNorthDirection}>
+                  <CheckCircle2 size={17} />
+                  {northConfirmed ? "Przejdź do markerów" : "Zatwierdź północ"}
+                </button>
               </div>
-            </div>
+            ) : null}
+          </div>
+        </div>
 
             <label className="field-quiet">
               <span>Dodatkowa uwaga o orientacji</span>
