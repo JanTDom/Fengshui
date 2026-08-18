@@ -319,6 +319,17 @@ function annotationHelpText(mode: AnnotationMode) {
   return "To są meble i wyposażenie, przy których liczy się dokładny kierunek osoby, frontu albo oparcia.";
 }
 
+function getResidentInitials(labelOrName: string | null | undefined): string {
+  if (!labelOrName) return "";
+  const cleaned = labelOrName.trim();
+  if (cleaned.toLowerCase().includes("główny")) return "G";
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 function furnitureSymbolClass(label: string) {
   if (label === "Łóżko") return "bed";
   if (label === "Biurko" || label === "Miejsce pracy") return "desk";
@@ -338,15 +349,15 @@ function renderFurnitureSymbol(label: string) {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg bed-svg" aria-hidden="true">
         {/* Materac łóżka */}
-        <rect x="14" y="10" width="44" height="54" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        <rect x="14" y="12" width="44" height="52" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
         {/* Solidne wezgłowie oparte o ścianę (na górze przy kącie 0°) */}
-        <rect x="11" y="4" width="50" height="8" rx="2" fill="#C49544" stroke="#FFFFFF" strokeWidth="1" />
+        <rect x="12" y="6" width="48" height="7" rx="1.5" fill="#C49544" stroke="#FFFFFF" strokeWidth="1" />
         {/* Dwie poduszki przy wezgłowiu */}
-        <rect x="17" y="15" width="17" height="12" rx="3" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
-        <rect x="38" y="15" width="17" height="12" rx="3" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
+        <rect x="18" y="16" width="16" height="11" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="38" y="16" width="16" height="11" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
         {/* Pościel / narzuta */}
-        <path d="M 14 34 L 58 34 L 58 64 L 14 64 Z" fill="#1E3F39" stroke="#C49544" strokeWidth="1.2" />
-        <line x1="14" y1="34" x2="58" y2="34" stroke="#FFFFFF" strokeWidth="2" strokeDasharray="3 2" />
+        <path d="M 14 34 L 58 34 L 58 64 L 14 64 Z" fill="#1E3F39" stroke="#C49544" strokeWidth="1" />
+        <line x1="14" y1="34" x2="58" y2="34" stroke="#FFFFFF" strokeWidth="1.5" strokeDasharray="3 2" />
       </svg>
     );
   }
@@ -355,18 +366,17 @@ function renderFurnitureSymbol(label: string) {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg desk-svg" aria-hidden="true">
         {/* Blat biurka */}
-        <rect x="10" y="32" width="52" height="26" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        <rect x="12" y="32" width="48" height="26" rx="2" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
         {/* Monitor na blacie */}
-        <rect x="23" y="36" width="26" height="5" rx="1" fill="#FFFFFF" />
+        <rect x="23" y="35" width="26" height="5" rx="1" fill="#FFFFFF" />
         {/* Klawiatura */}
-        <rect x="26" y="45" width="20" height="4" rx="1" fill="#C49544" />
-        {/* Fotel biurowy za biurkiem */}
-        <rect x="24" y="11" width="24" height="17" rx="4" fill="#1E3F39" stroke="#C49544" strokeWidth="1.6" />
-        {/* Zaokrąglone oparcie za plecami */}
-        <path d="M 18 15 Q 36 8 54 15" stroke="#FFFFFF" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+        <rect x="26" y="44" width="20" height="4" rx="1" fill="#C49544" />
+        {/* Krzesło biurowe za biurkiem */}
+        <rect x="24" y="12" width="24" height="16" rx="3" fill="#1E3F39" stroke="#C49544" strokeWidth="1.5" />
+        <rect x="20" y="10" width="32" height="6" rx="2" fill="#C49544" />
         {/* Podłokietniki */}
-        <rect x="17" y="12" width="4" height="12" rx="2" fill="#FFFFFF" />
-        <rect x="51" y="12" width="4" height="12" rx="2" fill="#FFFFFF" />
+        <rect x="18" y="13" width="4" height="11" rx="1" fill="#FFFFFF" />
+        <rect x="50" y="13" width="4" height="11" rx="1" fill="#FFFFFF" />
       </svg>
     );
   }
@@ -374,17 +384,15 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "mirror") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg mirror-svg" aria-hidden="true">
-        {/* Ściana / rama montażowa */}
-        <rect x="10" y="6" width="52" height="8" rx="2" fill="#73A8C7" stroke="#FFFFFF" strokeWidth="2" />
+        {/* Rama lustra */}
+        <rect x="10" y="8" width="52" height="7" rx="1.5" fill="#73A8C7" stroke="#FFFFFF" strokeWidth="1.5" />
         {/* Tafla szklana - blik */}
-        <line x1="18" y1="10" x2="54" y2="10" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Stożek pola odbicia światła i energii Qi */}
-        <path d="M 16 14 L 4 64 L 68 64 L 56 14 Z" fill="rgba(115, 168, 199, 0.4)" stroke="rgba(115, 168, 199, 0.95)" strokeWidth="2" strokeDasharray="4 3" />
-        {/* Promienie odbicia */}
-        <line x1="36" y1="15" x2="36" y2="58" stroke="#C49544" strokeWidth="2" strokeDasharray="3 3" />
-        {/* Punkt widzenia */}
-        <circle cx="36" cy="40" r="4.5" fill="#C49544" />
-        <circle cx="36" cy="40" r="2" fill="#10221F" />
+        <line x1="16" y1="11.5" x2="56" y2="11.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
+        {/* Stożek pola odbicia */}
+        <path d="M 16 15 L 6 62 L 66 62 L 56 15 Z" fill="rgba(115, 168, 199, 0.25)" stroke="rgba(115, 168, 199, 0.85)" strokeWidth="1.5" strokeDasharray="3 3" />
+        {/* Oś odbicia */}
+        <line x1="36" y1="16" x2="36" y2="58" stroke="#C49544" strokeWidth="1.5" strokeDasharray="3 3" />
+        <circle cx="36" cy="40" r="3.5" fill="#C49544" />
       </svg>
     );
   }
@@ -392,17 +400,16 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "sofa") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        {/* Siedzisko */}
-        <rect x="14" y="18" width="44" height="28" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
-        {/* Grube oparcie tylne */}
-        <path d="M 8 16 Q 36 8 64 16" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" fill="none" />
-        <path d="M 10 16 Q 36 8 62 16" stroke="#C49544" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        {/* Korpus sofy */}
+        <rect x="11" y="14" width="50" height="44" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
+        {/* Oparcie tylne */}
+        <rect x="11" y="12" width="50" height="11" rx="2" fill="#C49544" stroke="#FFFFFF" strokeWidth="1" />
         {/* Podłokietniki */}
-        <rect x="7" y="15" width="8" height="34" rx="4" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
-        <rect x="57" y="15" width="8" height="34" rx="4" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
-        {/* 2 poduchy siedziska */}
-        <rect x="17" y="20" width="18" height="24" rx="3" fill="#1E3F39" stroke="#C49544" strokeWidth="1.2" />
-        <rect x="37" y="20" width="18" height="24" rx="3" fill="#1E3F39" stroke="#C49544" strokeWidth="1.2" />
+        <rect x="9" y="12" width="6" height="46" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="57" y="12" width="6" height="46" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        {/* 2 poduszki siedziska */}
+        <rect x="17" y="25" width="18" height="30" rx="2" fill="#1E3F39" stroke="#C49544" strokeWidth="1" />
+        <rect x="37" y="25" width="18" height="30" rx="2" fill="#1E3F39" stroke="#C49544" strokeWidth="1" />
       </svg>
     );
   }
@@ -411,14 +418,14 @@ function renderFurnitureSymbol(label: string) {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg stove-svg" aria-hidden="true">
         {/* Płyta ceramiczna */}
-        <rect x="12" y="12" width="48" height="48" rx="5" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        <rect x="12" y="12" width="48" height="48" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
         {/* 4 pola grzewcze */}
-        <circle cx="26" cy="26" r="8" fill="none" stroke="#FFFFFF" strokeWidth="2" />
-        <circle cx="46" cy="26" r="9" fill="none" stroke="#FFFFFF" strokeWidth="2" />
-        <circle cx="26" cy="46" r="7" fill="none" stroke="#FFFFFF" strokeWidth="2" />
-        <circle cx="46" cy="46" r="8" fill="none" stroke="#FFFFFF" strokeWidth="2" />
+        <circle cx="26" cy="26" r="7.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+        <circle cx="46" cy="26" r="8.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+        <circle cx="26" cy="46" r="6.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+        <circle cx="46" cy="46" r="7.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
         {/* Panel dotykowy */}
-        <line x1="24" y1="54" x2="48" y2="54" stroke="#C49544" strokeWidth="3" strokeLinecap="round" />
+        <line x1="24" y1="54" x2="48" y2="54" stroke="#C49544" strokeWidth="2.5" strokeLinecap="round" />
       </svg>
     );
   }
@@ -427,14 +434,14 @@ function renderFurnitureSymbol(label: string) {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg table-svg" aria-hidden="true">
         {/* Blat stołu */}
-        <rect x="18" y="20" width="36" height="32" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        <rect x="18" y="20" width="36" height="32" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
         {/* 4 Krzesła dookoła */}
-        <rect x="26" y="11" width="20" height="7" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="26" y="54" width="20" height="7" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="9" y="26" width="7" height="20" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="56" y="26" width="7" height="20" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="25" y="12" width="22" height="6" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="25" y="54" width="22" height="6" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="10" y="25" width="6" height="22" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="56" y="25" width="6" height="22" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
         {/* Dekoracja środka stołu */}
-        <circle cx="36" cy="36" r="4.5" fill="none" stroke="#C49544" strokeWidth="1.5" />
+        <circle cx="36" cy="36" r="4" fill="none" stroke="#C49544" strokeWidth="1.2" />
       </svg>
     );
   }
@@ -443,12 +450,12 @@ function renderFurnitureSymbol(label: string) {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg storage-svg" aria-hidden="true">
         {/* Korpus szafy */}
-        <rect x="12" y="20" width="48" height="32" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        <rect x="12" y="18" width="48" height="36" rx="2" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
         {/* Półki */}
-        <line x1="28" y1="20" x2="28" y2="52" stroke="#FFFFFF" strokeWidth="1.5" opacity="0.8" />
-        <line x1="44" y1="20" x2="44" y2="52" stroke="#FFFFFF" strokeWidth="1.5" opacity="0.8" />
+        <line x1="28" y1="18" x2="28" y2="54" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.75" />
+        <line x1="44" y1="18" x2="44" y2="54" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.75" />
         {/* Front */}
-        <line x1="12" y1="20" x2="60" y2="20" stroke="#C49544" strokeWidth="3" />
+        <line x1="12" y1="18" x2="60" y2="18" stroke="#C49544" strokeWidth="2.5" />
       </svg>
     );
   }
@@ -1936,7 +1943,7 @@ function getKuaDirectionFeedback(
                                   {renderFurnitureSymbol(marker.label)}
                                   {marker.assignedResidentLabel ? (
                                     <span className="furniture-floating-tag">
-                                      <span className="resident-tag-highlight">👤 {marker.assignedResidentLabel}</span>
+                                      <span className="resident-tag-highlight">{getResidentInitials(marker.assignedResidentLabel)}</span>
                                     </span>
                                   ) : null}
                                 </div>
@@ -2047,7 +2054,7 @@ function getKuaDirectionFeedback(
                                 }}
                               >
                                 <UserRound size={13} />
-                                <span>{marker.assignedResidentLabel ? marker.assignedResidentLabel.split(" ")[0] : "Przypisz"}</span>
+                                <span>{marker.assignedResidentLabel ? getResidentInitials(marker.assignedResidentLabel) : "Przypisz"}</span>
                               </button>
                             ) : null}
 

@@ -4329,11 +4329,71 @@ body {
   background: #73A8C7;
 }
 
+.north-wizard.plan-expanded .scan-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  padding: 10px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.north-wizard.plan-expanded .scan-canvas-stage {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-height: calc(100dvh - 76px);
+  max-width: calc(100vw - 370px);
+  margin: auto;
+}
+
+.north-wizard.plan-expanded .scan-image-elem,
+.north-wizard.plan-expanded .scan-canvas-stage img,
+.north-wizard.plan-expanded .scan-canvas-stage object {
+  width: auto;
+  height: auto;
+  min-width: min(760px, calc(100vw - 380px));
+  min-height: min(600px, calc(100dvh - 90px));
+  max-height: calc(100dvh - 76px);
+  max-width: calc(100vw - 370px);
+  object-fit: contain;
+  margin: auto;
+  display: block;
+}
+
+.scan-preview-placeholder {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 40px 24px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.scan-preview-placeholder svg {
+  color: var(--sage);
+}
+
+.scan-annotation-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
 /* Choice Grid & Toolbar for Furniture */
 .choice-grid.furniture-choice-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .furniture-tool-btn {
@@ -4342,51 +4402,60 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 6px;
-  min-height: 72px;
+  padding: 10px 8px;
+  min-height: 84px;
   border: 1.5px solid var(--line);
-  border-radius: 9px;
-  background: rgba(255, 254, 251, 0.88);
+  border-radius: 10px;
+  background: #FFFFFF;
   color: var(--ink);
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(16, 34, 31, 0.04);
 }
 
 .furniture-tool-btn:hover {
   border-color: #C49544;
-  background: #FFFFFF;
+  background: #FFFDF9;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(196, 149, 68, 0.15);
+  box-shadow: 0 6px 14px rgba(196, 149, 68, 0.16);
 }
 
 .furniture-tool-btn.selected {
   border-color: #C49544;
-  background: #10221F;
-  color: #FFFDFB;
-  box-shadow: 0 6px 18px rgba(16, 34, 31, 0.25);
+  background: #FDFBF7;
+  color: var(--ink);
+  box-shadow: 0 0 0 2px #C49544, 0 6px 18px rgba(16, 34, 31, 0.12);
   transform: translateY(-1px);
 }
 
 .furniture-tool-btn .furniture-tool-icon {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 7px;
-  background: rgba(16, 34, 31, 0.95);
-  border: 1px solid #C49544;
-  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 0;
+  background: transparent !important;
+  border: none !important;
+  padding: 0;
 }
 
 .furniture-tool-btn.selected .furniture-tool-icon {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: #FFFDFB;
+  background: transparent !important;
+  border: none !important;
+}
+
+.furniture-tool-btn .furniture-tool-icon svg {
+  width: 42px;
+  height: 42px;
+  filter: drop-shadow(0 2px 4px rgba(16, 34, 31, 0.15));
 }
 
 .furniture-tool-btn .furniture-tool-name {
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 800;
   text-align: center;
+  color: var(--ink);
   line-height: 1.2;
 }
 
@@ -4418,14 +4487,14 @@ body {
   transform: rotate(var(--marker-facing, 0deg)) scale(var(--marker-scale, 1));
   transform-origin: 50% 50%;
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 2px 5px rgba(16, 34, 31, 0.35));
 }
 
 .plan-marker.furniture.selected .arch-furniture-piece {
   border: none !important;
   box-shadow: none !important;
-  filter: drop-shadow(0 0 4px #FFFFFF) drop-shadow(0 0 10px #C49544) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
-  transform: rotate(var(--marker-facing, 0deg)) scale(calc(var(--marker-scale, 1) * 1.08));
+  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 4px 10px rgba(16, 34, 31, 0.5));
+  transform: rotate(var(--marker-facing, 0deg)) scale(calc(var(--marker-scale, 1) * 1.05));
 }
 
 .plan-marker.furniture .furniture-floating-tag {
