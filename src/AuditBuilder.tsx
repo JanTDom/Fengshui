@@ -348,16 +348,18 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "bed") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg bed-svg" aria-hidden="true">
-        {/* Materac łóżka */}
-        <rect x="14" y="12" width="44" height="52" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
-        {/* Solidne wezgłowie oparte o ścianę (na górze przy kącie 0°) */}
-        <rect x="12" y="6" width="48" height="7" rx="1.5" fill="#C49544" stroke="#FFFFFF" strokeWidth="1" />
-        {/* Dwie poduszki przy wezgłowiu */}
-        <rect x="18" y="16" width="16" height="11" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="38" y="16" width="16" height="11" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        {/* Pościel / narzuta */}
-        <path d="M 14 34 L 58 34 L 58 64 L 14 64 Z" fill="#1E3F39" stroke="#C49544" strokeWidth="1" />
-        <line x1="14" y1="34" x2="58" y2="34" stroke="#FFFFFF" strokeWidth="1.5" strokeDasharray="3 2" />
+        {/* Rama i materac łóżka - jasny kremowy len */}
+        <rect x="13" y="10" width="46" height="54" rx="3" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
+        {/* Solidne drewniane wezgłowie na górze (oparte o ścianę) */}
+        <rect x="11" y="5" width="50" height="7" rx="1.5" fill="#C49544" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Dwie miękkie białe poduszki przy wezgłowiu */}
+        <rect x="16" y="14" width="17" height="12" rx="2" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
+        <rect x="39" y="14" width="17" height="12" rx="2" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
+        {/* Wywinięte prześcieradło */}
+        <rect x="13" y="28" width="46" height="6" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
+        {/* Ciepła narzuta / kołdra z przeszyciem */}
+        <path d="M 13 34 L 59 34 L 59 64 L 13 64 Z" fill="#E8E2D5" stroke="#1A2B27" strokeWidth="1.6" />
+        <line x1="13" y1="48" x2="59" y2="48" stroke="#C49544" strokeWidth="1.5" strokeDasharray="3 2" />
       </svg>
     );
   }
@@ -365,18 +367,24 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "desk") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg desk-svg" aria-hidden="true">
-        {/* Blat biurka */}
-        <rect x="12" y="32" width="48" height="26" rx="2" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
-        {/* Monitor na blacie */}
-        <rect x="23" y="35" width="26" height="5" rx="1" fill="#FFFFFF" />
-        {/* Klawiatura */}
-        <rect x="26" y="44" width="20" height="4" rx="1" fill="#C49544" />
-        {/* Krzesło biurowe za biurkiem */}
-        <rect x="24" y="12" width="24" height="16" rx="3" fill="#1E3F39" stroke="#C49544" strokeWidth="1.5" />
-        <rect x="20" y="10" width="32" height="6" rx="2" fill="#C49544" />
+        {/* Blat biurka - jasne naturalne drewno */}
+        <rect x="10" y="8" width="52" height="28" rx="2" fill="#F4EFE6" stroke="#1A2B27" strokeWidth="2" />
+        {/* Monitor ultra-wide na środku blatu */}
+        <rect x="22" y="12" width="28" height="4.5" rx="1" fill="#1A2B27" stroke="#C49544" strokeWidth="1" />
+        <rect x="32" y="16.5" width="8" height="2" fill="#C49544" />
+        {/* Klawiatura i podkładka */}
+        <rect x="25" y="22" width="22" height="6" rx="1" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1" />
+        {/* Fotel biurowy obrotowy (człowiek siedzi tyłem do dołu, patrząc w monitor w górę) */}
+        {/* Podstawa 5-ramienna fotela */}
+        <circle cx="36" cy="51" r="5" fill="#C49544" stroke="#1A2B27" strokeWidth="1.2" />
+        {/* Siedzisko fotela */}
+        <rect x="24" y="42" width="24" height="18" rx="4" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Oparcie pleców fotela */}
+        <path d="M 18 57 Q 36 63 54 57" stroke="#1A2B27" strokeWidth="4" strokeLinecap="round" fill="none" />
+        <path d="M 18 57 Q 36 63 54 57" stroke="#C49544" strokeWidth="2" strokeLinecap="round" fill="none" />
         {/* Podłokietniki */}
-        <rect x="18" y="13" width="4" height="11" rx="1" fill="#FFFFFF" />
-        <rect x="50" y="13" width="4" height="11" rx="1" fill="#FFFFFF" />
+        <rect x="18" y="44" width="4" height="12" rx="1.5" fill="#C49544" stroke="#1A2B27" strokeWidth="1" />
+        <rect x="50" y="44" width="4" height="12" rx="1.5" fill="#C49544" stroke="#1A2B27" strokeWidth="1" />
       </svg>
     );
   }
@@ -384,15 +392,16 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "mirror") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg mirror-svg" aria-hidden="true">
-        {/* Rama lustra */}
-        <rect x="10" y="8" width="52" height="7" rx="1.5" fill="#73A8C7" stroke="#FFFFFF" strokeWidth="1.5" />
-        {/* Tafla szklana - blik */}
-        <line x1="16" y1="11.5" x2="56" y2="11.5" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" />
-        {/* Stożek pola odbicia */}
-        <path d="M 16 15 L 6 62 L 66 62 L 56 15 Z" fill="rgba(115, 168, 199, 0.25)" stroke="rgba(115, 168, 199, 0.85)" strokeWidth="1.5" strokeDasharray="3 3" />
-        {/* Oś odbicia */}
-        <line x1="36" y1="16" x2="36" y2="58" stroke="#C49544" strokeWidth="1.5" strokeDasharray="3 3" />
-        <circle cx="36" cy="40" r="3.5" fill="#C49544" />
+        {/* Ścienna rama montażowa lustra */}
+        <rect x="8" y="7" width="56" height="6.5" rx="1.5" fill="#C49544" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Błyszcząca tafla lustra z blikiem */}
+        <rect x="10" y="8" width="52" height="4.5" rx="1" fill="#73A8C7" />
+        <line x1="16" y1="10" x2="56" y2="10" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" />
+        {/* Stożek odbicia światła i energii Qi w głąb pokoju */}
+        <path d="M 14 14 L 4 64 L 68 64 L 58 14 Z" fill="rgba(115, 168, 199, 0.22)" stroke="#73A8C7" strokeWidth="1.5" strokeDasharray="3 3" />
+        {/* Promień osiowy odbicia */}
+        <line x1="36" y1="14" x2="36" y2="58" stroke="#C49544" strokeWidth="1.5" strokeDasharray="3 3" />
+        <circle cx="36" cy="40" r="3.5" fill="#C49544" stroke="#1A2B27" strokeWidth="1" />
       </svg>
     );
   }
@@ -400,16 +409,20 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "sofa") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        {/* Korpus sofy */}
-        <rect x="11" y="14" width="50" height="44" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
-        {/* Oparcie tylne */}
-        <rect x="11" y="12" width="50" height="11" rx="2" fill="#C49544" stroke="#FFFFFF" strokeWidth="1" />
-        {/* Podłokietniki */}
-        <rect x="9" y="12" width="6" height="46" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="57" y="12" width="6" height="46" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        {/* 2 poduszki siedziska */}
-        <rect x="17" y="25" width="18" height="30" rx="2" fill="#1E3F39" stroke="#C49544" strokeWidth="1" />
-        <rect x="37" y="25" width="18" height="30" rx="2" fill="#1E3F39" stroke="#C49544" strokeWidth="1" />
+        {/* Główny korpus i podstawa kanapy */}
+        <rect x="10" y="10" width="52" height="50" rx="4" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
+        {/* Solidne, grube oparcie z tyłu na górze (oparte o ścianę) */}
+        <rect x="10" y="8" width="52" height="14" rx="3" fill="#D4A757" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Szwy ozdobne na oparciu */}
+        <line x1="36" y1="8" x2="36" y2="22" stroke="#1A2B27" strokeWidth="1.2" strokeDasharray="2 2" />
+        {/* Lewy i prawy wyściełany podłokietnik */}
+        <rect x="8" y="10" width="8" height="48" rx="3" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+        <rect x="56" y="10" width="8" height="48" rx="3" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Dwie głębokie, wygodne poduchy siedziska (otwarte ku dołowi - w tę stronę się siedzi!) */}
+        <rect x="18" y="24" width="17" height="34" rx="3" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.5" />
+        <rect x="37" y="24" width="17" height="34" rx="3" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.5" />
+        {/* Przednia krawędź siedziska */}
+        <line x1="16" y1="58" x2="56" y2="58" stroke="#C49544" strokeWidth="2" />
       </svg>
     );
   }
@@ -417,15 +430,19 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "stove") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg stove-svg" aria-hidden="true">
-        {/* Płyta ceramiczna */}
-        <rect x="12" y="12" width="48" height="48" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
-        {/* 4 pola grzewcze */}
-        <circle cx="26" cy="26" r="7.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
-        <circle cx="46" cy="26" r="8.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
-        <circle cx="26" cy="46" r="6.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
-        <circle cx="46" cy="46" r="7.5" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
-        {/* Panel dotykowy */}
-        <line x1="24" y1="54" x2="48" y2="54" stroke="#C49544" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Szklany blat płyty indukcyjnej */}
+        <rect x="11" y="11" width="50" height="50" rx="4" fill="#243330" stroke="#C49544" strokeWidth="2" />
+        {/* 4 pola grzewcze - białe pierścienie */}
+        <circle cx="25" cy="25" r="8" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+        <circle cx="25" cy="25" r="3" fill="#C49544" />
+        <circle cx="47" cy="25" r="9" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+        <circle cx="47" cy="25" r="4" fill="#C49544" />
+        <circle cx="25" cy="47" r="7" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+        <circle cx="25" cy="47" r="2.5" fill="#C49544" />
+        <circle cx="47" cy="47" r="8" fill="none" stroke="#FFFFFF" strokeWidth="1.8" />
+        <circle cx="47" cy="47" r="3" fill="#C49544" />
+        {/* Panel dotykowy sterowania */}
+        <rect x="23" y="55" width="26" height="3" rx="1" fill="#C49544" />
       </svg>
     );
   }
@@ -433,15 +450,23 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "table") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg table-svg" aria-hidden="true">
-        {/* Blat stołu */}
-        <rect x="18" y="20" width="36" height="32" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
-        {/* 4 Krzesła dookoła */}
-        <rect x="25" y="12" width="22" height="6" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="25" y="54" width="22" height="6" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="10" y="25" width="6" height="22" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        <rect x="56" y="25" width="6" height="22" rx="1.5" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
-        {/* Dekoracja środka stołu */}
-        <circle cx="36" cy="36" r="4" fill="none" stroke="#C49544" strokeWidth="1.2" />
+        {/* Blat stołu - jasny dąb */}
+        <rect x="18" y="18" width="36" height="36" rx="3" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
+        {/* Usłojenie / ozdoba środka */}
+        <circle cx="36" cy="36" r="4.5" fill="none" stroke="#C49544" strokeWidth="1.4" />
+        {/* 4 Krzesła dookoła stołu (widoczne zaokrąglone oparcia) */}
+        {/* Krzesło góra */}
+        <rect x="24" y="8" width="24" height="8" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
+        <line x1="24" y1="13" x2="48" y2="13" stroke="#C49544" strokeWidth="1.2" />
+        {/* Krzesło dół */}
+        <rect x="24" y="56" width="24" height="8" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
+        <line x1="24" y1="59" x2="48" y2="59" stroke="#C49544" strokeWidth="1.2" />
+        {/* Krzesło lewo */}
+        <rect x="8" y="24" width="8" height="24" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
+        <line x1="13" y1="24" x2="13" y2="48" stroke="#C49544" strokeWidth="1.2" />
+        {/* Krzesło prawo */}
+        <rect x="56" y="24" width="8" height="24" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
+        <line x1="59" y1="24" x2="59" y2="48" stroke="#C49544" strokeWidth="1.2" />
       </svg>
     );
   }
@@ -449,21 +474,23 @@ function renderFurnitureSymbol(label: string) {
   if (symbolClass === "storage") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg storage-svg" aria-hidden="true">
-        {/* Korpus szafy */}
-        <rect x="12" y="18" width="48" height="36" rx="2" fill="#10221F" stroke="#C49544" strokeWidth="2.2" />
-        {/* Półki */}
-        <line x1="28" y1="18" x2="28" y2="54" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.75" />
-        <line x1="44" y1="18" x2="44" y2="54" stroke="#FFFFFF" strokeWidth="1.2" opacity="0.75" />
-        {/* Front */}
-        <line x1="12" y1="18" x2="60" y2="18" stroke="#C49544" strokeWidth="2.5" />
+        {/* Korpus szafy - jasne drewno */}
+        <rect x="10" y="16" width="52" height="40" rx="2" fill="#F4EFE6" stroke="#1A2B27" strokeWidth="2" />
+        {/* Prowadnice / podział skrzydeł drzwi */}
+        <line x1="36" y1="16" x2="36" y2="56" stroke="#1A2B27" strokeWidth="1.5" />
+        {/* Uchwyty meblowe w złotym kolorze */}
+        <rect x="33" y="32" width="2" height="8" rx="0.5" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
+        <rect x="37" y="32" width="2" height="8" rx="0.5" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
+        {/* Front oznaczony złotą listwą */}
+        <line x1="10" y1="16" x2="62" y2="16" stroke="#C49544" strokeWidth="2.5" />
       </svg>
     );
   }
 
   return (
     <svg viewBox="0 0 72 72" className="arch-furniture-svg generic-svg" aria-hidden="true">
-      <rect x="16" y="16" width="40" height="40" rx="5" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
-      <path d="M 36 46 L 36 22 M 28 30 L 36 20 L 44 30" stroke="#C49544" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="14" y="14" width="44" height="44" rx="4" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
+      <path d="M 36 46 L 36 22 M 28 30 L 36 20 L 44 30" stroke="#C49544" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
