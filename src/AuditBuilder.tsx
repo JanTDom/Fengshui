@@ -34,6 +34,7 @@ import {
 import { methods, pricePlans, propertyTypes, type PropertyKey } from "./data";
 import type { AuditReport, AuditRequestPayload, ResidentProfile } from "./auditTypes";
 import {
+  createPlanSectorOverlayImage,
   downloadReportJson,
   downloadReportPdf,
   fileToPayload,
@@ -43,6 +44,8 @@ import {
   validateAuditFiles
 } from "./lib/auditClient";
 import { triggerBrandConfetti } from "./lib/confetti";
+import { calculateKua, type KuaResult } from "./lib/kuaEngine";
+import { getBuildingPeriod } from "./lib/natalChartEngine";
 import type { PlanMarker } from "./auditTypes";
 
 const purposeOptions = [
@@ -89,6 +92,7 @@ const fixedElementOptions = [
 const furnitureOptions = [
   "Łóżko",
   "Biurko",
+  "Lustro",
   "Sofa",
   "Stół",
   "Płyta/kuchenka",
@@ -100,9 +104,9 @@ const furnitureOptions = [
 const previewablePlanTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 const annotationModes = [
-  { key: "room", label: "Pomieszczenie", hint: "funkcja" },
-  { key: "fixed", label: "Stały punkt", hint: "wejście, okno" },
-  { key: "furniture", label: "Mebel", hint: "kierunek osoby" }
+  { key: "furniture", label: "Meble & Wyposażenie", hint: "łóżko, biurko, lustro, sofa" },
+  { key: "fixed", label: "Punkty stałe", hint: "wejście, okno, schody" },
+  { key: "room", label: "Pomieszczenia", hint: "sypialnia, salon, kuchnia" }
 ] as const;
 
 type AnnotationMode = (typeof annotationModes)[number]["key"];
@@ -111,6 +115,7 @@ type ScanTool = "north" | "marker";
 const furnitureOrientationRoles: Record<string, string[]> = {
   "Łóżko": ["strona głowy / wezgłowie"],
   "Biurko": ["kierunek patrzenia osoby siedzącej", "strona pleców osoby siedzącej"],
+  "Lustro": ["kierunek odbicia tafli lustra", "plecy / ściana za lustrem"],
   "Sofa": ["kierunek patrzenia osoby siedzącej na sofie", "oparcie sofy"],
   "Stół": ["główne miejsce siedzenia", "dłuższa oś stołu"],
   "Płyta/kuchenka": ["kierunek podejścia osoby do płyty/kuchenki", "front osoby gotującej", "ściana za płytą/kuchenką"],
@@ -158,24 +163,6 @@ type ResidentProfileForm = ResidentProfile & {
   id: string;
 };
 
-type AuditDraft = {
-  form: Partial<AuditForm>;
-  propertyKey: PropertyKey;
-  selectedPlan: string;
-  northAngle: number;
-  northConfirmed: boolean;
-  scanTool: ScanTool;
-  roomFunctions: string[];
-  fixedElements: string[];
-  furnitureItems: string[];
-  annotationMode: AnnotationMode;
-  selectedMarkerLabel: string;
-  furnitureDirection: number;
-  furnitureOrientationRole: string;
-  planMarkers: PlanMarker[];
-  savedAt: string;
-};
-
 function initialLevels(propertyKey: PropertyKey) {
   return propertyKey === "multi" || propertyKey === "house" ? "2" : "1";
 }
@@ -183,12 +170,14 @@ function initialLevels(propertyKey: PropertyKey) {
 function createResidentProfile(index: number, values: Partial<ResidentProfileForm> = {}): ResidentProfileForm {
   return {
     id: values.id ?? `resident-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    label: values.label ?? `Mieszkaniec ${index}`,
+    label: values.label ?? (index === 1 ? "Główny domownik" : `Mieszkaniec ${index}`),
     role: values.role ?? "",
     birthDate: values.birthDate ?? "",
     birthTime: values.birthTime ?? "",
     birthPlace: values.birthPlace ?? "",
-    formulaCategory: values.formulaCategory ?? "",
+    gender: values.gender ?? "male",
+    assignedFurniture: values.assignedFurniture ?? [],
+    formulaCategory: values.formulaCategory ?? "kua-gua",
     note: values.note ?? ""
   };
 }
@@ -215,6 +204,8 @@ function residentPayloadFromProfiles(profiles: ResidentProfileForm[]) {
       birthDate: profile.birthDate.trim(),
       birthTime: profile.birthTime.trim(),
       birthPlace: profile.birthPlace.trim(),
+      gender: profile.gender || "male",
+      assignedFurniture: profile.assignedFurniture || [],
       formulaCategory: profile.formulaCategory.trim(),
       note: profile.note.trim()
     }));
@@ -239,36 +230,32 @@ function normalizeAngle(value: number) {
 function scanDirectionLabel(angle: number) {
   const normalized = normalizeAngle(angle);
 
-  if (normalized >= 338 || normalized <= 22) return "górna krawędź skanu";
-  if (normalized <= 67) return "prawy górny narożnik";
-  if (normalized <= 112) return "prawa krawędź skanu";
-  if (normalized <= 157) return "prawy dolny narożnik";
-  if (normalized <= 202) return "dolna krawędź skanu";
-  if (normalized <= 247) return "lewy dolny narożnik";
-  if (normalized <= 292) return "lewa krawędź skanu";
-  return "lewy górny narożnik";
+  if (normalized >= 338 || normalized <= 22) return "góra skanu (górna ściana, 0°)";
+  if (normalized <= 67) return "prawy górny róg (45°)";
+  if (normalized <= 112) return "prawa strona (prawa ściana, 90°)";
+  if (normalized <= 157) return "prawy dolny róg (135°)";
+  if (normalized <= 202) return "dół skanu (dolna ściana, 180°)";
+  if (normalized <= 247) return "lewy dolny róg (225°)";
+  if (normalized <= 292) return "lewa strona (lewa ściana, 270°)";
+  return "lewy górny róg (315°)";
 }
 
 function defaultFurnitureOrientationRole(label: string) {
-  return furnitureOrientationRoles[label]?.[0] ?? "front / kierunek używania";
+  return furnitureOrientationRoles[label]?.[0] ?? "kierunek ustawienia";
 }
 
-function furnitureOrientationNote(label: string, role: string, direction: number) {
+function furnitureOrientationNote(label: string, _role: string, direction: number, assignedResident?: string | null) {
   const normalized = normalizeAngle(direction);
-  return `${label}: ${role}; kierunek: ${scanDirectionLabel(normalized)} (${normalized}° względem góry pliku).`;
+  const residentSuffix = assignedResident ? ` (domownik: ${assignedResident})` : "";
+  return `${label}${residentSuffix} · ${normalized}°`;
 }
 
-function furnitureDirectionHelp(label: string) {
-  if (label === "Łóżko") return "Obróć ikonę tak, aby głowa leżącej osoby była przy wezgłowiu. Dodatkowa strzałka nie jest potrzebna.";
-  if (label === "Sofa") return "Strzałka pokazuje, w którą stronę patrzy osoba siedząca na sofie.";
-  if (label === "Płyta/kuchenka" || label === "Kuchenka") return "Strzałka pokazuje kierunek podejścia osoby do płyty/kuchenki.";
-  if (label === "Biurko" || label === "Miejsce pracy") return "Strzałka pokazuje, w którą stronę patrzy osoba siedząca.";
-  if (label === "Stół") return "Strzałka pokazuje główny kierunek siedzenia przy stole.";
-  return "Strzałka pokazuje front albo kierunek używania mebla.";
+function furnitureDirectionHelp(_label: string) {
+  return "Dopasuj kąt obrotu mebla do układu ścian na rzucie.";
 }
 
-function furnitureDirectionControlLabel(label: string) {
-  return label === "Łóżko" ? "Co oznacza obrót łóżka" : "Co oznacza strzałka przy tym meblu";
+function furnitureDirectionControlLabel(_label: string) {
+  return "Obrót mebla";
 }
 
 function markerCountText(count: number) {
@@ -308,8 +295,10 @@ function markerShortLabel(marker: PlanMarker) {
     "Miejsce pracy": "Praca",
     "Recepcja/kasa": "Kasa"
   };
-  const label = aliases[marker.label] ?? marker.label.replace("/WC", "");
-  return label.length > 9 ? `${label.slice(0, 8).trim()}...` : label;
+  const base = aliases[marker.label] ?? marker.label.replace("/WC", "");
+  const resident = marker.assignedResidentLabel ? ` · ${marker.assignedResidentLabel.split(" ")[0]}` : "";
+  const full = `${base}${resident}`;
+  return full.length > 14 ? `${full.slice(0, 13).trim()}...` : full;
 }
 
 function markerCategoryLabel(marker: PlanMarker) {
@@ -333,6 +322,7 @@ function annotationHelpText(mode: AnnotationMode) {
 function furnitureSymbolClass(label: string) {
   if (label === "Łóżko") return "bed";
   if (label === "Biurko" || label === "Miejsce pracy") return "desk";
+  if (label === "Lustro") return "mirror";
   if (label === "Sofa") return "sofa";
   if (label === "Stół") return "table";
   if (label === "Płyta/kuchenka" || label === "Kuchenka") return "stove";
@@ -346,88 +336,127 @@ function renderFurnitureSymbol(label: string) {
 
   if (symbolClass === "bed") {
     return (
-      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg bed-svg" aria-hidden="true">
-        {/* Rama łóżka */}
-        <rect x="2" y="2" width="34" height="22" rx="3" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" strokeWidth="1.6" />
-        {/* Wezgłowie (głowa) po lewej */}
-        <rect x="3" y="3" width="5" height="20" rx="1.5" fill="#FFFFFF" opacity="0.9" />
-        {/* Poduszki */}
-        <rect x="9" y="4" width="7" height="8" rx="2" fill="#FFFFFF" opacity="0.65" />
-        <rect x="9" y="14" width="7" height="8" rx="2" fill="#FFFFFF" opacity="0.65" />
-        {/* Linia kołdry */}
-        <line x1="18" y1="3" x2="18" y2="23" stroke="#FFFFFF" strokeWidth="1.2" strokeDasharray="2 2" opacity="0.7" />
-        {/* Strzałka kierunku patrzenia / leżenia */}
-        <path d="M 26 13 L 33 13 M 30 10 L 33 13 L 30 16" stroke="#C49544" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg bed-svg" aria-hidden="true">
+        {/* Materac łóżka */}
+        <rect x="14" y="10" width="44" height="54" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        {/* Solidne wezgłowie oparte o ścianę (na górze przy kącie 0°) */}
+        <rect x="11" y="4" width="50" height="8" rx="2" fill="#C49544" stroke="#FFFFFF" strokeWidth="1" />
+        {/* Dwie poduszki przy wezgłowiu */}
+        <rect x="17" y="15" width="17" height="12" rx="3" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
+        <rect x="38" y="15" width="17" height="12" rx="3" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
+        {/* Pościel / narzuta */}
+        <path d="M 14 34 L 58 34 L 58 64 L 14 64 Z" fill="#1E3F39" stroke="#C49544" strokeWidth="1.2" />
+        <line x1="14" y1="34" x2="58" y2="34" stroke="#FFFFFF" strokeWidth="2" strokeDasharray="3 2" />
       </svg>
     );
   }
 
   if (symbolClass === "desk") {
     return (
-      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg desk-svg" aria-hidden="true">
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg desk-svg" aria-hidden="true">
         {/* Blat biurka */}
-        <rect x="2" y="4" width="34" height="18" rx="2.5" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" strokeWidth="1.6" />
-        {/* Monitor / Laptop */}
-        <rect x="13" y="6" width="12" height="4" rx="1" fill="#FFFFFF" opacity="0.9" />
-        {/* Krzesło biurowe */}
-        <rect x="14" y="14" width="10" height="7" rx="3" fill="#FFFFFF" opacity="0.6" />
-        {/* Strzałka wzroku użytkownika (w stronę ekranu/okna) */}
-        <path d="M 19 12 L 19 4 M 16 7 L 19 3 L 22 7" stroke="#C49544" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="10" y="32" width="52" height="26" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        {/* Monitor na blacie */}
+        <rect x="23" y="36" width="26" height="5" rx="1" fill="#FFFFFF" />
+        {/* Klawiatura */}
+        <rect x="26" y="45" width="20" height="4" rx="1" fill="#C49544" />
+        {/* Fotel biurowy za biurkiem */}
+        <rect x="24" y="11" width="24" height="17" rx="4" fill="#1E3F39" stroke="#C49544" strokeWidth="1.6" />
+        {/* Zaokrąglone oparcie za plecami */}
+        <path d="M 18 15 Q 36 8 54 15" stroke="#FFFFFF" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+        {/* Podłokietniki */}
+        <rect x="17" y="12" width="4" height="12" rx="2" fill="#FFFFFF" />
+        <rect x="51" y="12" width="4" height="12" rx="2" fill="#FFFFFF" />
+      </svg>
+    );
+  }
+
+  if (symbolClass === "mirror") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg mirror-svg" aria-hidden="true">
+        {/* Ściana / rama montażowa */}
+        <rect x="10" y="6" width="52" height="8" rx="2" fill="#73A8C7" stroke="#FFFFFF" strokeWidth="2" />
+        {/* Tafla szklana - blik */}
+        <line x1="18" y1="10" x2="54" y2="10" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+        {/* Stożek pola odbicia światła i energii Qi */}
+        <path d="M 16 14 L 4 64 L 68 64 L 56 14 Z" fill="rgba(115, 168, 199, 0.4)" stroke="rgba(115, 168, 199, 0.95)" strokeWidth="2" strokeDasharray="4 3" />
+        {/* Promienie odbicia */}
+        <line x1="36" y1="15" x2="36" y2="58" stroke="#C49544" strokeWidth="2" strokeDasharray="3 3" />
+        {/* Punkt widzenia */}
+        <circle cx="36" cy="40" r="4.5" fill="#C49544" />
+        <circle cx="36" cy="40" r="2" fill="#10221F" />
       </svg>
     );
   }
 
   if (symbolClass === "sofa") {
     return (
-      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        {/* Oparcie tylne */}
-        <rect x="2" y="2" width="34" height="6" rx="2" fill="#FFFFFF" opacity="0.9" />
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg sofa-svg" aria-hidden="true">
+        {/* Siedzisko */}
+        <rect x="14" y="18" width="44" height="28" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        {/* Grube oparcie tylne */}
+        <path d="M 8 16 Q 36 8 64 16" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" fill="none" />
+        <path d="M 10 16 Q 36 8 62 16" stroke="#C49544" strokeWidth="2.5" strokeLinecap="round" fill="none" />
         {/* Podłokietniki */}
-        <rect x="2" y="8" width="5" height="15" rx="2" fill="#FFFFFF" opacity="0.85" />
-        <rect x="31" y="8" width="5" height="15" rx="2" fill="#FFFFFF" opacity="0.85" />
-        {/* Poduchy siedziska */}
-        <rect x="8" y="8" width="10" height="14" rx="2" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.2" />
-        <rect x="20" y="8" width="10" height="14" rx="2" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.2" />
-        {/* Strzałka kierunku patrzenia */}
-        <path d="M 19 14 L 19 23 M 16 20 L 19 24 L 22 20" stroke="#C49544" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="7" y="15" width="8" height="34" rx="4" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
+        <rect x="57" y="15" width="8" height="34" rx="4" fill="#FFFFFF" stroke="#C49544" strokeWidth="1.2" />
+        {/* 2 poduchy siedziska */}
+        <rect x="17" y="20" width="18" height="24" rx="3" fill="#1E3F39" stroke="#C49544" strokeWidth="1.2" />
+        <rect x="37" y="20" width="18" height="24" rx="3" fill="#1E3F39" stroke="#C49544" strokeWidth="1.2" />
       </svg>
     );
   }
 
   if (symbolClass === "stove") {
     return (
-      <svg viewBox="0 0 36 26" width="36" height="26" className="arch-furniture-svg stove-svg" aria-hidden="true">
-        {/* Płyta indukcyjna */}
-        <rect x="2" y="2" width="32" height="22" rx="3" fill="rgba(255,255,255,0.18)" stroke="#FFFFFF" strokeWidth="1.6" />
-        {/* 4 Palniki */}
-        <circle cx="10" cy="8" r="4.5" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
-        <circle cx="26" cy="8" r="5" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
-        <circle cx="10" cy="18" r="3.5" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
-        <circle cx="26" cy="18" r="4" fill="none" stroke="#FFFFFF" strokeWidth="1.5" />
-        {/* Panel sterowania */}
-        <circle cx="18" cy="20" r="1.5" fill="#C49544" />
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg stove-svg" aria-hidden="true">
+        {/* Płyta ceramiczna */}
+        <rect x="12" y="12" width="48" height="48" rx="5" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        {/* 4 pola grzewcze */}
+        <circle cx="26" cy="26" r="8" fill="none" stroke="#FFFFFF" strokeWidth="2" />
+        <circle cx="46" cy="26" r="9" fill="none" stroke="#FFFFFF" strokeWidth="2" />
+        <circle cx="26" cy="46" r="7" fill="none" stroke="#FFFFFF" strokeWidth="2" />
+        <circle cx="46" cy="46" r="8" fill="none" stroke="#FFFFFF" strokeWidth="2" />
+        {/* Panel dotykowy */}
+        <line x1="24" y1="54" x2="48" y2="54" stroke="#C49544" strokeWidth="3" strokeLinecap="round" />
       </svg>
     );
   }
 
   if (symbolClass === "table") {
     return (
-      <svg viewBox="0 0 38 26" width="38" height="26" className="arch-furniture-svg table-svg" aria-hidden="true">
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg table-svg" aria-hidden="true">
         {/* Blat stołu */}
-        <rect x="7" y="5" width="24" height="16" rx="3" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.6" />
-        {/* Krzesła dookoła */}
-        <rect x="13" y="1" width="12" height="3" rx="1.5" fill="#FFFFFF" opacity="0.8" />
-        <rect x="13" y="22" width="12" height="3" rx="1.5" fill="#FFFFFF" opacity="0.8" />
-        <rect x="2" y="9" width="3" height="8" rx="1.5" fill="#FFFFFF" opacity="0.8" />
-        <rect x="33" y="9" width="3" height="8" rx="1.5" fill="#FFFFFF" opacity="0.8" />
+        <rect x="18" y="20" width="36" height="32" rx="4" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        {/* 4 Krzesła dookoła */}
+        <rect x="26" y="11" width="20" height="7" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="26" y="54" width="20" height="7" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="9" y="26" width="7" height="20" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        <rect x="56" y="26" width="7" height="20" rx="2" fill="#FFFFFF" stroke="#C49544" strokeWidth="1" />
+        {/* Dekoracja środka stołu */}
+        <circle cx="36" cy="36" r="4.5" fill="none" stroke="#C49544" strokeWidth="1.5" />
+      </svg>
+    );
+  }
+
+  if (symbolClass === "storage") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg storage-svg" aria-hidden="true">
+        {/* Korpus szafy */}
+        <rect x="12" y="20" width="48" height="32" rx="3" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+        {/* Półki */}
+        <line x1="28" y1="20" x2="28" y2="52" stroke="#FFFFFF" strokeWidth="1.5" opacity="0.8" />
+        <line x1="44" y1="20" x2="44" y2="52" stroke="#FFFFFF" strokeWidth="1.5" opacity="0.8" />
+        {/* Front */}
+        <line x1="12" y1="20" x2="60" y2="20" stroke="#C49544" strokeWidth="3" />
       </svg>
     );
   }
 
   return (
-    <svg viewBox="0 0 34 26" width="34" height="26" className="arch-furniture-svg generic-svg" aria-hidden="true">
-      <rect x="2" y="2" width="30" height="22" rx="3" fill="rgba(255,255,255,0.2)" stroke="#FFFFFF" strokeWidth="1.5" />
-      <path d="M 17 8 L 17 18 M 12 13 L 17 19 L 22 13" stroke="#C49544" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg viewBox="0 0 72 72" className="arch-furniture-svg generic-svg" aria-hidden="true">
+      <rect x="16" y="16" width="40" height="40" rx="5" fill="#10221F" stroke="#C49544" strokeWidth="2.5" />
+      <path d="M 36 46 L 36 22 M 28 30 L 36 20 L 44 30" stroke="#C49544" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -515,60 +544,21 @@ function normalizePlanMarkers(value: unknown) {
     .slice(-48);
 }
 
-function readAuditDraft(): AuditDraft | null {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const rawDraft = window.localStorage.getItem(AUDIT_DRAFT_STORAGE_KEY);
-    if (!rawDraft) return null;
-    const draft = JSON.parse(rawDraft) as Partial<AuditDraft>;
-    if (!draft.form || !draft.propertyKey || !draft.selectedPlan) return null;
-    return draft as AuditDraft;
-  } catch {
-    return null;
-  }
-}
-
-function writeAuditDraft(draft: AuditDraft) {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(AUDIT_DRAFT_STORAGE_KEY, JSON.stringify(draft));
-  } catch {
-    // Autosave is helpful, not critical for generating the report.
-  }
-}
-
 function clearAuditDraft() {
   if (typeof window === "undefined") return;
 
   try {
     window.localStorage.removeItem(AUDIT_DRAFT_STORAGE_KEY);
+    window.localStorage.removeItem("planHarmonii:auditDraft:v1");
+    window.localStorage.clear();
+    window.sessionStorage.clear();
   } catch {
     // Ignore storage failures.
   }
 }
 
-function draftFormFrom(form: AuditForm): Partial<AuditForm> {
-  return {
-    levelsCount: form.levelsCount,
-    usableAreaM2: form.usableAreaM2,
-    purpose: form.purpose,
-    addressNote: form.addressNote,
-    orientationNote: form.orientationNote,
-    entryNote: form.entryNote,
-    roomFunctionNote: form.roomFunctionNote,
-    fixedElementNote: form.fixedElementNote,
-    furnitureNote: form.furnitureNote,
-    constructionYear: form.constructionYear,
-    firstOccupiedYear: form.firstOccupiedYear,
-    moveInDate: form.moveInDate,
-    renovationYear: form.renovationYear,
-    renovationNote: form.renovationNote,
-    formulaCategory: form.formulaCategory,
-    constraintsNote: form.constraintsNote
-  };
-}
+// Natychmiastowe wyczyszczenie przy ładowaniu modułu
+clearAuditDraft();
 
 export function AuditBuilder({
   propertyKey,
@@ -613,9 +603,11 @@ export function AuditBuilder({
   const [fixedElements, setFixedElements] = useState<string[]>(["Wejście główne", "Okno"]);
   const [furnitureItems, setFurnitureItems] = useState<string[]>(["Łóżko", "Biurko", "Sofa"]);
   const [residentProfiles, setResidentProfiles] = useState<ResidentProfileForm[]>(() => [createResidentProfile(1)]);
-  const [annotationMode, setAnnotationMode] = useState<AnnotationMode>("room");
-  const [selectedMarkerLabel, setSelectedMarkerLabel] = useState("Salon");
+  const [showResidentEditorInFurniture, setShowResidentEditorInFurniture] = useState(false);
+  const [annotationMode, setAnnotationMode] = useState<AnnotationMode>("furniture");
+  const [selectedMarkerLabel, setSelectedMarkerLabel] = useState("Łóżko");
   const [furnitureDirection, setFurnitureDirection] = useState(0);
+  const [furnitureScale, setFurnitureScale] = useState(1.0);
   const [furnitureOrientationRole, setFurnitureOrientationRole] = useState(defaultFurnitureOrientationRole("Łóżko"));
   const [planMarkers, setPlanMarkers] = useState<PlanMarker[]>([]);
   const [selectedPlanMarkerId, setSelectedPlanMarkerId] = useState<string | null>(null);
@@ -624,10 +616,30 @@ export function AuditBuilder({
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "reading" | "generating" | "saving" | "ready">("idle");
   const [persistenceMessage, setPersistenceMessage] = useState<string | null>(null);
-  const [draftMessage, setDraftMessage] = useState<string | null>(null);
-  const [draftLoaded, setDraftLoaded] = useState(false);
   const northDialRef = useRef<HTMLDivElement | null>(null);
   const previousPropertyKeyRef = useRef(propertyKey);
+  const planImageRef = useRef<HTMLImageElement | null>(null);
+  const suppressScanClickRef = useRef(false);
+  const lastMarkerPointerTimeRef = useRef(0);
+  const [schematicReportUrl, setSchematicReportUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (report && files[0]) {
+      createPlanSectorOverlayImage(files[0], report, northAngle, planMarkers)
+        .then((url) => {
+          if (active && url) {
+            setSchematicReportUrl(url);
+          }
+        })
+        .catch((err) => console.warn("Schematic overlay rendering error:", err));
+    } else {
+      setSchematicReportUrl(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [report, files, northAngle, planMarkers]);
 
   const activePlan = pricePlans.find((plan) => plan.id === selectedPlan) ?? pricePlans[1];
   const property = propertyTypes.find((item) => item.key === propertyKey) ?? propertyTypes[0];
@@ -681,91 +693,9 @@ export function AuditBuilder({
   }, [propertyKey]);
 
   useEffect(() => {
-    const draft = readAuditDraft();
-    setDraftLoaded(true);
-
-    if (!draft) return;
-
-    const restoredPropertyKey = propertyTypes.some((item) => item.key === draft.propertyKey)
-      ? draft.propertyKey
-      : propertyKey;
-    const restoredSelectedPlan = pricePlans.some((item) => item.id === draft.selectedPlan)
-      ? draft.selectedPlan
-      : selectedPlan;
-    const restoredAnnotationMode = isAnnotationMode(draft.annotationMode) ? draft.annotationMode : "room";
-    const restoredMarkerOptions = markerOptionsForMode(restoredAnnotationMode);
-    const restoredSelectedMarkerLabel =
-      typeof draft.selectedMarkerLabel === "string" && restoredMarkerOptions.includes(draft.selectedMarkerLabel)
-        ? draft.selectedMarkerLabel
-        : restoredMarkerOptions[0];
-    const restoredFurnitureRoles =
-      furnitureOrientationRoles[restoredSelectedMarkerLabel] ?? [defaultFurnitureOrientationRole(restoredSelectedMarkerLabel)];
-    const restoredFurnitureOrientationRole =
-      typeof draft.furnitureOrientationRole === "string" && restoredFurnitureRoles.includes(draft.furnitureOrientationRole)
-        ? draft.furnitureOrientationRole
-        : defaultFurnitureOrientationRole(restoredSelectedMarkerLabel);
-
-    setForm((current) => ({ ...current, ...draft.form }));
-    setPropertyKey(restoredPropertyKey);
-    setSelectedPlan(restoredSelectedPlan);
-    setNorthAngle(normalizeAngle(draft.northAngle ?? 0));
-    setNorthConfirmed(Boolean(draft.northConfirmed));
-    setScanTool(isScanTool(draft.scanTool) ? draft.scanTool : "north");
-    setRoomFunctions(normalizeOptionList(draft.roomFunctions, ["Salon", "Kuchnia", "Sypialnia", "Łazienka/WC"], roomFunctionOptions));
-    setFixedElements(normalizeOptionList(draft.fixedElements, ["Wejście główne", "Okno"], fixedElementOptions));
-    setFurnitureItems(normalizeOptionList(draft.furnitureItems, ["Łóżko", "Biurko", "Sofa"], furnitureOptions));
-    setAnnotationMode(restoredAnnotationMode);
-    setSelectedMarkerLabel(restoredSelectedMarkerLabel);
-    setFurnitureDirection(normalizeAngle(draft.furnitureDirection ?? 0));
-    setFurnitureOrientationRole(restoredFurnitureOrientationRole);
-
-    const restoredMarkers = normalizePlanMarkers(draft.planMarkers);
-    setPlanMarkers(restoredMarkers);
-    setSelectedPlanMarkerId(null);
-    setDraftMessage(
-      restoredMarkers.length > 0
-        ? `Przywróciłem szkic: ${markerCountText(restoredMarkers.length)}. Dodaj ponownie ten sam plan, jeśli podgląd zniknął po odświeżeniu.`
-        : "Przywróciłem ostatni szkic danych przestrzennych. E-mail i dane urodzeniowe nie są zapisywane lokalnie."
-    );
-  }, [setPropertyKey, setSelectedPlan]);
-
-  useEffect(() => {
-    if (!draftLoaded) return;
-
-    writeAuditDraft({
-      form: draftFormFrom(form),
-      propertyKey,
-      selectedPlan,
-      northAngle,
-      northConfirmed,
-      scanTool,
-      roomFunctions,
-      fixedElements,
-      furnitureItems,
-      annotationMode,
-      selectedMarkerLabel,
-      furnitureDirection,
-      furnitureOrientationRole,
-      planMarkers,
-      savedAt: new Date().toISOString()
-    });
-  }, [
-    annotationMode,
-    draftLoaded,
-    fixedElements,
-    form,
-    furnitureDirection,
-    furnitureItems,
-    furnitureOrientationRole,
-    northAngle,
-    northConfirmed,
-    planMarkers,
-    propertyKey,
-    roomFunctions,
-    scanTool,
-    selectedMarkerLabel,
-    selectedPlan
-  ]);
+    // Upewnij się, że po odświeżeniu strony żaden stan z poprzedniego pomiaru nie zostaje przywrócony
+    clearAuditDraft();
+  }, []);
 
   useEffect(() => {
     const firstFile = files[0];
@@ -838,7 +768,8 @@ export function AuditBuilder({
   }
 
   function setNorthFromClientPoint(clientX: number, clientY: number, target: HTMLDivElement) {
-    const rect = target.getBoundingClientRect();
+    const img = planImageRef.current;
+    const rect = (img && img.clientWidth > 0 && img.clientHeight > 0) ? img.getBoundingClientRect() : target.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     const x = clientX - centerX;
@@ -908,13 +839,85 @@ export function AuditBuilder({
   function handleMarkerLabelSelect(label: string) {
     setSelectedMarkerLabel(label);
     setScanTool("marker");
-    setSelectedPlanMarkerId(null);
-    if (annotationMode === "furniture") {
-      setFurnitureOrientationRole(defaultFurnitureOrientationRole(label));
+
+    // If a marker of this label already exists, select it to move/rotate it instead of duplicating
+    const existing = planMarkers.find((m) => m.label === label);
+    if (existing) {
+      setSelectedPlanMarkerId(existing.id);
+      if (existing.category === "furniture") {
+        setFurnitureDirection(existing.facingDeg ?? 0);
+        setFurnitureOrientationRole(existing.orientationRole ?? defaultFurnitureOrientationRole(label));
+      }
+    } else {
+      setSelectedPlanMarkerId(null);
+      if (annotationMode === "furniture") {
+        setFurnitureOrientationRole(defaultFurnitureOrientationRole(label));
+      }
     }
   }
 
-  function updateSelectedFurnitureMarker(updates: { facingDeg?: number; orientationRole?: string }) {
+function getKuaDirectionFeedback(
+  resident: ResidentProfileForm | undefined,
+  directionDeg: number,
+  furnitureLabel: string
+) {
+  if (!resident || !resident.birthDate) return null;
+  const kua = calculateKua(resident.birthDate, resident.gender);
+  if (!kua) return null;
+
+  const normalized = normalizeAngle(directionDeg);
+  const dirNames = ["Północ (N)", "Północny Wschód (NE)", "Wschód (E)", "Południowy Wschód (SE)", "Południe (S)", "Południowy Zachód (SW)", "Zachód (W)", "Północny Zachód (NW)"];
+  const dirIndex = Math.round(normalized / 45) % 8;
+  const currentDir = dirNames[dirIndex];
+
+  const isShengChi = kua.shengChi.toLowerCase().includes(currentDir.slice(0, 4).toLowerCase());
+  const isTianYi = kua.tianYi.toLowerCase().includes(currentDir.slice(0, 4).toLowerCase());
+  const isYanNian = kua.yanNian.toLowerCase().includes(currentDir.slice(0, 4).toLowerCase());
+  const isFuWei = kua.fuWei.toLowerCase().includes(currentDir.slice(0, 4).toLowerCase());
+
+  if (isShengChi) {
+    return {
+      status: "optimal",
+      title: `✨ Sheng Qi (Najwyższa Pomyślność & Sukces) dla: ${resident.label || "Mieszkaniec"}`,
+      text: `${currentDir} to najsilniejszy kierunek generowania witalności i sukcesu. Doskonałe ustawienie ${furnitureLabel.toLowerCase()}!`
+    };
+  }
+  if (isTianYi) {
+    return {
+      status: "optimal",
+      title: `✨ Tian Yi (Niebiański Lekarz & Zdrowie) dla: ${resident.label || "Mieszkaniec"}`,
+      text: `${currentDir} wzmacnia odporność i głęboki sen. Idealny kierunek wezgłowia łóżka!`
+    };
+  }
+  if (isYanNian) {
+    return {
+      status: "optimal",
+      title: `✨ Yan Nian (Długowieczność & Relacje) dla: ${resident.label || "Mieszkaniec"}`,
+      text: `${currentDir} sprzyja stabilności emocjonalnej i trwałej harmonii partnerskiej.`
+    };
+  }
+  if (isFuWei) {
+    return {
+      status: "optimal",
+      title: `✨ Fu Wei (Spokój Wewnętrzny & Koncentracja) dla: ${resident.label || "Mieszkaniec"}`,
+      text: `${currentDir} sprzyja nauce, medytacji i stabilnemu skupieniu przy pracy.`
+    };
+  }
+
+  const matchInauspicious = kua.inauspicious.find((item) => item.toLowerCase().includes(currentDir.slice(0, 4).toLowerCase()));
+  return {
+    status: "warning",
+    title: `⚠️ ${matchInauspicious || "Kierunek wymagający neutralizacji"} dla: ${resident.label || "Mieszkaniec"}`,
+    text: `Kierunki sprzyjające dla Kua ${kua.kua} (${kua.group}): ${kua.shengChi}, ${kua.tianYi}, ${kua.yanNian}, ${kua.fuWei}.`
+  };
+}
+
+  function updateSelectedFurnitureMarker(updates: {
+    facingDeg?: number;
+    scale?: number;
+    orientationRole?: string;
+    assignedResidentLabel?: string | null;
+  }) {
     if (!selectedPlanMarkerId) return;
 
     setPlanMarkers((current) =>
@@ -922,14 +925,21 @@ export function AuditBuilder({
         if (marker.id !== selectedPlanMarkerId || marker.category !== "furniture") return marker;
 
         const nextFacingDeg = updates.facingDeg ?? marker.facingDeg ?? furnitureDirection;
+        const nextScale = updates.scale !== undefined ? updates.scale : (marker.scale ?? furnitureScale);
         const nextOrientationRole =
           updates.orientationRole ?? marker.orientationRole ?? defaultFurnitureOrientationRole(marker.label);
+        const nextAssignedResident =
+          updates.assignedResidentLabel !== undefined
+            ? updates.assignedResidentLabel
+            : marker.assignedResidentLabel;
 
         return {
           ...marker,
           facingDeg: nextFacingDeg,
+          scale: nextScale,
           orientationRole: nextOrientationRole,
-          orientationNote: furnitureOrientationNote(marker.label, nextOrientationRole, nextFacingDeg)
+          assignedResidentLabel: nextAssignedResident,
+          orientationNote: furnitureOrientationNote(marker.label, nextOrientationRole, nextFacingDeg, nextAssignedResident)
         };
       })
     );
@@ -939,6 +949,12 @@ export function AuditBuilder({
     const nextDirection = normalizeAngle(value);
     setFurnitureDirection(nextDirection);
     updateSelectedFurnitureMarker({ facingDeg: nextDirection });
+  }
+
+  function setFurnitureScaleValue(value: number) {
+    const clamped = Math.round(Math.min(2.5, Math.max(0.5, value)) * 100) / 100;
+    setFurnitureScale(clamped);
+    updateSelectedFurnitureMarker({ scale: clamped });
   }
 
   function setFurnitureOrientationRoleValue(role: string) {
@@ -955,11 +971,16 @@ export function AuditBuilder({
     if (marker.category === "furniture") {
       setFurnitureDirection(marker.facingDeg ?? 0);
       setFurnitureOrientationRole(marker.orientationRole ?? defaultFurnitureOrientationRole(marker.label));
+      setFurnitureScale(marker.scale ?? 1.0);
     }
   }
 
   function createPlanMarkerAtPercent(xPercent: number, yPercent: number) {
     const markerId = createMarkerId();
+    const defaultResident = residentProfiles[0]?.label || null;
+    const isSleepOrWork = selectedMarkerLabel === "Łóżko" || selectedMarkerLabel === "Biurko" || selectedMarkerLabel === "Miejsce pracy";
+    const assignedResident = isSleepOrWork && residentProfiles.length === 1 ? defaultResident : null;
+
     const marker: PlanMarker = {
       id: markerId,
       label: selectedMarkerLabel,
@@ -967,9 +988,11 @@ export function AuditBuilder({
       xPercent: Number(xPercent.toFixed(2)),
       yPercent: Number(yPercent.toFixed(2)),
       facingDeg: annotationMode === "furniture" ? furnitureDirection : null,
+      scale: annotationMode === "furniture" ? furnitureScale : undefined,
       orientationRole: annotationMode === "furniture" ? furnitureOrientationRole : null,
+      assignedResidentLabel: assignedResident,
       orientationNote: annotationMode === "furniture"
-        ? furnitureOrientationNote(selectedMarkerLabel, furnitureOrientationRole, furnitureDirection)
+        ? furnitureOrientationNote(selectedMarkerLabel, furnitureOrientationRole, furnitureDirection, assignedResident)
         : null
     };
 
@@ -992,32 +1015,63 @@ export function AuditBuilder({
   function addPlanMarkerAt(clientX: number, clientY: number, target: HTMLDivElement) {
     if (!hasVisualPreview) return;
 
-    const rect = target.getBoundingClientRect();
-    const xPercent = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
-    const yPercent = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+    const img = planImageRef.current;
+    const rect = (img && img.clientWidth > 0 && img.clientHeight > 0) ? img.getBoundingClientRect() : target.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const xPercent = Math.max(1, Math.min(99, ((clientX - rect.left) / rect.width) * 100));
+    const yPercent = Math.max(1, Math.min(99, ((clientY - rect.top) / rect.height) * 100));
+
+    // If user already has a marker selected, MOVE that marker instead of duplicating it
+    if (selectedPlanMarkerId) {
+      setPlanMarkers((current) =>
+        current.map((marker) =>
+          marker.id === selectedPlanMarkerId
+            ? { ...marker, xPercent: Number(xPercent.toFixed(2)), yPercent: Number(yPercent.toFixed(2)) }
+            : marker
+        )
+      );
+      return;
+    }
 
     createPlanMarkerAtPercent(xPercent, yPercent);
   }
 
-  function handlePlanMarkerClick(marker: PlanMarker) {
+  function handlePlanMarkerClick(marker: PlanMarker, event?: MouseEvent) {
+    lastMarkerPointerTimeRef.current = Date.now();
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
     handlePlanMarkerSelect(marker);
   }
 
   function handleMarkerPointerDown(marker: PlanMarker, event: PointerEvent<HTMLButtonElement>) {
+    lastMarkerPointerTimeRef.current = Date.now();
     event.stopPropagation();
+    event.preventDefault();
     handlePlanMarkerSelect(marker);
     setDraggingMarkerId(marker.id);
     (event.currentTarget.parentElement as HTMLElement)?.setPointerCapture(event.pointerId);
   }
 
   function handleScanClick(event: MouseEvent<HTMLDivElement>) {
-    if ((event.target as HTMLElement).closest(".plan-marker")) return;
+    if (Date.now() - lastMarkerPointerTimeRef.current < 450) return;
+    if (suppressScanClickRef.current) {
+      suppressScanClickRef.current = false;
+      return;
+    }
+    const target = event.target as HTMLElement;
+    if (target.closest(".plan-marker-wrapper, .plan-marker, .marker-floating-actions, .floating-north-compass, .north-plan-confirm, .action-btn, button")) return;
     if (scanTool !== "marker") return;
     addPlanMarkerAt(event.clientX, event.clientY, event.currentTarget);
   }
 
   function handleScanPointerDown(event: PointerEvent<HTMLDivElement>) {
-    if ((event.target as HTMLElement).closest(".plan-marker")) return;
+    if (Date.now() - lastMarkerPointerTimeRef.current < 450) return;
+    if (suppressScanClickRef.current) return;
+    const target = event.target as HTMLElement;
+    if (target.closest(".plan-marker-wrapper, .plan-marker, .marker-floating-actions, .floating-north-compass, .north-plan-confirm, .action-btn, button")) return;
     if (scanTool !== "north" || !hasVisualPreview) return;
 
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -1027,9 +1081,12 @@ export function AuditBuilder({
 
   function handleScanPointerMove(event: PointerEvent<HTMLDivElement>) {
     if (draggingMarkerId) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const xPercent = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
-      const yPercent = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+      const img = planImageRef.current;
+      const rect = (img && img.clientWidth > 0 && img.clientHeight > 0) ? img.getBoundingClientRect() : event.currentTarget.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+
+      const xPercent = Math.max(1, Math.min(99, ((event.clientX - rect.left) / rect.width) * 100));
+      const yPercent = Math.max(1, Math.min(99, ((event.clientY - rect.top) / rect.height) * 100));
 
       setPlanMarkers((current) =>
         current.map((marker) =>
@@ -1055,8 +1112,12 @@ export function AuditBuilder({
   }
 
   function removePlanMarker(markerId: string) {
+    suppressScanClickRef.current = true;
     setPlanMarkers((current) => current.filter((marker) => marker.id !== markerId));
-    setSelectedPlanMarkerId((current) => current === markerId ? null : current);
+    setSelectedPlanMarkerId((current) => (current === markerId ? null : current));
+    setTimeout(() => {
+      suppressScanClickRef.current = false;
+    }, 350);
   }
 
   function removeSelectedPlanMarker() {
@@ -1078,11 +1139,6 @@ export function AuditBuilder({
     setFiles(selectedFiles);
     setNorthConfirmed(false);
     setScanTool("north");
-    setDraftMessage(
-      planMarkers.length > 0
-        ? `Zostawiłem dotychczasowe znaczniki (${markerCountText(planMarkers.length)}). Jeśli to inny plan, użyj "Wyczyść".`
-        : null
-    );
     setSelectedPlanMarkerId(null);
     setIsPlanExpanded(false);
     setReport(null);
@@ -1293,23 +1349,6 @@ export function AuditBuilder({
             </span>
           </label>
 
-          {draftMessage ? (
-            <div className="form-alert info">
-              <DatabaseZap size={18} />
-              <span>{draftMessage}</span>
-              <button
-                type="button"
-                className="inline-alert-button"
-                onClick={() => {
-                  clearAuditDraft();
-                  setDraftMessage(null);
-                }}
-              >
-                Wyczyść zapis
-              </button>
-            </div>
-          ) : null}
-
           {isPlanExpanded ? (
             <button
               type="button"
@@ -1409,227 +1448,6 @@ export function AuditBuilder({
                 </div>
               </div>
 
-              {scanTool === "marker" ? (
-                <div className="marker-selection-panel">
-                  <div className="marker-panel-heading">
-                    <strong>
-                      {annotationMode === "furniture"
-                        ? "Wybierz mebel i jego kierunek"
-                        : `Wybierz: ${currentAnnotationMode.label.toLocaleLowerCase("pl-PL")}`}
-                    </strong>
-                    <span>
-                      {annotationMode === "furniture"
-                        ? "Marker zapisze kierunek osoby, front, stronę głowy albo oparcie."
-                        : annotationHelpText(annotationMode)}
-                    </span>
-                  </div>
-
-                  <div className="choice-grid" role="group" aria-label="Wybór etykiety markera">
-                    {activeMarkerOptions.map((option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        className={selectedMarkerLabel === option ? "selected" : ""}
-                        onClick={() => handleMarkerLabelSelect(option)}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-
-                  {annotationMode === "furniture" ? (
-                    <div className="furniture-direction" style={furnitureDirectionStyle}>
-                      <label>
-                        <span>{furnitureDirectionControlLabel(selectedMarkerLabel)}</span>
-                        <select
-                          value={furnitureOrientationRole}
-                          onChange={(event) => setFurnitureOrientationRoleValue(event.target.value)}
-                        >
-                          {(furnitureOrientationRoles[selectedMarkerLabel] ?? [defaultFurnitureOrientationRole(selectedMarkerLabel)]).map((role) => (
-                            <option key={role} value={role}>{role}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="north-slider">
-                        <span>{furnitureOrientationRole}: {scanDirectionLabel(furnitureDirection)} ({furnitureDirection}°)</span>
-                        <input
-                          type="range"
-                          min="0"
-                          max="359"
-                          value={furnitureDirection}
-                          onChange={(event) => setFurnitureDirectionValue(Number(event.target.value))}
-                        />
-                        <span className="furniture-direction-preview" aria-hidden="true">
-                          {renderFurnitureSymbol(selectedMarkerLabel)}
-                        </span>
-                      </label>
-                      <div className="furniture-presets" aria-label="Szybkie ustawienia kierunku mebla">
-                        <button type="button" onClick={() => setFurnitureDirectionValue(0)}>0° W górę</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(90)}>90° W prawo</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(180)}>180° W dół</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(270)}>270° W lewo</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue(((furnitureDirection - 45) + 360) % 360)}>↺ -45°</button>
-                        <button type="button" onClick={() => setFurnitureDirectionValue((furnitureDirection + 45) % 360)}>↻ +45°</button>
-                      </div>
-                      <small>
-                        {furnitureDirectionHelp(selectedMarkerLabel)}
-                      </small>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-
-            <div className="north-workspace">
-              <div className="scan-preview">
-                {previewUrl ? (
-                  previewMimeType === "application/pdf" ? (
-                    <object data={previewUrl} type="application/pdf" aria-label="Podgląd wgranego planu PDF">
-                      <div className="scan-preview-placeholder">
-                        <FileUp size={22} />
-                        <span>PDF jest wczytany. Jeśli nie widzisz podglądu, dodaj eksport JPG/PNG.</span>
-                      </div>
-                    </object>
-                  ) : previewablePlanTypes.has(previewMimeType ?? "") ? (
-                    <img src={previewUrl} alt="Podgląd wgranego planu" />
-                  ) : (
-                    <div className="scan-preview-placeholder">
-                      <FileUp size={22} />
-                      <span>
-                        Plik {previewMimeType?.toUpperCase() || "graficzny"} jest wczytany. Raport może użyć
-                        go w analizie, ale do obracania północy i markerów dodaj podgląd JPG, PNG albo WEBP.
-                      </span>
-                    </div>
-                  )
-                ) : (
-                  <div className="scan-preview-placeholder">
-                    <FileUp size={22} />
-                    <span>Po wgraniu planu tutaj pojawi się skan z nakładką północy i markerami.</span>
-                  </div>
-                )}
-
-                <div
-                  className={`scan-annotation-layer ${scanTool}${isDraggingScanNorth ? " dragging" : ""}`}
-                  onPointerDown={handleScanPointerDown}
-                  onPointerMove={handleScanPointerMove}
-                  onPointerUp={handleScanPointerUp}
-                  onPointerCancel={handleScanPointerUp}
-                  onClick={handleScanClick}
-                  aria-label={
-                    scanTool === "north"
-                      ? "Kliknij albo przeciągnij po planie, aby obrócić wskazówkę północy"
-                      : "Kliknij na planie, aby dodać wybrany marker"
-                  }
-                >
-                  <div
-                    className={`floating-north-compass${northConfirmed ? " confirmed" : ""}`}
-                    style={northDialStyle}
-                    aria-hidden="true"
-                    title={`Północ: ${Math.round(northAngle)}°`}
-                  >
-                    <div className="compass-dial">
-                      <div className="compass-arrow-needle" />
-                      <span className="compass-letter">N</span>
-                    </div>
-                    <span className="compass-deg-pill">{Math.round(northAngle)}°</span>
-                  </div>
-
-                  {planMarkers.map((marker, index) => {
-                    const stackOffset = markerStackOffset(marker, planMarkers);
-                    const isSelected = marker.id === selectedPlanMarkerId;
-
-                    return (
-                      <div
-                        key={marker.id}
-                        className={`plan-marker-wrapper ${marker.category}${isSelected ? " selected" : ""}`}
-                        style={{
-                          left: `${marker.xPercent}%`,
-                          top: `${marker.yPercent}%`,
-                          zIndex: isSelected ? 25 : 5 + stackOffset.stackIndex
-                        }}
-                      >
-                        <button
-                          type="button"
-                          className={`plan-marker ${marker.category}${isSelected ? " selected" : ""}`}
-                          style={{
-                            "--marker-facing": `${marker.facingDeg ?? 0}deg`,
-                            "--marker-offset-x": `${stackOffset.x}px`,
-                            "--marker-offset-y": `${stackOffset.y}px`
-                          } as CSSProperties}
-                          title={`${marker.label}. Kliknij, aby edytować lub przeciągnąć.`}
-                          onPointerDown={(event) => handleMarkerPointerDown(marker, event)}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handlePlanMarkerClick(marker);
-                          }}
-                          aria-label={`${marker.label}. Edytuj marker.`}
-                        >
-                          {marker.category === "furniture" ? (
-                            <span className="furniture-pin-content">
-                              <span className="furniture-marker-shape">
-                                {renderFurnitureSymbol(marker.label)}
-                              </span>
-                              <span className="marker-label">{markerShortLabel(marker)}</span>
-                            </span>
-                          ) : (
-                            <span className="pin-content">
-                              <span className="pin-dot" />
-                              <span className="marker-label">{markerShortLabel(marker)}</span>
-                            </span>
-                          )}
-                        </button>
-
-                        {isSelected ? (
-                          <div
-                            className="marker-floating-actions"
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onClick={(event) => event.stopPropagation()}
-                          >
-                            {marker.category === "furniture" ? (
-                              <button
-                                type="button"
-                                className="action-btn rotate"
-                                title="Obróć mebel o 45°"
-                                onClick={() => {
-                                  const newDeg = (((marker.facingDeg ?? 0) + 45) % 360);
-                                  setPlanMarkers((current) =>
-                                    current.map((m) => (m.id === marker.id ? { ...m, facingDeg: newDeg } : m))
-                                  );
-                                  setFurnitureDirection(newDeg);
-                                }}
-                              >
-                                <RotateCw size={13} />
-                                <span>{marker.facingDeg ?? 0}°</span>
-                              </button>
-                            ) : null}
-                            <button
-                              type="button"
-                              className="action-btn delete"
-                              title="Usuń ten marker"
-                              onClick={() => removePlanMarker(marker.id)}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {scanTool === "north" && hasVisualPreview ? (
-                  <div className={`north-plan-confirm${northConfirmed ? " confirmed" : ""}`}>
-                    <div>
-                      <span>{northConfirmed ? "Północ zatwierdzona" : "Ustawiasz północ"}</span>
-                      <strong>{scanDirectionLabel(northAngle)} · {northAngle}°</strong>
-                    </div>
-                    <button type="button" onClick={confirmNorthDirection}>
-                      <CheckCircle2 size={17} />
-                      {northConfirmed ? "Przejdź do markerów" : "Zatwierdź północ"}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-
               {scanTool === "north" ? (
                 <div className="north-controls">
                   <div
@@ -1691,6 +1509,550 @@ export function AuditBuilder({
                   </button>
                 </div>
               ) : null}
+
+              {scanTool === "marker" ? (
+                <div className="marker-selection-panel">
+                  <div className="marker-panel-heading">
+                    <strong>
+                      {annotationMode === "furniture"
+                        ? "Wybierz mebel i jego kierunek"
+                        : `Wybierz: ${currentAnnotationMode.label.toLocaleLowerCase("pl-PL")}`}
+                    </strong>
+                    <span>
+                      {annotationMode === "furniture"
+                        ? "Marker zapisze kierunek osoby, front, stronę głowy albo oparcie."
+                        : annotationHelpText(annotationMode)}
+                    </span>
+                  </div>
+
+                  <div className={`choice-grid${annotationMode === "furniture" ? " furniture-choice-grid" : ""}`} role="group" aria-label="Wybór etykiety markera">
+                    {activeMarkerOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        className={annotationMode === "furniture" ? `furniture-tool-btn${selectedMarkerLabel === option ? " selected" : ""}` : selectedMarkerLabel === option ? "selected" : ""}
+                        onClick={() => handleMarkerLabelSelect(option)}
+                      >
+                        {annotationMode === "furniture" ? (
+                          <span className="furniture-tool-icon" aria-hidden="true">
+                            {renderFurnitureSymbol(option)}
+                          </span>
+                        ) : null}
+                        <span className="furniture-tool-name">{option}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {annotationMode === "furniture" ? (
+                    <div className="furniture-direction" style={furnitureDirectionStyle}>
+                      <label>
+                        <span>{furnitureDirectionControlLabel(selectedMarkerLabel)}</span>
+                        <select
+                          value={furnitureOrientationRole}
+                          onChange={(event) => setFurnitureOrientationRoleValue(event.target.value)}
+                        >
+                          {(furnitureOrientationRoles[selectedMarkerLabel] ?? [defaultFurnitureOrientationRole(selectedMarkerLabel)]).map((role) => (
+                            <option key={role} value={role}>{role}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="north-slider">
+                        <span>{furnitureOrientationRole}: {scanDirectionLabel(furnitureDirection)} ({furnitureDirection}°)</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="359"
+                          value={furnitureDirection}
+                          onChange={(event) => setFurnitureDirectionValue(Number(event.target.value))}
+                        />
+                        <span className="furniture-direction-preview" aria-hidden="true">
+                          {renderFurnitureSymbol(selectedMarkerLabel)}
+                        </span>
+                      </label>
+                      <div className="furniture-presets" aria-label="Szybkie ustawienia kierunku mebla">
+                        <button type="button" onClick={() => setFurnitureDirectionValue(0)}>0° W górę</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(90)}>90° W prawo</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(180)}>180° W dół</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(270)}>270° W lewo</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue(((furnitureDirection - 45) + 360) % 360)}>↺ -45°</button>
+                        <button type="button" onClick={() => setFurnitureDirectionValue((furnitureDirection + 45) % 360)}>↻ +45°</button>
+                      </div>
+
+                      <div className="furniture-scale-box">
+                        <label className="north-slider">
+                          <div className="furniture-scale-header">
+                            <span>Rozmiar mebla: <strong>{Math.round(furnitureScale * 100)}%</strong></span>
+                            <span className="scale-size-badge">
+                              {furnitureScale >= 1.6 ? "XL · Bardzo duży" : furnitureScale >= 1.25 ? "L · Duży" : furnitureScale <= 0.75 ? "S · Kompaktowy" : "M · Standard"}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.5"
+                            max="2.2"
+                            step="0.05"
+                            value={furnitureScale}
+                            onChange={(event) => setFurnitureScaleValue(Number(event.target.value))}
+                          />
+                        </label>
+                        <div className="scale-presets-grid" aria-label="Szybkie rozmiary mebla">
+                          <button type="button" className={furnitureScale === 0.7 ? "selected" : ""} onClick={() => setFurnitureScaleValue(0.7)}>S (70%)</button>
+                          <button type="button" className={furnitureScale === 1.0 ? "selected" : ""} onClick={() => setFurnitureScaleValue(1.0)}>M (100%)</button>
+                          <button type="button" className={furnitureScale === 1.3 ? "selected" : ""} onClick={() => setFurnitureScaleValue(1.3)}>L (130%)</button>
+                          <button type="button" className={furnitureScale === 1.6 ? "selected" : ""} onClick={() => setFurnitureScaleValue(1.6)}>XL (160%)</button>
+                          <button type="button" className={furnitureScale === 2.0 ? "selected" : ""} onClick={() => setFurnitureScaleValue(2.0)}>2XL (200%)</button>
+                        </div>
+                      </div>
+                      {(selectedMarkerLabel === "Łóżko" || selectedMarkerLabel === "Biurko" || selectedMarkerLabel === "Miejsce pracy") ? (
+                        <div className="furniture-resident-box">
+                          <div className="furniture-resident-header">
+                            <label className="resident-picker-label">
+                              <span className="resident-picker-title">
+                                <UserRound size={14} />
+                                <span>Przypisany domownik:</span>
+                              </span>
+                              <select
+                                value={
+                                  (selectedPlanMarkerId
+                                    ? planMarkers.find((m) => m.id === selectedPlanMarkerId)?.assignedResidentLabel
+                                    : "") ?? ""
+                                }
+                                onChange={(event) => {
+                                  const residentLabel = event.target.value;
+                                  if (selectedPlanMarkerId) {
+                                    updateSelectedFurnitureMarker({ assignedResidentLabel: residentLabel || null });
+                                  }
+                                }}
+                              >
+                                <option value="">-- Wszyscy domownicy / brak przypisania --</option>
+                                {residentProfiles.map((res, rIdx) => {
+                                  const kua = calculateKua(res.birthDate, res.gender);
+                                  const name = res.label || `Mieszkaniec ${rIdx + 1}`;
+                                  return (
+                                    <option key={res.id} value={name}>
+                                      {name} {kua ? `· Kua ${kua.kua} (${kua.element} · ${kua.group})` : " (uzupełnij datę ur.)"}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </label>
+
+                            <button
+                              type="button"
+                              className="resident-manage-toggle-btn"
+                              onClick={() => setShowResidentEditorInFurniture((prev) => !prev)}
+                            >
+                              {showResidentEditorInFurniture ? "✕ Zwiń edycję" : "✏️ Zdefiniuj domowników & Kua"}
+                            </button>
+                          </div>
+
+                          {showResidentEditorInFurniture ? (
+                            <div className="inline-resident-editor">
+                              <div className="inline-resident-editor-head">
+                                <strong>Daty urodzenia & Płeć do kalkulacji Kua:</strong>
+                                <small>Wprowadź dane, aby system automatycznie obliczył Liczbę Kua i najlepsze kierunki wezgłowia / biurka.</small>
+                              </div>
+
+                              {residentProfiles.map((res, rIdx) => {
+                                const kua = calculateKua(res.birthDate, res.gender);
+                                return (
+                                  <div key={res.id} className="inline-resident-card">
+                                    <div className="inline-resident-inputs">
+                                      <label>
+                                        <span>Imię / Rola:</span>
+                                        <input
+                                          type="text"
+                                          value={res.label}
+                                          placeholder={`Mieszkaniec ${rIdx + 1}`}
+                                          onChange={(e) => updateResidentProfile(rIdx, { label: e.target.value })}
+                                        />
+                                      </label>
+                                      <label>
+                                        <span>Data urodzenia:</span>
+                                        <input
+                                          type="date"
+                                          value={res.birthDate}
+                                          onChange={(e) => updateResidentProfile(rIdx, { birthDate: e.target.value })}
+                                        />
+                                      </label>
+                                      <label>
+                                        <span>Płeć:</span>
+                                        <select
+                                          value={res.gender}
+                                          onChange={(e) => updateResidentProfile(rIdx, { gender: e.target.value as "female" | "male" })}
+                                        >
+                                          <option value="female">Kobieta</option>
+                                          <option value="male">Mężczyzna</option>
+                                        </select>
+                                      </label>
+                                    </div>
+
+                                    {kua ? (
+                                      <div className="inline-kua-summary">
+                                        <div className="kua-badge-pill">
+                                          <strong>Liczba Kua: {kua.kua}</strong> · {kua.element} · {kua.group}
+                                        </div>
+                                        <div className="kua-dir-row">
+                                          <span className="kua-dir-fav">✅ Korzystne: {kua.shengChi}, {kua.tianYi}, {kua.yanNian}, {kua.fuWei}</span>
+                                          <span className="kua-dir-unfav">❌ Niekorzystne: {kua.inauspicious.join(", ")}</span>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="kua-pending-hint">
+                                        Wpisz datę urodzenia (np. 1988-05-24), aby natychmiast wyznaczyć Liczbę Kua.
+                                      </div>
+                                    )}
+
+                                    {residentProfiles.length > 1 ? (
+                                      <button
+                                        type="button"
+                                        className="inline-res-remove-btn"
+                                        onClick={() => removeResidentProfile(rIdx)}
+                                        title="Usuń profil"
+                                      >
+                                        Usuń
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+
+                              <button
+                                type="button"
+                                className="inline-res-add-btn"
+                                onClick={addResidentProfile}
+                              >
+                                + Dodaj kolejnego domownika
+                              </button>
+                            </div>
+                          ) : null}
+
+                          {(() => {
+                            const marker = selectedPlanMarkerId ? planMarkers.find((m) => m.id === selectedPlanMarkerId) : null;
+                            const assignedName = marker?.assignedResidentLabel;
+                            const targetRes = assignedName ? residentProfiles.find((r) => r.label === assignedName) : (residentProfiles.length === 1 ? residentProfiles[0] : undefined);
+                            const feedback = getKuaDirectionFeedback(targetRes, furnitureDirection, selectedMarkerLabel);
+                            if (!feedback) return null;
+                            return (
+                              <div className={`kua-live-badge ${feedback.status}`}>
+                                <strong>{feedback.title}</strong>
+                                <p>{feedback.text}</p>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : null}
+
+                      {selectedMarkerLabel === "Lustro" ? (
+                        <div className="furniture-mirror-box">
+                          <div className="mirror-info-header">
+                            <span className="mirror-icon" aria-hidden="true">🪞</span>
+                            <div>
+                              <strong>Zasady Feng Shui dla Lustra:</strong>
+                              <p>Stożek światła na symbolu pokazuje, w którą stronę i w jaką strefę pokoju odbijana jest energia Qi.</p>
+                            </div>
+                          </div>
+                          <ul className="mirror-rules-list">
+                            <li><strong>Nie odbijaj wezgłowia łóżka</strong> – widok śpiącego w lustrze wywołuje niepokój podświadomości i zaburza fazę snu głębokiego.</li>
+                            <li><strong>Nie umieszczaj naprzeciwko drzwi wejściowych</strong> – energia wchodząca do domu zostaje natychmiast odbita na zewnątrz.</li>
+                            <li><strong>Odbijaj piękno i światło</strong> – skieruj taflę na widok za oknem, zieleń roślin lub stół jadalny (symbol obfitości).</li>
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      <small>
+                        {furnitureDirectionHelp(selectedMarkerLabel)}
+                      </small>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+            <div className="north-workspace">
+              <div className="scan-preview">
+                {previewUrl ? (
+                  <div className="scan-canvas-stage">
+                    {previewMimeType === "application/pdf" ? (
+                      <object data={previewUrl} type="application/pdf" className="scan-image-elem" aria-label="Podgląd wgranego planu PDF">
+                        <div className="scan-preview-placeholder">
+                          <FileUp size={22} />
+                          <span>PDF jest wczytany. Jeśli nie widzisz podglądu, dodaj eksport JPG/PNG.</span>
+                        </div>
+                      </object>
+                    ) : previewablePlanTypes.has(previewMimeType ?? "") ? (
+                      <img ref={planImageRef} src={previewUrl} alt="Podgląd wgranego planu" className="scan-image-elem" />
+                    ) : (
+                      <div className="scan-preview-placeholder">
+                        <FileUp size={22} />
+                        <span>
+                          Plik {previewMimeType?.toUpperCase() || "graficzny"} jest wczytany. Raport może użyć
+                          go w analizie, ale do obracania północy i markerów dodaj podgląd JPG, PNG albo WEBP.
+                        </span>
+                      </div>
+                    )}
+
+                    <div
+                      className={`scan-annotation-layer ${scanTool}${isDraggingScanNorth ? " dragging" : ""}`}
+                      onPointerDown={handleScanPointerDown}
+                      onPointerMove={handleScanPointerMove}
+                      onPointerUp={handleScanPointerUp}
+                      onPointerCancel={handleScanPointerUp}
+                      onClick={handleScanClick}
+                      aria-label={
+                        scanTool === "north"
+                          ? "Kliknij albo przeciągnij po planie, aby obrócić wskazówkę północy"
+                          : "Kliknij na planie, aby dodać wybrany marker"
+                      }
+                    >
+                      {scanTool === "north" ? (
+                        <div
+                          className={`north-arrow-overlay${isDraggingScanNorth ? " dragging" : ""}${northConfirmed ? " confirmed" : ""}`}
+                          style={{ transform: `rotate(${northAngle}deg)` }}
+                          aria-hidden="true"
+                        >
+                          <div className="north-arrow-head">
+                            <span className="north-arrow-tip" />
+                            <span className="north-arrow-n">N</span>
+                          </div>
+                          <div className="north-arrow-axis" />
+                          <div className="north-arrow-center">
+                            <span className="north-center-pin" />
+                          </div>
+                          <div className="north-arrow-tail">
+                            <span className="north-arrow-s">S</span>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div
+                        className={`floating-north-compass${northConfirmed ? " confirmed" : ""}`}
+                        style={northDialStyle}
+                        aria-hidden="true"
+                        title={`Północ: ${Math.round(northAngle)}°`}
+                      >
+                        <div className="compass-dial">
+                          <div className="compass-arrow-needle" />
+                          <span className="compass-letter">N</span>
+                        </div>
+                        <span className="compass-deg-pill">{Math.round(northAngle)}°</span>
+                      </div>
+
+                      {planMarkers.map((marker, index) => {
+                        const stackOffset = markerStackOffset(marker, planMarkers);
+                        const isSelected = marker.id === selectedPlanMarkerId;
+
+                        return (
+                          <div
+                            key={marker.id}
+                            className={`plan-marker-wrapper ${marker.category}${isSelected ? " selected" : ""}`}
+                            style={{
+                              left: `${marker.xPercent}%`,
+                              top: `${marker.yPercent}%`,
+                              zIndex: isSelected ? 25 : 5 + stackOffset.stackIndex
+                            }}
+                          >
+                            <button
+                              type="button"
+                              className={`plan-marker ${marker.category}${isSelected ? " selected" : ""}`}
+                              style={{
+                                "--marker-facing": `${marker.facingDeg ?? 0}deg`,
+                                "--marker-scale": `${marker.scale ?? 1}`,
+                                "--marker-offset-x": `${stackOffset.x}px`,
+                                "--marker-offset-y": `${stackOffset.y}px`
+                              } as CSSProperties}
+                              title={`${marker.label} (${marker.facingDeg ?? 0}°, ${Math.round((marker.scale ?? 1) * 100)}%). Kliknij, aby edytować lub przeciągnąć.`}
+                              onPointerDown={(event) => handleMarkerPointerDown(marker, event)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                                handlePlanMarkerClick(marker, event as unknown as MouseEvent);
+                              }}
+                              aria-label={`${marker.label}. Edytuj marker.`}
+                            >
+                              {marker.category === "furniture" ? (
+                                <div className="arch-furniture-piece">
+                                  {renderFurnitureSymbol(marker.label)}
+                                  {marker.assignedResidentLabel ? (
+                                    <span className="furniture-floating-tag">
+                                      <span className="resident-tag-highlight">👤 {marker.assignedResidentLabel}</span>
+                                    </span>
+                                  ) : null}
+                                </div>
+                              ) : (
+                                <span className="pin-content">
+                                  <span className="pin-dot" />
+                                  <span className="marker-label">{markerShortLabel(marker)}</span>
+                                </span>
+                              )}
+                            </button>
+
+                        {isSelected ? (
+                          <div
+                            className="marker-floating-actions"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            {marker.category === "furniture" ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="action-btn rotate"
+                                  title="Obróć mebel o 45°"
+                                  onPointerDown={(event) => {
+                                    event.stopPropagation();
+                                    event.preventDefault();
+                                  }}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    event.preventDefault();
+                                    const newDeg = (((marker.facingDeg ?? 0) + 45) % 360);
+                                    setPlanMarkers((current) =>
+                                      current.map((m) => (m.id === marker.id ? { ...m, facingDeg: newDeg } : m))
+                                    );
+                                    setFurnitureDirection(newDeg);
+                                  }}
+                                >
+                                  <RotateCw size={13} />
+                                  <span>{marker.facingDeg ?? 0}°</span>
+                                </button>
+
+                                <div className="action-scale-group">
+                                  <button
+                                    type="button"
+                                    className="action-btn scale-btn"
+                                    title="Zmniejsz rozmiar mebla (-15%)"
+                                    onPointerDown={(event) => {
+                                      event.stopPropagation();
+                                      event.preventDefault();
+                                    }}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      event.preventDefault();
+                                      const curScale = marker.scale ?? 1.0;
+                                      const newScale = Math.round(Math.max(0.5, curScale - 0.15) * 100) / 100;
+                                      setFurnitureScale(newScale);
+                                      setPlanMarkers((current) =>
+                                        current.map((m) => (m.id === marker.id ? { ...m, scale: newScale } : m))
+                                      );
+                                    }}
+                                  >
+                                    -
+                                  </button>
+                                  <span className="scale-pill-indicator">{Math.round((marker.scale ?? 1.0) * 100)}%</span>
+                                  <button
+                                    type="button"
+                                    className="action-btn scale-btn"
+                                    title="Powiększ rozmiar mebla (+15%)"
+                                    onPointerDown={(event) => {
+                                      event.stopPropagation();
+                                      event.preventDefault();
+                                    }}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      event.preventDefault();
+                                      const curScale = marker.scale ?? 1.0;
+                                      const newScale = Math.round(Math.min(2.5, curScale + 0.15) * 100) / 100;
+                                      setFurnitureScale(newScale);
+                                      setPlanMarkers((current) =>
+                                        current.map((m) => (m.id === marker.id ? { ...m, scale: newScale } : m))
+                                      );
+                                    }}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </>
+                            ) : null}
+
+                            {(marker.label === "Łóżko" || marker.label === "Biurko" || marker.label === "Miejsce pracy") ? (
+                              <button
+                                type="button"
+                                className="action-btn resident-toggle"
+                                title="Zmień przypisanego mieszkańca (Kua)"
+                                onPointerDown={(event) => {
+                                  event.stopPropagation();
+                                  event.preventDefault();
+                                }}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  event.preventDefault();
+                                  const names = ["", ...residentProfiles.map((r, rI) => r.label || `Mieszkaniec ${rI + 1}`)];
+                                  const curIdx = names.indexOf(marker.assignedResidentLabel || "");
+                                  const nextName = names[(curIdx + 1) % names.length];
+                                  setPlanMarkers((current) =>
+                                    current.map((m) => (m.id === marker.id ? { ...m, assignedResidentLabel: nextName || null } : m))
+                                  );
+                                }}
+                              >
+                                <UserRound size={13} />
+                                <span>{marker.assignedResidentLabel ? marker.assignedResidentLabel.split(" ")[0] : "Przypisz"}</span>
+                              </button>
+                            ) : null}
+
+                            <button
+                              type="button"
+                              className="action-btn"
+                              title="Zatwierdź pozycję i odznacz znacznik"
+                              onPointerDown={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                              }}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                                setSelectedPlanMarkerId(null);
+                              }}
+                            >
+                              <CheckCircle2 size={13} />
+                              <span>Gotowe</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="action-btn delete"
+                              title="Usuń ten marker"
+                              onPointerDown={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                              }}
+                              onPointerUp={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                              }}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                event.preventDefault();
+                                removePlanMarker(marker.id);
+                              }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="scan-preview-placeholder">
+                <FileUp size={22} />
+                <span>Po wgraniu planu tutaj pojawi się skan z nakładką północy i markerami.</span>
+              </div>
+            )}
+
+                {scanTool === "north" && hasVisualPreview ? (
+                  <div className={`north-plan-confirm${northConfirmed ? " confirmed" : ""}`}>
+                    <div>
+                      <span>{northConfirmed ? "Północ zatwierdzona" : "Ustawiasz północ"}</span>
+                      <strong>{scanDirectionLabel(northAngle)} · {northAngle}°</strong>
+                    </div>
+                    <button type="button" onClick={confirmNorthDirection}>
+                      <CheckCircle2 size={17} />
+                      {northConfirmed ? "Przejdź do markerów" : "Zatwierdź północ"}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
 
               {planMarkers.length > 0 ? (
@@ -1882,6 +2244,30 @@ export function AuditBuilder({
                   onChange={(event) => updateField("renovationNote", event.target.value)}
                 />
               </label>
+
+              {(() => {
+                const activeYear = form.renovationYear || form.constructionYear || form.firstOccupiedYear;
+                if (!activeYear || isNaN(Number(activeYear))) return null;
+                const pInfo = getBuildingPeriod(activeYear);
+                return (
+                  <div className="kua-live-badge building-period-badge" aria-label="Okres energetyczny budynku">
+                    <div className="kua-header">
+                      <span className="kua-number-pill">Okres {pInfo.period} ({pInfo.range})</span>
+                      <strong>Żywioł: {pInfo.element} · {pInfo.trigram}</strong>
+                    </div>
+                    <div className="kua-details-grid">
+                      <div>
+                        <span>🏛️ Zapis Energetyczny Budynku (Xuan Kong Fei Xing):</span>
+                        <strong>{pInfo.rulingEnergy}</strong>
+                      </div>
+                      <div>
+                        <span>🔥 Wpływ Okresu 9 (2024–2043):</span>
+                        <em>Wykres natalny określa dystrybucję Gwiazd Górskich (Zdrowie) i Wodnych (Finanse).</em>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="mini-fieldset">
@@ -1933,6 +2319,18 @@ export function AuditBuilder({
                         />
                       </label>
                       <label>
+                        <span>Płeć (do wyliczenia Kua)</span>
+                        <select
+                          value={profile.gender || "male"}
+                          onChange={(event) => updateResidentProfile(index, { gender: event.target.value as "male" | "female" })}
+                        >
+                          <option value="male">Mężczyzna</option>
+                          <option value="female">Kobieta</option>
+                        </select>
+                      </label>
+                    </div>
+                    <div className="form-row">
+                      <label>
                         <span>Godzina</span>
                         <input
                           type="time"
@@ -1940,8 +2338,6 @@ export function AuditBuilder({
                           onChange={(event) => updateResidentProfile(index, { birthTime: event.target.value })}
                         />
                       </label>
-                    </div>
-                    <div className="form-row">
                       <label>
                         <span>Miejsce urodzenia</span>
                         <input
@@ -1950,19 +2346,55 @@ export function AuditBuilder({
                           onChange={(event) => updateResidentProfile(index, { birthPlace: event.target.value })}
                         />
                       </label>
-                      <label>
-                        <span>Zakres osobisty</span>
+                    </div>
+
+                    {(() => {
+                      const kuaData = calculateKua(profile.birthDate, profile.gender);
+                      if (!kuaData) return null;
+                      return (
+                        <div className="kua-live-badge" aria-label="Profil Kua mieszkańca">
+                          <div className="kua-header">
+                            <span className="kua-number-pill">Liczba Kua: {kuaData.kua}</span>
+                            <strong>Żywioł: {kuaData.element} · {kuaData.trigram}</strong>
+                            <small>({kuaData.group})</small>
+                          </div>
+                          <div className="kua-details-grid">
+                            <div>
+                              <span>🌿 Sprzyjające kierunki (Sen & Sukces):</span>
+                              <strong>{kuaData.shengChi} · {kuaData.tianYi}</strong>
+                            </div>
+                            <div>
+                              <span>🛏️ Rekomendacja dla wezgłowia / biurka:</span>
+                              <em>{kuaData.bedAdvice}</em>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {planMarkers.filter((m) => m.category === "furniture" || m.category === "room").length > 0 ? (
+                      <label className="field-quiet">
+                        <span>Przypisany mebel / pokój dla tej osoby</span>
                         <select
-                          value={profile.formulaCategory}
-                          onChange={(event) => updateResidentProfile(index, { formulaCategory: event.target.value })}
+                          value={profile.assignedFurniture?.[0] || ""}
+                          onChange={(event) =>
+                            updateResidentProfile(index, {
+                              assignedFurniture: event.target.value ? [event.target.value] : []
+                            })
+                          }
                         >
-                          <option value="">Dobierz automatycznie</option>
-                          <option value="kua-gua">Kua / Gua</option>
-                          <option value="bazi-lite">BaZi tylko jako kontekst</option>
-                          <option value="bez-osobistych">Bez metod osobistych</option>
+                          <option value="">Wybierz z oznaczonych na planie...</option>
+                          {planMarkers
+                            .filter((m) => m.category === "furniture" || m.category === "room")
+                            .map((m) => (
+                              <option key={m.id} value={`${m.label} (${m.id})`}>
+                                {m.label} {m.facingDeg !== null ? `· ${m.facingDeg}°` : ""}
+                              </option>
+                            ))}
                         </select>
                       </label>
-                    </div>
+                    ) : null}
+
                     <label>
                       <span>Notatka o osobie</span>
                       <input
@@ -2058,7 +2490,7 @@ export function AuditBuilder({
                   type="button"
                   className="secondary-button"
                   onClick={() => {
-                    downloadReportPdf(report, { planFile: files[0] ?? null, northAngleDeg: northAngle })
+                    downloadReportPdf(report, { planFile: files[0] ?? null, northAngleDeg: northAngle, planMarkers })
                       .then(() => triggerBrandConfetti())
                       .catch(() => {
                         setError("Nie udało się przygotować PDF. Pobierz JSON albo spróbuj ponownie.");
@@ -2100,6 +2532,73 @@ export function AuditBuilder({
                   </ul>
                 </div>
               </div>
+
+              {previewUrl ? (
+                <section className="rich-report-section">
+                  <div className="rich-report-heading">
+                    <span>00</span>
+                    <h3>Schematyczny rzut CAD i mapa 9 sektorów</h3>
+                    <p>Oczyszczony schemat architektoniczny z naniesionymi 9 pałacami Bagua, orientacją północy ({Math.round(northAngle)}°) oraz rozmieszczeniem mebli.</p>
+                  </div>
+                  <div className="report-plan-viewport">
+                    {schematicReportUrl ? (
+                      <div className="schematic-cad-container">
+                        <img
+                          src={schematicReportUrl}
+                          alt="Schematyczny rzut architektoniczny z umeblowaniem i strefami Bagua"
+                          className="schematic-cad-img"
+                        />
+                      </div>
+                    ) : (
+                      <div className="scan-canvas-stage">
+                        <img src={previewUrl} alt="Schemat rzutu" className="scan-image-elem" />
+                        <div className="scan-annotation-layer view-only">
+                          <div
+                            className="floating-north-compass confirmed"
+                            style={northDialStyle}
+                            aria-hidden="true"
+                          >
+                            <div className="compass-dial">
+                              <div className="compass-arrow-needle" />
+                              <span className="compass-letter">N</span>
+                            </div>
+                            <span className="compass-deg-pill">{Math.round(northAngle)}°</span>
+                          </div>
+                          {planMarkers.map((marker) => (
+                            <div
+                              key={marker.id}
+                              className={`plan-marker-wrapper ${marker.category}`}
+                              style={{
+                                left: `${marker.xPercent}%`,
+                                top: `${marker.yPercent}%`
+                              }}
+                            >
+                              <div
+                                className={`plan-marker ${marker.category}`}
+                                style={{
+                                  "--marker-facing": `${marker.facingDeg ?? 0}deg`
+                                } as CSSProperties}
+                              >
+                                {marker.category === "furniture" ? (
+                                  <div className="arch-furniture-piece">
+                                    {renderFurnitureSymbol(marker.label)}
+                                    <span className="furniture-floating-tag">{markerShortLabel(marker)}</span>
+                                  </div>
+                                ) : (
+                                  <span className="pin-content">
+                                    <span className="pin-dot" />
+                                    <span className="marker-label">{markerShortLabel(marker)}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              ) : null}
 
               <section className="rich-report-section">
                 <div className="rich-report-heading">

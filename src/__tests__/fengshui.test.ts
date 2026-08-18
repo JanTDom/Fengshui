@@ -179,3 +179,29 @@ describe("Zod Schema Runtime Validation", () => {
     expect(Array.isArray(parsed.priority_actions)).toBe(true);
   });
 });
+
+describe("Xuan Kong Fei Xing (Flying Stars) Building Natal Chart Engine", () => {
+  it("should calculate correct Building Period (Yun) from construction year", async () => {
+    const { getBuildingPeriod } = await import("../lib/natalChartEngine");
+    expect(getBuildingPeriod(2025).period).toBe(9);
+    expect(getBuildingPeriod(2015).period).toBe(8);
+    expect(getBuildingPeriod(1995).period).toBe(7);
+    expect(getBuildingPeriod(1975).period).toBe(6);
+  });
+
+  it("should generate 9-palace natal chart with mountain and water stars", async () => {
+    const { calculateBuildingNatalChart } = await import("../lib/natalChartEngine");
+    const chart = calculateBuildingNatalChart("2018", undefined, 180);
+    expect(chart.period).toBe(8);
+    expect(chart.facing_direction).toContain("Południe");
+    expect(chart.sitting_direction).toContain("Północ");
+    expect(chart.palaces.length).toBe(9);
+
+    const southPalace = chart.palaces.find((p) => p.code === "S");
+    expect(southPalace).toBeDefined();
+    expect(southPalace?.water_star).toBeDefined();
+    expect(southPalace?.mountain_star).toBeDefined();
+    expect(southPalace?.health_relationships).toBeTruthy();
+    expect(southPalace?.wealth_career).toBeTruthy();
+  });
+});

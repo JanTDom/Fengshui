@@ -25,8 +25,10 @@ export type PlanMarker = {
   xPercent: number;
   yPercent: number;
   facingDeg: number | null;
+  scale?: number;
   orientationRole?: string | null;
   orientationNote?: string | null;
+  assignedResidentLabel?: string | null;
 };
 
 export type PlanAnnotations = {
@@ -56,8 +58,25 @@ export type ResidentProfile = {
   birthDate: string;
   birthTime: string;
   birthPlace: string;
+  gender?: "male" | "female" | string;
+  assignedFurniture?: string[];
   formulaCategory: string;
   note: string;
+};
+
+export type ResidentAnalysisItem = {
+  name: string;
+  role?: string;
+  birth_year?: string;
+  gender?: string;
+  kua_number: number;
+  element: string;
+  group: string;
+  favorable_directions: string[];
+  unfavorable_directions: string[];
+  assigned_furniture?: string[];
+  placement_advice: string;
+  yearly_warning?: string;
 };
 
 export type AuditRequestPayload = {
@@ -166,6 +185,33 @@ export type SourceLedgerItem = {
   confidence: AuditConfidence;
 };
 
+export type NatalPalace = {
+  direction: string;
+  code: string;
+  mountain_star: number;
+  base_star: number;
+  water_star: number;
+  nature: string;
+  health_relationships: string;
+  wealth_career: string;
+  remedy_wu_xing: string;
+  period9_outlook: string;
+};
+
+export type BuildingNatalChart = {
+  period: number;
+  period_label: string;
+  period_element: string;
+  construction_year?: string;
+  facing_direction: string;
+  sitting_direction: string;
+  facing_angle_deg: number;
+  chart_type: string;
+  summary: string;
+  palaces: NatalPalace[];
+  period9_strategy: string;
+};
+
 export type AuditReport = {
   score: number;
   confidence: AuditConfidence;
@@ -178,8 +224,10 @@ export type AuditReport = {
   zones: ZoneReport[];
   directional_insights: DirectionalInsight[];
   sector_map: SectorReport[];
+  natal_chart?: BuildingNatalChart;
   room_recommendations: RoomRecommendation[];
   furniture_recommendations: FurnitureRecommendation[];
+  resident_analysis?: ResidentAnalysisItem[];
   traditional_analysis: ReportSection[];
   practical_analysis: ReportSection[];
   practical_changes: PracticalChange[];

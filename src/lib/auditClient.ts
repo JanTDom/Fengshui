@@ -1,4 +1,5 @@
-import type { AuditApiResponse, AuditFilePayload, AuditReport, AuditRequestPayload } from "../auditTypes";
+import type { AuditApiResponse, AuditFilePayload, AuditReport, AuditRequestPayload, BuildingNatalChart, PlanMarker } from "../auditTypes";
+import { calculateBuildingNatalChart } from "./natalChartEngine";
 import { hasSupabaseConfig, supabase } from "./supabase";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -155,6 +156,7 @@ export function downloadReportJson(report: AuditReport) {
 type ReportPdfOptions = {
   planFile?: File | null;
   northAngleDeg?: number | null;
+  planMarkers?: PlanMarker[];
 };
 
 type SectorDirectionCode = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" | "CENTER";
@@ -325,12 +327,360 @@ function loadImageElement(src: string) {
 
 /**
  * Creates an elegant, high-clarity architectural Bagua 9-sector overlay.
- * Floor plan remains 100% clearly visible with discreet quadrant corner tags.
  */
-async function createPlanSectorOverlayImage(
+function markerCanvasLabel(marker: PlanMarker) {
+  const aliases: Record<string, string> = {
+    "Łazienka/WC": "Łazienka",
+    "Hol/korytarz": "Hol",
+    "Pokój dziecka": "Pokój dz.",
+    "Wejście główne": "Wejście",
+    "Drzwi wewnętrzne": "Drzwi",
+    "Drzwi balkonowe/taras": "Taras",
+    "Płyta/kuchenka": "Kuchenka",
+    "Regał/szafa": "Szafa",
+    "Miejsce pracy": "Praca"
+  };
+  return aliases[marker.label] ?? marker.label;
+}
+
+function drawArchitecturalMarkerOnCanvas(
+  ctx: CanvasRenderingContext2D,
+  marker: PlanMarker,
+  canvasWidth: number,
+  canvasHeight: number
+) {
+  const px = (marker.xPercent / 100) * canvasWidth;
+  const py = (marker.yPercent / 100) * canvasHeight;
+
+  if (marker.category === "furniture") {
+    const angleDeg = marker.facingDeg ?? 0;
+    const angleRad = (angleDeg * Math.PI) / 180;
+    const scale = marker.scale ?? 1.0;
+    const label = marker.label || "Mebel";
+
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.rotate(angleRad);
+    ctx.scale(scale, scale);
+
+    if (label === "Łóżko") {
+      // 1. ŁÓŻKO: 76x96px (Architektoniczny rzut 2D z wezgłowiem na górze, 2 poduszkami i narzutą)
+      // Rama i materac
+      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(-38, -48, 76, 96, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Masywne drewniane wezgłowie oparte o ścianę (na górze przy kącie 0°)
+      ctx.fillStyle = "#C49544";
+      ctx.fillRect(-40, -56, 80, 10);
+
+      // 2 Duże poduszki przy wezgłowiu
+      ctx.fillStyle = "#FFFFFF";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.roundRect(-32, -40, 28, 20, 4);
+      ctx.roundRect(4, -40, 28, 20, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      // Pościel / Narzuta w dolnej części
+      ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+      ctx.fillRect(-38, -10, 76, 58);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.setLineDash([5, 3.5]);
+      ctx.beginPath();
+      ctx.moveTo(-38, -10);
+      ctx.lineTo(38, -10);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (label === "Biurko" || label === "Miejsce pracy") {
+      // 2. BIURKO Z ERGONOMICZNYM FOTELEM: 88x74px
+      // Blat biurka z przodu (na dole)
+      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(-44, 8, 88, 36, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Monitor panoramiczny / Laptop
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(-24, 14, 48, 7);
+
+      // Fotel biurowy za biurkiem (użytkownik siedzi z tyłu, twarzą do biurka)
+      ctx.fillStyle = "rgba(196, 149, 68, 0.45)";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-22, -34, 44, 30, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Zaokrąglone oparcie fotela za plecami
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 5.5;
+      ctx.beginPath();
+      ctx.arc(0, -32, 24, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+
+      // Podłokietniki
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(-27, -34, 6, 18);
+      ctx.fillRect(21, -34, 6, 18);
+    } else if (label === "Sofa") {
+      // 3. SOFA Z OPARCIEM I PODŁOKIETNIKAMI: 92x62px
+      // Grube oparcie z tyłu (na górze)
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 11;
+      ctx.beginPath();
+      ctx.arc(0, -26, 36, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 2.6;
+      ctx.stroke();
+
+      // Podłokietniki po bokach
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(-45, -24, 10, 42);
+      ctx.fillRect(35, -24, 10, 42);
+
+      // 2 Duże poduchy siedziska
+      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-31, -18, 30, 36, 5);
+      ctx.roundRect(1, -18, 30, 36, 5);
+      ctx.fill();
+      ctx.stroke();
+    } else if (label === "Lustro") {
+      // 4. LUSTRO ZE STOŻKIEM ODBICIA: 80x78px
+      // Rama ścienna na górze
+      ctx.fillStyle = "#73A8C7";
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2.8;
+      ctx.fillRect(-38, -38, 76, 10);
+
+      // Tafla szkła - lśnienie
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(-26, -33);
+      ctx.lineTo(26, -33);
+      ctx.stroke();
+
+      // Wyraźny stożek pola odbicia światła w głąb pokoju
+      ctx.fillStyle = "rgba(115, 168, 199, 0.35)";
+      ctx.strokeStyle = "rgba(115, 168, 199, 0.95)";
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(-34, -28);
+      ctx.lineTo(-52, 42);
+      ctx.lineTo(52, 42);
+      ctx.lineTo(34, -28);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Oznaczenie oka / punktu obserwatora
+      ctx.fillStyle = "#C49544";
+      ctx.beginPath();
+      ctx.arc(0, 16, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#10221F";
+      ctx.beginPath();
+      ctx.arc(0, 16, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (label.includes("Płyta") || label.includes("Kuchenka")) {
+      // 5. PŁYTA INDUKCYJNA
+      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(-34, -34, 68, 68, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(-16, -16, 11, 0, Math.PI * 2);
+      ctx.arc(16, -16, 13, 0, Math.PI * 2);
+      ctx.arc(-16, 16, 9, 0, Math.PI * 2);
+      ctx.arc(16, 16, 12, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Panel dotykowy
+      ctx.fillStyle = "#C49544";
+      ctx.fillRect(-20, 26, 40, 4);
+    } else if (label === "Stół") {
+      // 6. STÓŁ Z KRZESŁAMI
+      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(-34, -24, 68, 48, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(-24, -36, 48, 8);
+      ctx.fillRect(-24, 28, 48, 8);
+      ctx.fillRect(-45, -16, 8, 32);
+      ctx.fillRect(37, -16, 8, 32);
+    } else {
+      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(-34, -34, 68, 68, 8);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // Floating text label beneath furniture only if assigned to a resident
+    if (marker.assignedResidentLabel) {
+      const tagText = `👤 ${marker.assignedResidentLabel}`;
+      ctx.save();
+      ctx.font = "bold 12px Arial, sans-serif";
+      const textW = ctx.measureText(tagText).width;
+      const tagPad = 10;
+      const boxW = textW + tagPad * 2;
+      const boxH = 24;
+      const boxX = px - boxW / 2;
+      const boxY = py + Math.max(42, 42 * scale) + 8;
+
+      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.strokeStyle = "rgba(196, 149, 68, 0.95)";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(tagText, px, boxY + boxH / 2);
+      ctx.restore();
+    }
+  } else if (marker.category === "fixed") {
+    // STAŁE PUNKTY ARCHITEKTONICZNE (Drzwi, Okna, Schody, Wejście)
+    const label = marker.label || "";
+    ctx.save();
+    ctx.translate(px, py);
+
+    if (label.includes("Drzwi")) {
+      ctx.strokeStyle = "#2B536D";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, 0, Math.PI / 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(24, 0);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, 24);
+      ctx.stroke();
+    } else if (label.includes("Okno")) {
+      ctx.fillStyle = "rgba(115, 168, 199, 0.5)";
+      ctx.strokeStyle = "#2B536D";
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(-26, -6, 52, 12);
+      ctx.strokeRect(-26, -6, 52, 12);
+      ctx.beginPath();
+      ctx.moveTo(-26, 0);
+      ctx.lineTo(26, 0);
+      ctx.stroke();
+    } else if (label.includes("Schody")) {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.strokeStyle = "#10221F";
+      ctx.lineWidth = 2.2;
+      ctx.fillRect(-18, -26, 36, 52);
+      ctx.strokeRect(-18, -26, 36, 52);
+      for (let s = -20; s <= 20; s += 8) {
+        ctx.beginPath();
+        ctx.moveTo(-18, s);
+        ctx.lineTo(18, s);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, 18);
+      ctx.lineTo(0, -18);
+      ctx.lineTo(-6, -10);
+      ctx.moveTo(0, -18);
+      ctx.lineTo(6, -10);
+      ctx.stroke();
+    } else if (label.includes("Wejście")) {
+      ctx.fillStyle = "#936B26";
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-36, -14, 72, 28, 7);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 10px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("WEJŚCIE ➔", 0, 0);
+    } else {
+      ctx.fillStyle = "#2B536D";
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.restore();
+  } else if (marker.category === "room") {
+    // POMIESZCZENIA (ROOMS)
+    const label = marker.label || "";
+    ctx.save();
+    ctx.font = "bold 11px Arial, sans-serif";
+    const textW = ctx.measureText(label).width;
+    const boxW = textW + 18;
+    const boxH = 24;
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
+    ctx.strokeStyle = "#2D5A46";
+    ctx.lineWidth = 1.8;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.roundRect(px - boxW / 2, py - boxH / 2, boxW, boxH, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#2D5A46";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, px, py);
+    ctx.restore();
+  }
+}
+
+/**
+ * Creates a crystal-clear, high-contrast architectural CAD blueprint with 9 Bagua sectors & furniture.
+ */
+export async function createPlanSectorOverlayImage(
   file: File | null | undefined,
   _report: AuditReport,
-  northAngleDeg = 0
+  northAngleDeg = 0,
+  planMarkers: PlanMarker[] = []
 ): Promise<string | null> {
   if (!file || !canUsePlanImageInPdf(file)) {
     return null;
@@ -339,7 +689,7 @@ async function createPlanSectorOverlayImage(
   const dataUrl = await readFileAsDataUrl(file);
   const image = await loadImageElement(dataUrl);
 
-  const targetWidth = 1200;
+  const targetWidth = 1400;
   const aspectRatio = (image.naturalHeight || image.height) / (image.naturalWidth || image.width);
   const targetHeight = Math.round(targetWidth * (aspectRatio || 0.75));
 
@@ -350,13 +700,78 @@ async function createPlanSectorOverlayImage(
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  // Base background and floor plan rendering
-  ctx.fillStyle = "#FAF8F5";
+  // Base background: clean architectural white
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, targetWidth, targetHeight);
+
+  // Render raw drawing onto canvas
   ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
 
+  // 1. HIGH-PASS ADAPTIVE ARCHITECTURAL VECTOR/CAD FILTER
+  try {
+    const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+    const data = imgData.data;
+    const len = data.length;
+
+    // Calculate background paper luminance histogram
+    const hist = new Uint32Array(256);
+    for (let i = 0; i < len; i += 16) {
+      const lum = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+      hist[lum]++;
+    }
+
+    // Find the paper peak in the brighter half of the image
+    let paperPeakLum = 230;
+    let maxCount = 0;
+    for (let l = 130; l < 256; l++) {
+      if (hist[l] > maxCount) {
+        maxCount = hist[l];
+        paperPeakLum = l;
+      }
+    }
+
+    // Dynamic thresholds relative to the actual paper brightness
+    const inkMax = Math.min(145, Math.max(80, Math.round(paperPeakLum * 0.62)));
+    const paperMin = Math.min(235, Math.max(160, Math.round(paperPeakLum * 0.85)));
+
+    for (let i = 0; i < len; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+
+      // Detect yellow/orange/green highlighter stains
+      const isHighlighterOrTint = (r > 150 && g > 130 && (b < 120 || Math.abs(r - b) > 50));
+
+      if (lum <= inkMax && !isHighlighterOrTint) {
+        // Crisp, solid graphite architectural ink for walls, doors, windows, stairs
+        data[i] = 16;
+        data[i + 1] = 34;
+        data[i + 2] = 31;
+        data[i + 3] = 255;
+      } else if (lum >= paperMin || isHighlighterOrTint) {
+        // Pure architectural white canvas
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+        data[i + 3] = 255;
+      } else {
+        // Anti-aliased transition
+        const factor = (lum - inkMax) / (paperMin - inkMax);
+        const v = Math.round(16 + factor * (255 - 16));
+        data[i] = v;
+        data[i + 1] = v;
+        data[i + 2] = v;
+        data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  } catch (e) {
+    console.warn("Luminance filter skipped:", e);
+  }
+
   // Full dwelling 3x3 grid dimensions
-  const pad = 10;
+  const pad = 12;
   const gridX = pad;
   const gridY = pad;
   const gridW = targetWidth - pad * 2;
@@ -364,45 +779,41 @@ async function createPlanSectorOverlayImage(
   const cellW = gridW / 3;
   const cellH = gridH / 3;
 
-  // Draw 9 sectors with soft pastel tint and discreet corner pills
+  // 2. Draw 9 sectors with crisp dashed lines & corner badges (NO opaque fills covering the plan!)
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       const cellX = gridX + col * cellW;
       const cellY = gridY + row * cellH;
       const sector = getCellCompassSector(col, row, northAngleDeg);
 
-      // Subtle element tint
-      ctx.fillStyle = sector.colorBg;
-      ctx.fillRect(cellX, cellY, cellW, cellH);
-
       // Delicate architectural dashed grid line
       ctx.save();
-      ctx.setLineDash([8, 6]);
-      ctx.strokeStyle = "rgba(196, 148, 63, 0.75)";
-      ctx.lineWidth = 1.5;
+      ctx.setLineDash([8, 5]);
+      ctx.strokeStyle = "rgba(196, 148, 63, 0.85)";
+      ctx.lineWidth = 1.8;
       ctx.strokeRect(cellX, cellY, cellW, cellH);
       ctx.restore();
 
-      // Compact architectural tag in top-left of the cell (leaving rooms and furniture clear!)
-      const tagW = Math.min(cellW - 16, 190);
-      const tagH = 24;
+      // Compact architectural badge in top-left of the cell
+      const tagW = Math.min(cellW - 16, 210);
+      const tagH = 26;
       const tagX = cellX + 8;
       const tagY = cellY + 8;
 
       ctx.save();
-      ctx.fillStyle = "rgba(255, 253, 250, 0.92)";
-      ctx.strokeStyle = "rgba(196, 148, 63, 0.8)";
-      ctx.lineWidth = 1;
-      ctx.shadowColor = "rgba(16, 34, 31, 0.1)";
-      ctx.shadowBlur = 4;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.strokeStyle = "rgba(196, 148, 63, 0.9)";
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = "rgba(16, 34, 31, 0.12)";
+      ctx.shadowBlur = 5;
       ctx.beginPath();
-      ctx.roundRect(tagX, tagY, tagW, tagH, 4);
+      ctx.roundRect(tagX, tagY, tagW, tagH, 5);
       ctx.fill();
       ctx.stroke();
 
       // Tag Text
-      ctx.fillStyle = sector.colorText;
-      ctx.font = "bold 10.5px Arial, sans-serif";
+      ctx.fillStyle = "#10221F";
+      ctx.font = "bold 11px Arial, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(
@@ -416,13 +827,20 @@ async function createPlanSectorOverlayImage(
 
   // Outer frame
   ctx.strokeStyle = "#10221F";
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3;
   ctx.strokeRect(gridX, gridY, gridW, gridH);
 
-  // Discreet Compass widget in corner
+  // 3. Draw All User Markers (Rooms, Fixed Elements, Furniture with exact angles & bold symbols!)
+  if (planMarkers && planMarkers.length > 0) {
+    planMarkers.forEach((marker) => {
+      drawArchitecturalMarkerOnCanvas(ctx, marker, targetWidth, targetHeight);
+    });
+  }
+
+  // 4. Discreet Compass widget in corner
   drawNorthCompassWidget(ctx, targetWidth, northAngleDeg);
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/jpeg", 0.94);
 }
 
 function drawNorthCompassWidget(ctx: CanvasRenderingContext2D, canvasWidth: number, northAngleDeg: number) {
@@ -654,15 +1072,17 @@ function pdfSectorMatrix(sectors: AuditReport["sector_map"]) {
   const byCode = new Map<string, AuditReport["sector_map"][number]>();
   sectors.forEach((sec) => {
     const raw = String(sec.direction || "").toLowerCase();
-    if (raw.includes("północny zach") || raw.includes("nw")) byCode.set("NW", sec);
-    else if (raw.includes("północny wsch") || raw.includes("ne")) byCode.set("NE", sec);
-    else if (raw.includes("północ") || raw.includes("n")) byCode.set("N", sec);
-    else if (raw.includes("południowy zach") || raw.includes("sw")) byCode.set("SW", sec);
-    else if (raw.includes("południowy wsch") || raw.includes("se")) byCode.set("SE", sec);
-    else if (raw.includes("południe") || raw.includes("s")) byCode.set("S", sec);
-    else if (raw.includes("zachód") || raw.includes("w")) byCode.set("W", sec);
-    else if (raw.includes("wschód") || raw.includes("e")) byCode.set("E", sec);
-    else if (raw.includes("centrum")) byCode.set("CENTER", sec);
+    const secName = String(sec.sector || "").toLowerCase();
+
+    if (raw.includes("centrum") || secName.includes("serce") || secName.includes("centrum") || raw.includes("center")) byCode.set("CENTER", sec);
+    else if (raw.includes("północny zach") || raw.includes("nw") || secName.includes("pomocni")) byCode.set("NW", sec);
+    else if (raw.includes("północny wsch") || raw.includes("ne") || secName.includes("wiedza")) byCode.set("NE", sec);
+    else if (raw.includes("północ") || raw === "n" || secName.includes("karier")) byCode.set("N", sec);
+    else if (raw.includes("południowy zach") || raw.includes("sw") || secName.includes("relacj") || secName.includes("partner")) byCode.set("SW", sec);
+    else if (raw.includes("południowy wsch") || raw.includes("se") || secName.includes("bogact") || secName.includes("finans") || secName.includes("obfitość")) byCode.set("SE", sec);
+    else if (raw.includes("południe") || raw === "s" || secName.includes("sława") || secName.includes("reputacj")) byCode.set("S", sec);
+    else if (raw.includes("zachód") || raw === "w" || secName.includes("kreatyw") || secName.includes("dzieci")) byCode.set("W", sec);
+    else if (raw.includes("wschód") || raw === "e" || secName.includes("zdrowi") || secName.includes("rodzin")) byCode.set("E", sec);
   });
 
   const matrixLayout: SectorDirectionCode[][] = [
@@ -683,11 +1103,60 @@ function pdfSectorMatrix(sectors: AuditReport["sector_map"]) {
           return {
             stack: [
               { text: `${def.direction.toUpperCase()} (${def.code})`, style: "matrixDirection" },
-              { text: item?.sector || def.sector, style: "matrixTitle" },
-              { text: `Żywioł: ${item?.element || def.element}`, style: "matrixMeta" },
+              { text: def.sector, style: "matrixTitle" },
+              { text: `Żywioł: ${def.element} · ${def.trigram}`, style: "matrixMeta" },
               { text: item?.current_use || "Strefa funkcjonalna", style: "matrixUse" }
             ],
             margin: [5, 4, 5, 4]
+          };
+        })
+      )
+    },
+    layout: {
+      fillColor: (rowIndex: number, _node: unknown, columnIndex: number) => {
+        if (rowIndex === 1 && columnIndex === 1) return "#F4EBD9";
+        return (rowIndex + columnIndex) % 2 === 0 ? "#FBF8F2" : "#FFFDFB";
+      },
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8"
+    },
+    margin: [0, 0, 0, 8]
+  };
+}
+
+function pdfNatalChartMatrix(chart?: BuildingNatalChart) {
+  if (!chart || !chart.palaces) return null;
+
+  const byCode = new Map(chart.palaces.map((item) => [item.code, item]));
+  const grid = [
+    ["SE", "S", "SW"],
+    ["E", "C", "W"],
+    ["NE", "N", "NW"]
+  ];
+
+  return {
+    unbreakable: true,
+    table: {
+      dontBreakRows: true,
+      widths: ["33.33%", "33.33%", "33.34%"],
+      body: grid.map((row) =>
+        row.map((code) => {
+          const item = byCode.get(code);
+          return {
+            stack: [
+              {
+                columns: [
+                  { text: `▲ Góra: ${item?.mountain_star ?? "-"}`, fontSize: 6.8, bold: true, color: "#8E601B" },
+                  { text: `${code}`, alignment: "center", fontSize: 7.2, bold: true, color: "#10221F" },
+                  { text: `Woda: ${item?.water_star ?? "-"} 💧`, alignment: "right", fontSize: 6.8, bold: true, color: "#2B5F75" }
+                ],
+                margin: [0, 0, 0, 2]
+              },
+              { text: `${item?.direction ?? ""}`, style: "matrixTitle", fontSize: 7.4 },
+              { text: `Baza: ${item?.base_star ?? "-"} · ${item?.nature ?? ""}`, style: "matrixMeta", fontSize: 6.4 },
+              { text: `Lekarstwo: ${item?.remedy_wu_xing ?? ""}`, style: "matrixUse", fontSize: 6.4, margin: [0, 2, 0, 0] }
+            ],
+            margin: [4, 3.5, 4, 3.5]
           };
         })
       )
@@ -731,7 +1200,8 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
   const planOverlayImage = await createPlanSectorOverlayImage(
     options.planFile,
     report,
-    northAngle
+    northAngle,
+    options.planMarkers || []
   ).catch((err) => {
     console.error("Błąd tworzenia nakładki rzutu:", err);
     return null;
@@ -806,6 +1276,27 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       "Rejestr Źródeł"
     )
   );
+
+  const residentCards = (report.resident_analysis || []).map((res) =>
+    pdfCard(
+      `${pdfText(res.name)} ${res.kua_number ? `· KUA ${res.kua_number} (${res.element})` : ""}`,
+      `${pdfText(res.role || "Domownik")}${res.gender ? ` · ${res.gender}` : ""}${res.group ? ` · ${res.group}` : ""}\n\n${pdfText(res.placement_advice)}${res.yearly_warning ? `\n\n⚡ Wskazówka roczna: ${pdfText(res.yearly_warning)}` : ""}`,
+      [
+        ...(res.favorable_directions?.length
+          ? [`Kierunki sprzyjające: ${res.favorable_directions.join(", ")}`]
+          : []),
+        ...(res.unfavorable_directions?.length
+          ? [`Kierunki niekorzystne: ${res.unfavorable_directions.join(", ")}`]
+          : []),
+        ...(res.assigned_furniture?.length
+          ? [`Przypisany mebel/strefa: ${res.assigned_furniture.join(", ")}`]
+          : [])
+      ].slice(0, 4),
+      "Profil Energetyczny Mieszkańca (Ba Zhai)"
+    )
+  );
+
+  const natalChart = report.natal_chart;
 
   const docDefinition: any = {
     pageSize: "A4",
@@ -903,18 +1394,18 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         margin: [0, 0, 0, 10]
       },
 
-      // 2. PLAN OVERLAY (Centered, proportional height)
+      // 2. SCHEMATYCZNY RZUT CAD & MAPA 9 STREF BAGUA (Z NANIESIONYMI MEBLAMI)
       {
         unbreakable: true,
         stack: [
-          { text: "Mapa 9 Stref Bagua na Rzucie Nieruchomości", style: "sectionTitle", keepWithNext: true, margin: [0, 2, 0, 2] },
-          { text: "Siatka 9 pałaców Luo Shu pokrywa 100% obrysu lokalu z orientacją względem północy.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
+          { text: "Schematyczny Rzut Architektoniczny (CAD) & Siatka 9 Sektorów Bagua", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: `Wektory ścian, orientacja N (${northAngle}°) oraz naniesione elementy wyposażenia wnętrza.`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           planOverlayImage
             ? {
                 image: planOverlayImage,
-                width: 440,
+                width: 527,
                 alignment: "center",
-                margin: [0, 0, 0, 8]
+                margin: [0, 2, 0, 6]
               }
             : pdfCard("Podgląd planu", "Wgraj plik graficzny dla bezpośredniej nakładki 9 stref na rzucie."),
           pdfSectorMatrix(report.sector_map)
@@ -922,7 +1413,47 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         margin: [0, 0, 0, 10]
       },
 
-      // 3. PRIORITY ACTIONS
+      // 3. WYKRES URODZENIOWY BUDYNKU (XUAN KONG FEI XING)
+      ...(natalChart
+        ? [
+            {
+              unbreakable: true,
+              stack: [
+                { text: "Wykres Urodzeniowy Budynku (Xuan Kong Fei Xing – Latające Gwiazdy)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+                { text: `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
+                pdfNatalChartMatrix(natalChart),
+                pdfCard(
+                  "Strategia Energetyczna w Okresie 9 (2024–2043)",
+                  natalChart.period9_strategy,
+                  [
+                    "Główny punkt koncentracji dobrostanu: Sektory z Gwiazdą 9 (Władca Okresu)",
+                    "Strefa przyszłego wzrostu: Sektory z Gwiazdą 1 (Woda / Mądrość)",
+                    "Rekomendacja: Wycisz sektory 5 i 2 elementami żywiołu Metalu (biel, mosiądz, obłe formy)"
+                  ],
+                  "Transformacja Okresu 9 · Cykl 20-letni"
+                )
+              ],
+              margin: [0, 0, 0, 10]
+            }
+          ]
+        : []),
+
+      // 4. RESIDENT PROFILE & KUA NUMBERS (If available)
+      ...(residentCards.length > 0
+        ? [
+            {
+              unbreakable: true,
+              stack: [
+                { text: "Profil Energetyczny Mieszkańców (Liczby Kua & Żywioły)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+                { text: "Kalkulacja Ba Zhai (Osiem Pałaców): optymalne kierunki snu, pracy i dopasowanie mebli do domowników.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
+                pdfCardGrid(residentCards, 2)
+              ],
+              margin: [0, 0, 0, 10]
+            }
+          ]
+        : []),
+
+      // 5. PRIORITY ACTIONS
       {
         unbreakable: true,
         stack: [
@@ -933,7 +1464,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         margin: [0, 0, 0, 10]
       },
 
-      // 4. ROOM-BY-ROOM AUDIT
+      // 5. ROOM-BY-ROOM AUDIT
       {
         unbreakable: true,
         stack: [
@@ -944,18 +1475,22 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         margin: [0, 0, 0, 10]
       },
 
-      // 5. FURNITURE & COMMAND POSITION
-      {
-        unbreakable: true,
-        stack: [
-          { text: "Meble i Pozycja Dominująca (Command Position)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-          { text: "Oparcie łóżka (Czarny Żółw), biurka, sofy i kuchni względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-          pdfCardGrid(furnitureCards, 2)
-        ],
-        margin: [0, 0, 0, 10]
-      },
+      // 6. FURNITURE & COMMAND POSITION
+      ...(furnitureCards.length > 0
+        ? [
+            {
+              unbreakable: true,
+              stack: [
+                { text: "Meble i Pozycja Dominująca (Command Position)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+                { text: "Oparcie wezgłowia (Czarny Żółw), biurka i wyposażenia względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
+                pdfCardGrid(furnitureCards, 2)
+              ],
+              margin: [0, 0, 0, 10]
+            }
+          ]
+        : []),
 
-      // 6. FORM SCHOOL & ERGONOMICS
+      // 7. FORM SCHOOL & ERGONOMICS
       {
         unbreakable: true,
         stack: [

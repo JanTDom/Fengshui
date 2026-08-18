@@ -196,6 +196,259 @@ function normalizeAngleDeg(value) {
   return ((Math.round(numeric) % 360) + 360) % 360;
 }
 
+function calculateKuaNode(birthDateStr, gender = "male") {
+  if (!birthDateStr) return null;
+  const date = new Date(birthDateStr);
+  if (isNaN(date.getTime())) return null;
+
+  let year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+
+  if (month === 1 || (month === 2 && day < 4)) {
+    year -= 1;
+  }
+
+  const lastTwoDigits = year % 100;
+  let sum = Math.floor(lastTwoDigits / 10) + (lastTwoDigits % 10);
+  while (sum > 9) {
+    sum = Math.floor(sum / 10) + (sum % 10);
+  }
+
+  const isFemale = String(gender).toLowerCase().includes("fem") || String(gender).toLowerCase().includes("kob") || String(gender).toLowerCase().includes("k");
+  const isPost2000 = year >= 2000;
+
+  let kua = 0;
+  if (!isFemale) {
+    kua = isPost2000 ? (9 - sum) : (10 - sum);
+    while (kua <= 0) kua += 9;
+    while (kua > 9) kua -= 9;
+    if (kua === 5) kua = 2;
+  } else {
+    kua = isPost2000 ? (sum + 6) : (sum + 5);
+    while (kua > 9) {
+      kua = Math.floor(kua / 10) + (kua % 10);
+    }
+    if (kua === 5) kua = 8;
+  }
+
+  const KUA_INFO = {
+    1: { element: "Woda", trigram: "Kan (坎)", group: "Grupa Wschodnia", fav: ["Południowy Wschód (Sheng Chi)", "Wschód (Tian Yi)", "Południe (Yan Nian)", "Północ (Fu Wei)"], unfav: ["Zachód (Jue Ming)", "Północny Wschód (Wu Gui)", "Północny Zachód (Liu Sha)", "Południowy Zachód (Huo Hai)"], bed: "Głowa na Wschód (Zdrowie) lub Południowy Wschód (Witalność). Unikać wezgłowia na Zachód." },
+    2: { element: "Ziemia", trigram: "Kun (坤)", group: "Grupa Zachodnia", fav: ["Północny Wschód (Sheng Chi)", "Zachód (Tian Yi)", "Północny Zachód (Yan Nian)", "Południowy Zachód (Fu Wei)"], unfav: ["Północ (Jue Ming)", "Południowy Wschód (Wu Gui)", "Południe (Liu Sha)", "Wschód (Huo Hai)"], bed: "Głowa na Zachód (Zdrowie) lub Północny Wschód (Sukces). Unikać wezgłowia na Północ." },
+    3: { element: "Drewno", trigram: "Zhen (震)", group: "Grupa Wschodnia", fav: ["Południe (Sheng Chi)", "Północ (Tian Yi)", "Południowy Wschód (Yan Nian)", "Wschód (Fu Wei)"], unfav: ["Zachód (Jue Ming)", "Północny Zachód (Wu Gui)", "Północny Wschód (Liu Sha)", "Południowy Zachód (Huo Hai)"], bed: "Głowa na Północ (Zdrowie) lub Południe (Witalność). Chronić strefę głowy przed kierunkami zachodnimi." },
+    4: { element: "Drewno", trigram: "Xun (巽)", group: "Grupa Wschodnia", fav: ["Północ (Sheng Chi)", "Południe (Tian Yi)", "Wschód (Yan Nian)", "Południowy Wschód (Fu Wei)"], unfav: ["Północny Wschód (Jue Ming)", "Południowy Zachód (Wu Gui)", "Zachód (Liu Sha)", "Północny Zachód (Huo Hai)"], bed: "Głowa na Południe (Zdrowie) lub Północ (Najwyższa Witalność)." },
+    6: { element: "Metal", trigram: "Qian (乾)", group: "Grupa Zachodnia", fav: ["Zachód (Sheng Chi)", "Północny Wschód (Tian Yi)", "Południowy Zachód (Yan Nian)", "Północny Zachód (Fu Wei)"], unfav: ["Południe (Jue Ming)", "Wschód (Wu Gui)", "Północ (Liu Sha)", "Południowy Wschód (Huo Hai)"], bed: "Głowa na Północny Wschód (Zdrowie) lub Zachód. Bezwzględnie unikać głowy na Południe." },
+    7: { element: "Metal", trigram: "Dui (兌)", group: "Grupa Zachodnia", fav: ["Północny Zachód (Sheng Chi)", "Południowy Zachód (Tian Yi)", "Północny Wschód (Yan Nian)", "Zachód (Fu Wei)"], unfav: ["Wschód (Jue Ming)", "Południe (Wu Gui)", "Południowy Wschód (Liu Sha)", "Północ (Huo Hai)"], bed: "Głowa na Południowy Zachód (Zdrowie/Relacje) lub Północny Zachód." },
+    8: { element: "Ziemia", trigram: "Gen (艮)", group: "Grupa Zachodnia", fav: ["Południowy Zachód (Sheng Chi)", "Północny Zachód (Tian Yi)", "Zachód (Yan Nian)", "Północny Wschód (Fu Wei)"], unfav: ["Południowy Wschód (Jue Ming)", "Północ (Wu Gui)", "Wschód (Liu Sha)", "Południe (Huo Hai)"], bed: "Głowa na Północny Zachód (Zdrowie) lub Południowy Zachód." },
+    9: { element: "Ogień", trigram: "Li (離)", group: "Grupa Wschodnia", fav: ["Wschód (Sheng Chi)", "Południowy Wschód (Tian Yi)", "Północ (Yan Nian)", "Południe (Fu Wei)"], unfav: ["Północny Zachód (Jue Ming)", "Zachód (Wu Gui)", "Południowy Zachód (Liu Sha)", "Północny Wschód (Huo Hai)"], bed: "Głowa na Południowy Wschód (Zdrowie) lub Wschód. Unikać głowy na Północny Zachód." }
+  };
+
+function calculateBuildingNatalChartNode(constructionYearStr, renovationYearStr, facingAngleDeg = 180) {
+  const year = Number(renovationYearStr || constructionYearStr || 2018);
+  let p = 8;
+  let pName = "Okres 8";
+  let pRange = "2004–2023";
+  let pElement = "Ziemia";
+  let pTrigram = "Gen (艮)";
+
+  if (year >= 2024) { p = 9; pName = "Okres 9"; pRange = "2024–2043"; pElement = "Ogień"; pTrigram = "Li (離)"; }
+  else if (year >= 2004) { p = 8; pName = "Okres 8"; pRange = "2004–2023"; pElement = "Ziemia"; pTrigram = "Gen (艮)"; }
+  else if (year >= 1984) { p = 7; pName = "Okres 7"; pRange = "1984–2003"; pElement = "Metal"; pTrigram = "Dui (兌)"; }
+  else if (year >= 1964) { p = 6; pName = "Okres 6"; pRange = "1964–1983"; pElement = "Metal"; pTrigram = "Qian (乾)"; }
+  else if (year >= 1944) { p = 5; pName = "Okres 5"; pRange = "1944–1963"; pElement = "Ziemia"; pTrigram = "Tai Qi"; }
+  else { p = 4; pName = "Okres 4"; pRange = "1924–1943"; pElement = "Drewno"; pTrigram = "Xun (巽)"; }
+
+  const normalized = ((Math.round(facingAngleDeg) % 360) + 360) % 360;
+  let facingDirName = "Południe (S)";
+  let sittingDirName = "Północ (N)";
+
+  if (normalized >= 338 || normalized < 23) { facingDirName = "Północ (N)"; sittingDirName = "Południe (S)"; }
+  else if (normalized < 68) { facingDirName = "Północny Wschód (NE)"; sittingDirName = "Południowy Zachód (SW)"; }
+  else if (normalized < 113) { facingDirName = "Wschód (E)"; sittingDirName = "Zachód (W)"; }
+  else if (normalized < 158) { facingDirName = "Południowy Wschód (SE)"; sittingDirName = "Północny Zachód (NW)"; }
+  else if (normalized < 203) { facingDirName = "Południe (S)"; sittingDirName = "Północ (N)"; }
+  else if (normalized < 248) { facingDirName = "Południowy Zachód (SW)"; sittingDirName = "Północny Wschód (NE)"; }
+  else if (normalized < 293) { facingDirName = "Zachód (W)"; sittingDirName = "Wschód (E)"; }
+  else { facingDirName = "Północny Zachód (NW)"; sittingDirName = "Południowy Wschód (SE)"; }
+
+  const palaces = [
+    { code: "N", direction: "Północ", element: "Woda", palaceBase: 1 },
+    { code: "NE", direction: "Północny wschód", element: "Ziemia", palaceBase: 8 },
+    { code: "E", direction: "Wschód", element: "Drewno", palaceBase: 3 },
+    { code: "SE", direction: "Południowy wschód", element: "Drewno", palaceBase: 4 },
+    { code: "S", direction: "Południe", element: "Ogień", palaceBase: 9 },
+    { code: "SW", direction: "Południowy zachód", element: "Ziemia", palaceBase: 2 },
+    { code: "W", direction: "Zachód", element: "Metal", palaceBase: 7 },
+    { code: "NW", direction: "Północny zachód", element: "Metal", palaceBase: 6 },
+    { code: "C", direction: "Centrum (Tai Qi)", element: "Ziemia", palaceBase: 5 }
+  ].map((item) => {
+    let mountainStar = ((p + item.palaceBase - 1) % 9) || 9;
+    let waterStar = ((p + (10 - item.palaceBase) - 1) % 9) || 9;
+    const baseStar = item.palaceBase;
+
+    if (item.direction.includes(facingDirName.split(" ")[0])) {
+      waterStar = p === 9 ? 9 : (p === 8 ? 8 : 9);
+      mountainStar = (p === 9 ? 1 : (p === 8 ? 8 : 7));
+    } else if (item.direction.includes(sittingDirName.split(" ")[0])) {
+      mountainStar = p === 9 ? 9 : (p === 8 ? 8 : 9);
+      waterStar = (p === 9 ? 1 : (p === 8 ? 8 : 7));
+    }
+
+    const isProsperousWater = waterStar === 9 || waterStar === 1 || waterStar === 8;
+    const isProsperousMountain = mountainStar === 9 || mountainStar === 1 || mountainStar === 8;
+    const hasFiveYellow = mountainStar === 5 || waterStar === 5 || baseStar === 5;
+    const hasTwoBlack = mountainStar === 2 || waterStar === 2;
+
+    let healthDesc = `Gwiazda Górska ${mountainStar}: `;
+    if (isProsperousMountain) {
+      healthDesc += "Wysoki potencjał witalny. Znakomity sektor na sypialnię i regenerację.";
+    } else if (mountainStar === 5) {
+      healthDesc += "Wymaga ciszy i braku gwałtownych ingerencji budowlanych.";
+    } else {
+      healthDesc += "Umiarkowana energia witalna; wspieraj naturalnym światłem.";
+    }
+
+    let wealthDesc = `Gwiazda Wodna ${waterStar}: `;
+    if (isProsperousWater) {
+      wealthDesc += "Główny sektor aktywności finansowej i rozwoju kariery.";
+    } else if (waterStar === 5) {
+      wealthDesc += "Wskazana ostrożność finansowa i ład przestrzenny.";
+    } else {
+      wealthDesc += "Stabilny przepływ; energia wymaga regularnego pobudzania.";
+    }
+
+    let remedy = "Harmonijny układ żywiołów.";
+    if (hasFiveYellow) remedy = "Wprowadź Żywioł Metalu (mosiądz, biel), aby zneutralizować Gwiazdę 5.";
+    else if (hasTwoBlack) remedy = "Zastosuj elementy Metalu i unikaj nadmiaru Ognia.";
+    else if (isProsperousWater) remedy = "Wprowadź aktywność Yang: światło dzienne i rośliny.";
+
+    let period9Outlook = `W Okresie 9 (2024–2043) ${waterStar === 9 || mountainStar === 9 ? "osiąga najwyższy poziom pomyślności." : "utrzymuje stabilny balans."}`;
+
+    return {
+      direction: item.direction,
+      code: item.code,
+      mountain_star: mountainStar,
+      base_star: baseStar,
+      water_star: waterStar,
+      nature: `${item.element} · Pałac ${item.palaceBase}`,
+      health_relationships: healthDesc,
+      wealth_career: wealthDesc,
+      remedy_wu_xing: remedy,
+      period9_outlook: period9Outlook
+    };
+  });
+
+  return {
+    period: p,
+    period_label: `${pName} (${pRange}) · Żywioł ${pElement}`,
+    period_element: pElement,
+    construction_year: constructionYearStr || undefined,
+    facing_direction: facingDirName,
+    sitting_direction: sittingDirName,
+    facing_angle_deg: normalized,
+    chart_type: `Wykres Urodzeniowy ${pName} (${pRange})`,
+    summary: `Budynek wzniesiony/zamieszkany w ${pName} posiada unikalny zapis energetyczny Qi. Fasada na ${facingDirName} i tył na ${sittingDirName} determinują rozkład energii witalnej i finansowej. W bieżącym Okresie 9 (2024–2043) kluczowa jest aktywacja sektorów z Gwiazdą 9 i 1.`,
+    palaces,
+    period9_strategy: "W Okresie 9 (2024–2043) przenieś główną aktywność życiową i biznesową do stref z Gwiazdą 9 i 1, a sektory z Gwiazdą 5 neutralizuj żywiołem Metalu."
+  };
+}
+
+function getFilteredFurnitureRecommendations(planMarkers, keyPieces) {
+  const allSpecified = new Set([
+    ...(planMarkers || []).filter((m) => m?.category === "furniture").map((m) => m.label),
+    ...(keyPieces || [])
+  ]);
+
+  const catalog = {
+    "Łóżko": {
+      item: "Łóżko",
+      orientation_role: "Wezgłowie (oparcie głowy)",
+      direction: "Oparcie o pełną ścianę murowaną (Czarny Żółw)",
+      assessment: "Wezgłowie łóżka musi przylegać do stabilnej ściany murowanej z dala od okien i rur kanalizacyjnych. Strzałka na rzucie wskazuje kierunek nóg i wzroku leżącego.",
+      practical_limit: "Należy bezwzględnie unikać ustawienia głowy pod oknem lub bezpośrednio w osi drzwi wejściowych do pokoju.",
+      recommendations: [
+        "Zapewnij swobodne dojście z obu stron łóżka min. 65 cm",
+        "Zastosuj miękkie tapicerowane wezgłowie i ciepłe lampki nocne 2200K–2700K",
+        "Wyeliminuj lustra odbijające śpiące osoby w nocy"
+      ]
+    },
+    "Biurko": {
+      item: "Biurko do pracy",
+      orientation_role: "Kierunek patrzenia osoby pracującej",
+      direction: "Widok na drzwi (Command Position)",
+      assessment: "Stanowisko pracy wymaga pełnej pozycji dowodzenia – plecy podparte ścianą, wzrok na wejście pod kątem.",
+      practical_limit: "Unikaj siedzenia tyłem do drzwi lub twarzą dosuniętą bezpośrednio do ściany (blokada Feniksa).",
+      recommendations: [
+        "Ustaw fotel tyłem do ściany pod kątem 45-90° do okna",
+        "Doświetl blat lampą zadaniową 4000K z lewej strony (dla praworęcznych)",
+        "Zastosuj zamknięte organizery na dokumenty, aby uniknąć Sha Qi"
+      ]
+    },
+    "Lustro": {
+      item: "Lustro",
+      orientation_role: "Kierunek odbicia tafli lustra",
+      direction: "Ściana boczna (poza osią łóżka i drzwi)",
+      assessment: "Lustro podwaja i przyspiesza przepływ Qi. Nie może odbijać materaca w sypialni ani drzwi wejściowych.",
+      practical_limit: "Odbicie śpiących osób w nocy wywołuje podświadomy niepokój i zakłóca regenerację.",
+      recommendations: [
+        "Zawieś lustro na ścianie bocznej tak, aby nie odbijało łóżka ani wejścia",
+        "W jadalni zawieś lustro odbijające stół – symbolizuje podwojenie obfitości",
+        "W wąskim przedpokoju lustro optycznie poszerza wąski korytarz"
+      ]
+    },
+    "Sofa": {
+      item: "Sofa w salonie",
+      orientation_role: "Kierunek patrzenia domowników",
+      direction: "Oparcie o ścianę lub niską konsolę",
+      assessment: "Główny mebel wypoczynkowy powinien tworzyć bezpieczną strefę integracji z widokiem na pokój.",
+      practical_limit: "Sofa nie powinna stać tyłem do głównego wejścia do strefy dziennej.",
+      recommendations: [
+        "Ustaw sofę z oparciem o ścianę lub konsolę z roślinami",
+        "Zachowaj min. 45 cm odległości od stolika kawowego",
+        "Wprowadź miękki dywan stabilizujący strefę wypoczynku"
+      ]
+    },
+    "Płyta/kuchenka": {
+      item: "Płyta kuchenna",
+      orientation_role: "Podejście osoby gotującej",
+      direction: "Front roboczy z widokiem",
+      assessment: "Płyta reprezentuje żywioł Ognia. Wymaga bufora od zlewu (Woda) oraz dobrej widoczności.",
+      practical_limit: "Instalacje determinują lokalizację, ale kluczowy jest bufor blatu min. 40-60 cm.",
+      recommendations: [
+        "Zachowaj min. 40-60 cm blatu między płytą a zlewem (Drewno neutralizuje konflikt Ognia i Wody)",
+        "Zainstaluj oświetlenie podszafkowe 4000K CRI > 90",
+        "Utrzymuj płytę w nienagannej czystości"
+      ]
+    },
+    "Stół": {
+      item: "Stół jadalniany",
+      orientation_role: "Główne miejsca siedzenia",
+      direction: "Centrum strefy jadalnej",
+      assessment: "Stół jest sercem integracji domowników. Wymaga stabilnego doświetlenia i swobodnego odejścia krzeseł.",
+      practical_limit: "Zapewnij min. 80-90 cm przestrzeni wokół stołu na odsunięcie krzesła i przejście.",
+      recommendations: [
+        "Zawieś lampę centralnie nad blatem stołu na wysokości 75-85 cm",
+        "Preferuj stoły o zaoblonych narożnikach dla łagodnego przepływu Qi",
+        "Wprowadź świeże kwiaty lub misę z owocami jako symbol dostatku"
+      ]
+    }
+  };
+
+  const results = [];
+  for (const [key, card] of Object.entries(catalog)) {
+    const isMatch = Array.from(allSpecified).some((item) => item.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(item.toLowerCase()));
+    if (isMatch) {
+      results.push(card);
+    }
+  }
+
+  if (results.length === 0) {
+    results.push(catalog["Łóżko"]);
+  }
+
+  return results;
+}
+
 function buildFallbackReport(payload, mode, model) {
   const propertyLabel = payload.propertyType === "house" ? "domu" : payload.propertyType === "business" ? "lokalu użytkowego" : "mieszkania";
   const levelsCount = Math.max(1, Math.min(12, Number(payload.levelsCount) || 1));
@@ -226,6 +479,39 @@ function buildFallbackReport(payload, mode, model) {
       : `Wprowadź akcenty żywiołu ${sector.element.toLowerCase()} w wykończeniu i dodatkach.`,
     priority: "średni"
   }));
+
+  const residentAnalysis = residentProfiles.map((res, i) => {
+    const kua = calculateKuaNode(res.birthDate, res.gender);
+    const name = res.label || `Mieszkaniec ${i + 1}`;
+    if (!kua) {
+      return {
+        name,
+        role: res.role || "Domownik",
+        kua_number: 0,
+        element: "Do uzupełnienia",
+        group: "Brak daty urodzenia",
+        favorable_directions: ["Wymaga podania daty urodzenia"],
+        unfavorable_directions: [],
+        placement_advice: "Podaj datę urodzenia domownika w formularzu, aby wyliczyć osobistą Liczbę Kua i sprzyjające kierunki snu i pracy.",
+        yearly_warning: ""
+      };
+    }
+
+    return {
+      name,
+      role: res.role || "Domownik",
+      birth_year: res.birthDate ? res.birthDate.slice(0, 4) : undefined,
+      gender: res.gender === "female" ? "Kobieta" : "Mężczyzna",
+      kua_number: kua.kua,
+      element: kua.element,
+      group: kua.group,
+      favorable_directions: kua.fav,
+      unfavorable_directions: kua.unfav,
+      assigned_furniture: res.assignedFurniture || [],
+      placement_advice: kua.bed,
+      yearly_warning: `Dla żywiołu ${kua.element} w bieżącym roku zalecana szczególna dbałość o czystość energetyczną strefy snu.`
+    };
+  });
 
   return {
     score: clampScore(score, 78),
@@ -336,56 +622,13 @@ function buildFallbackReport(payload, mode, model) {
         method: "Forma + Ergonomia + 5 Żywiołów"
       };
     }),
-    furniture_recommendations: [
-      {
-        item: "Łóżko Główne",
-        orientation_role: "Wezgłowie (oparcie głowy)",
-        direction: "Oparcie o pełną ścianę murowaną",
-        assessment: "Wezgłowie łóżka musi przylegać do stabilnej ściany murowanej z dala od okien i rur (Czarny Żółw).",
-        practical_limit: "Należy unikać ustawienia głowy pod oknem lub bezpośrednio w świetle drzwi.",
-        recommendations: [
-          "Zapewnij swobodne dojście z obu stron łóżka min. 65 cm",
-          "Zastosuj miękkie tapicerowane wezgłowie i lampki 2200K–2700K",
-          "Wyeliminuj lustra odbijające śpiące osoby"
-        ]
-      },
-      {
-        item: "Biurko do pracy",
-        orientation_role: "Kierunek patrzenia osoby pracującej",
-        direction: "Widok na drzwi (Command Position)",
-        assessment: "Stanowisko pracy wymaga pełnej pozycji dowodzenia – plecy podparte ścianą, wzrok na wejście.",
-        practical_limit: "Unikaj siedzenia tyłem do drzwi lub twarzą dosuniętą bezpośrednio do ściany.",
-        recommendations: [
-          "Ustaw fotel tyłem do ściany pod kątem 45-90° do okna",
-          "Doświetl blat lampą zadaniową 4000K z lewej strony",
-          "Zastosuj zamknięte organizery na dokumenty"
-        ]
-      },
-      {
-        item: "Sofa w salonie",
-        orientation_role: "Kierunek patrzenia domowników",
-        direction: "Oparcie o ścianę lub niską konsolę",
-        assessment: "Główny mebel wypoczynkowy powinien tworzyć bezpieczną strefę integracji z widokiem na pokój.",
-        practical_limit: "Sofa nie powinna stać tyłem do głównego wejścia do strefy dziennej.",
-        recommendations: [
-          "Ustaw sofę z oparciem o ścianę lub konsolę z roślinami",
-          "Zachowaj min. 45 cm odległości od stolika kawowego",
-          "Wprowadź miękki dywan stabilizujący strefę wypoczynku"
-        ]
-      },
-      {
-        item: "Płyta kuchenna",
-        orientation_role: "Podejście osoby gotującej",
-        direction: "Front roboczy z widokiem",
-        assessment: "Płyta reprezentuje żywioł Ognia. Wymaga bufora od zlewu (Woda) oraz dobrej widoczności.",
-        practical_limit: "Instalacje determinują lokalizację, ale kluczowy jest bufor blatu min. 40-60 cm.",
-        recommendations: [
-          "Zachowaj min. 40-60 cm blatu między płytą a zlewem",
-          "Zainstaluj oświetlenie podszafkowe 4000K CRI > 90",
-          "Utrzymuj płytę w nienagannej czystości"
-        ]
-      }
-    ],
+    furniture_recommendations: getFilteredFurnitureRecommendations(planMarkers, payload.furnitureAnnotations?.keyPieces),
+    resident_analysis: residentAnalysis,
+    natal_chart: calculateBuildingNatalChartNode(
+      payload.buildingProfile?.constructionYear,
+      payload.buildingProfile?.majorRenovationYear,
+      payload.orientationData?.northAngleDeg || 180
+    ),
     traditional_analysis: [
       {
         title: "Szkoła Formy (Luan Tou) i 4 Zwierzęta",
@@ -461,16 +704,21 @@ GŁÓWNE ZASADY JAKOŚCI AUDYTU:
    - Realne Atuty architektoniczne (doświetlenie, oparcie, bufor prywatności).
    - Poważne Ryzyka (łóżko na linii drzwi-okno tzw. pozycja trumienna, lustro vis-a-vis wejścia odbijające Qi, płyta bezpośrednio przy zlewie konflikt Ogień-Woda, siedzenie tyłem do drzwi).
    - Bezwzględnie Konkretne Rekomendacje (jak dokładnie przestawić meble, jakie światło zastosować np. 2200K sypialnia vs 4000K praca, jakie materiały i barwy wprowadzić).
-3. MEBLE - ZAKAZ DUPLIKATÓW (Maksymalnie po 1 unikalnym meblu z każdej kategorii):
+3. MEBLE - ZAKAZ DUPLIKATÓW I ZAKAZ FABRYKACJI:
+   - Analizuj WYŁĄCZNIE meble i elementy, które użytkownik realnie zaznaczył na rzucie (w plan_annotations.markers lub furniture_annotations.keyPieces).
+   - Jeśli na rzucie oznaczono tylko Łóżko, zwróć analizę WYŁĄCZNIE dla Łóżka! Nigdy nie wymyślaj mebli, których nie ma na schemacie.
+   - Jeśli zaznaczono Lustro: zbadaj kierunek odbicia (zakaz odbijania łóżka i drzwi wejściowych).
    - Łóżko: oparcie wezgłowia o pełną ścianę (Czarny Żółw), widok na drzwi (pozycja dominująca), min. 65 cm dojścia z obu stron, brak luster odbijających materac.
-   - Biurko: oparcie za plecami, widok na wejście, światło 4000K z lewej strony.
+   - Biurko: oparcie za plecami, widok na wejście (Command Position), światło 4000K z lewej strony.
    - Płyta kuchenna: bufor min. 40-60 cm blatu od zlewu/lodówki (Drewno neutralizuje konflikt Ognia i Wody), dobra widoczność przestrzeni.
    - Sofa: oparcie o ścianę lub niską konsolę, widok na wejście do salonu, ciągi komunikacyjne 90-110 cm.
 4. KIERUNKI I PÓŁNOC:
    - Pisz ludzkim językiem (np. "Orientacja północy: 33° N (północno-wschodnia elewacja)"). Nigdy nie pisz "względem góry pliku"!
 5. 9 SEKTORÓW BAGUA:
    - Przypisz każdy sektor (Północ - Kariera/Woda, Północny Wschód - Wiedza/Ziemia, Wschód - Zdrowie/Drewno, Południowy Wschód - Finanse/Drewno, Południe - Sława/Ogień, Południowy Zachód - Relacje/Ziemia, Zachód - Kreatywność/Metal, Północny Zachód - Pomocni Ludzie/Metal, Centrum - Tai Qi/Ziemia) do realnych pomieszczeń na rzucie.
-6. ZMIANY BEZ REMONTU:
+6. DOMOWNICY I LICZBY KUA:
+   - Dla każdego mieszkańca z podaną datą urodzenia wylicz Liczbę Kua (1-9), Żywioł i 4 korzystne kierunki snu/pracy oraz wskaż, czy jego przypisane łóżko/biurko jest ustawione w dobrym kierunku.
+7. ZMIANY BEZ REMONTU:
    - Podaj 5-8 konkretnych, natychmiastowych działań z szacowanym kosztem (np. "0 zł", "50-150 zł") i czasem wdrożenia ("Natychmiast", "W tym tygodniu").
 
 DANE WEJŚCIOWE:
@@ -507,6 +755,8 @@ Zwróć wyłącznie prawidłowy JSON zgodny ze strukturą:
   "sector_map": [{ "sector": string, "direction": string, "element": string, "current_use": string, "assessment": string, "advice": string, "priority": string }],
   "room_recommendations": [{ "room": string, "function": string, "diagnosis": string, "strengths": string[], "risks": string[], "recommendations": string[], "method": string }],
   "furniture_recommendations": [{ "item": string, "orientation_role": string, "direction": string, "assessment": string, "practical_limit": string, "recommendations": string[] }],
+  "resident_analysis": [{ "name": string, "role": string, "birth_year": string, "gender": string, "kua_number": number, "element": string, "group": string, "favorable_directions": string[], "unfavorable_directions": string[], "placement_advice": string, "yearly_warning": string }],
+  "natal_chart": { "period": number, "period_label": string, "period_element": string, "facing_direction": string, "sitting_direction": string, "facing_angle_deg": number, "chart_type": string, "summary": string, "palaces": [{ "direction": string, "code": string, "mountain_star": number, "base_star": number, "water_star": number, "nature": string, "health_relationships": string, "wealth_career": string, "remedy_wu_xing": string, "period9_outlook": string }], "period9_strategy": string },
   "traditional_analysis": [{ "title": string, "body": string, "bullets": string[] }],
   "practical_analysis": [{ "title": string, "body": string, "bullets": string[] }],
   "practical_changes": [{ "title": string, "cost": string, "when": string }],
