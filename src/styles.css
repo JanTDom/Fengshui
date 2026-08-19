@@ -4280,7 +4280,9 @@ body {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  pointer-events: auto;
+  pointer-events: none; /* Prevents oversized transparent hit area */
+  width: max-content;
+  height: max-content;
 }
 
 .plan-marker {
@@ -4289,22 +4291,23 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  min-width: 14px;
-  height: 18px;
-  padding: 0 6px;
-  max-width: 140px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 4px;
+  gap: 2px;
+  min-width: 10px;
+  height: auto;
+  padding: 1px 3px;
+  max-width: 120px;
+  border: 1px solid #1A2B27;
+  border-radius: 0 !important; /* Zero oval pill frames */
   background: var(--ink);
   color: #FFFFFF;
-  box-shadow: 0 2px 6px rgba(16, 34, 31, 0.2);
-  font-size: 0.62rem;
+  box-shadow: 0 1px 3px rgba(16, 34, 31, 0.2);
+  font-size: 0.50rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   cursor: grab;
   user-select: none;
   touch-action: none;
+  pointer-events: auto; /* Active hit area restricted strictly to the marker */
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -4313,57 +4316,53 @@ body {
 }
 
 .plan-marker:hover {
-  transform: scale(1.06);
-  box-shadow: 0 4px 12px rgba(16, 34, 31, 0.3);
+  transform: scale(1.04);
+  box-shadow: 0 2px 8px rgba(16, 34, 31, 0.3);
 }
 
 .plan-marker.selected {
   outline: 2px solid #C49544;
-  outline-offset: 1.5px;
-  transform: scale(1.08);
-  box-shadow: 0 4px 14px rgba(196, 148, 63, 0.45);
+  outline-offset: 1px;
+  transform: scale(1.05);
+  box-shadow: 0 2px 10px rgba(196, 148, 63, 0.45);
 }
 
 .plan-marker.room {
   background: rgba(255, 255, 255, 0.96);
   color: #10221F;
-  border: 1px solid #2D5A46;
-  border-radius: 3px;
-  height: 14px;
+  border: 1px solid #1A2B27;
+  border-radius: 0 !important; /* Zero oval frames */
+  height: auto;
   min-width: 0;
   max-width: none;
-  padding: 0 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  font-size: 0.52rem;
-  font-weight: 700;
+  padding: 1px 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  font-size: 0.38rem; /* 2x smaller than before */
+  font-weight: 800;
   white-space: nowrap;
-  line-height: 1;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .plan-marker.room .pin-dot {
-  width: 3.5px;
-  height: 3.5px;
-  border-radius: 50%;
-  background: #2D5A46;
+  display: none; /* Clean architectural typography without clutter dots */
 }
 
 .plan-marker.fixed {
   background: rgba(43, 83, 109, 0.92);
   color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 3px;
-  height: 16px;
-  padding: 0 5px;
-  font-size: 0.60rem;
+  border: 1px solid #1A2B27;
+  border-radius: 0 !important; /* Clean square corner */
+  height: auto;
+  padding: 1px 4px;
+  font-size: 0.46rem;
   font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .plan-marker.fixed .pin-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #A0CBE5;
+  display: none;
 }
 
 .north-wizard.plan-expanded .scan-preview {
@@ -4497,6 +4496,7 @@ body {
 }
 
 /* Floor Plan Furniture Marker (Realistic 2D Architectural Shape) */
+/* Floor Plan Furniture Marker (Realistic 2D Architectural Shape) */
 .plan-marker.furniture {
   position: relative;
   display: flex !important;
@@ -4515,8 +4515,8 @@ body {
   position: relative;
   display: grid;
   place-items: center;
-  width: clamp(28px, 10.5cqi, 88px);
-  height: clamp(28px, 10.5cqi, 88px);
+  width: clamp(24px, 7.5cqi, 58px);
+  height: clamp(24px, 7.5cqi, 58px);
   border-radius: 0 !important;
   background: transparent !important;
   border: none !important;
@@ -4524,14 +4524,14 @@ body {
   transform: rotate(var(--marker-facing, 0deg)) scaleX(var(--marker-scale-x, var(--marker-scale, 1))) scaleY(var(--marker-scale-y, var(--marker-scale, 1)));
   transform-origin: 50% 50%;
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  filter: drop-shadow(0 2px 5px rgba(16, 34, 31, 0.35));
+  filter: drop-shadow(0 1px 4px rgba(16, 34, 31, 0.35));
 }
 
 .plan-marker.furniture.selected .arch-furniture-piece {
   border: none !important;
   box-shadow: none !important;
-  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 4px 10px rgba(16, 34, 31, 0.5));
-  transform: rotate(var(--marker-facing, 0deg)) scaleX(calc(var(--marker-scale-x, var(--marker-scale, 1)) * 1.04)) scaleY(calc(var(--marker-scale-y, var(--marker-scale, 1)) * 1.04));
+  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 3px 8px rgba(16, 34, 31, 0.5));
+  transform: rotate(var(--marker-facing, 0deg)) scaleX(calc(var(--marker-scale-x, var(--marker-scale, 1)) * 1.03)) scaleY(calc(var(--marker-scale-y, var(--marker-scale, 1)) * 1.03));
 }
 
 /* Floor Plan Fixed Points (Doors, Windows, Structural Elements) */
@@ -4553,8 +4553,8 @@ body {
   position: relative;
   display: grid;
   place-items: center;
-  width: clamp(24px, 8.5cqi, 76px);
-  height: clamp(24px, 8.5cqi, 76px);
+  width: clamp(20px, 6cqi, 50px);
+  height: clamp(20px, 6cqi, 50px);
   border-radius: 0 !important;
   background: transparent !important;
   border: none !important;
@@ -4562,24 +4562,24 @@ body {
   transform: rotate(var(--marker-facing, 0deg)) scaleX(var(--marker-scale-x, var(--marker-scale, 1))) scaleY(var(--marker-scale-y, var(--marker-scale, 1)));
   transform-origin: 50% 50%;
   transition: transform 0.15s ease;
-  filter: drop-shadow(0 2px 4px rgba(43, 83, 109, 0.35));
+  filter: drop-shadow(0 1px 3px rgba(43, 83, 109, 0.35));
 }
 
 .plan-marker.fixed.selected .arch-fixed-piece {
-  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 4px 8px rgba(43, 83, 109, 0.6));
-  transform: rotate(var(--marker-facing, 0deg)) scaleX(calc(var(--marker-scale-x, var(--marker-scale, 1)) * 1.04)) scaleY(calc(var(--marker-scale-y, var(--marker-scale, 1)) * 1.04));
+  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 3px 6px rgba(43, 83, 109, 0.6));
+  transform: rotate(var(--marker-facing, 0deg)) scaleX(calc(var(--marker-scale-x, var(--marker-scale, 1)) * 1.03)) scaleY(calc(var(--marker-scale-y, var(--marker-scale, 1)) * 1.03));
 }
 
 .pin-marker-pill.fixed-pill {
   background: rgba(43, 83, 109, 0.92);
   color: #FFFFFF;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 3px;
-  height: 16px;
-  padding: 0 5px;
-  font-size: 0.60rem;
+  border: 1px solid #1A2B27;
+  border-radius: 0 !important;
+  height: auto;
+  padding: 1px 4px;
+  font-size: 0.46rem;
   font-weight: 700;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .architectural-compass-svg {
@@ -4597,19 +4597,19 @@ body {
 
 .plan-marker.furniture .furniture-floating-tag {
   position: absolute;
-  top: calc(100% + 5px);
+  top: calc(100% + 2px);
   left: 50%;
   transform: translateX(-50%);
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(16, 34, 31, 0.96);
+  padding: 1px 3px;
+  border-radius: 0 !important; /* Zero oval pill frames */
+  background: #10221F;
   color: #FFFFFF;
-  border: 1px solid rgba(196, 149, 68, 0.75);
-  font-size: 0.72rem;
+  border: 1px solid #C49544;
+  font-size: 0.50rem;
   font-weight: 800;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   z-index: 10;
 }
 

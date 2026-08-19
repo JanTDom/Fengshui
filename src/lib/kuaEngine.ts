@@ -487,27 +487,43 @@ export function evaluateResidentPlacement(
 
   if (isBed) {
     if (isFavorable) {
-      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} jest w 100% zgodne z osobistym Kua ${activeKua.kua} (${dirQuality}). Zapewnia głęboką regenerację fazy REM.`;
-      correction = `Utrzymaj obecny kierunek wezgłowia (${currentDir.label}). Zadbaj o pełne oparcie ściany za głową i brak ostrego światła.`;
+      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} jest w 100% zgodne z osobistym Kua ${activeKua.kua} (${dirQuality}). Zapewnia optymalną regenerację fazy REM i witalność biologiczną.`;
+      correction = `Utrzymaj obecny kierunek wezgłowia (${currentDir.label}). Zadbaj o pełne oparcie ściany za głową (Czarny Żółw) i brak ostrego światła.`;
     } else {
       verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} koliduje z osobistym profilem Kua ${activeKua.kua} (${dirQuality}). Może powodować płytki sen, mikrowybudzenia lub poranne zmęczenie.`;
-      correction = `Zalecana korekta: obróć wezgłowie łóżka w stronę ${activeKua.tianYi} (optymalne dla snu) lub ${activeKua.fuWei} (spokój psychiczny).`;
+      correction = `Zalecana korekta: obróć wezgłowie łóżka w stronę ${activeKua.tianYi} (optymalne dla zdrowia i regeneracji) lub ${activeKua.fuWei} (spokój psychiczny).`;
     }
   } else if (isDesk) {
     if (isFavorable) {
-      verdict = `Wzrok przy biurku skierowany na ${currentDir.label} jest w pełni zgodny z Kua ${activeKua.kua} (${dirQuality}). Sprzyja jasności myśli i sukcesom zawodowym.`;
-      correction = `Bardzo dobre ustawienie. Zadbaj dodatkowo o to, aby mieć za plecami pełną ścianę (pozycja dowodzenia).`;
+      verdict = `Wzrok przy biurku skierowany na ${currentDir.label} jest w pełni zgodny z osobistym Kua ${activeKua.kua} (${dirQuality}). Sprzyja jasności umysłu, skutecznym decyzjom i sukcesom finansowym.`;
+      correction = `Bardzo dobre ustawienie kompasowe. Upewnij się, że zachowana jest równocześnie Szkoła Formy (pełna ściana za plecami, widok na wejście).`;
     } else {
-      verdict = `Kierunek pracy przy biurku (${currentDir.label}) znajduje się w strefie osłabiającej Kua ${activeKua.kua} (${dirQuality}), co może sprzyjać rozpraszaniu uwagi.`;
-      correction = `Zalecany obrót biurka twarzą na ${activeKua.shengChi} (sukces finansowy) lub ${activeKua.fuWei} (koncentracja analityczna).`;
+      verdict = `Kierunek pracy przy biurku (${currentDir.label}) znajduje się w strefie osłabiającej Kua ${activeKua.kua} (${dirQuality}), co może sprzyjać rozpraszaniu uwagi i zmęczeniu decyzyjnemu.`;
+      correction = `Zalecany obrót biurka: dla zarobków i biznesu wybierz kierunek Sheng Chi (${activeKua.shengChi}), natomiast do głębokiej pracy analitycznej i nauki wybierz Fu Wei (${activeKua.fuWei}).`;
     }
   } else {
     verdict = `Mebel w sektorze ${currentSector.name} oddziałuje na domownika energią ${currentSector.element}.`;
     correction = `Zadbaj o równowagę 5 żywiołów w tej strefie.`;
   }
 
+  // Wypośrodkowanie (Forma vs Kua) & Roczne zakazy 2026
+  const annualAfflictionNotice = `Roczne wpływy przestrzenne w 2026 roku:
+• Tai Sui (Władca Roku): Sektor Południowy (S, 180°). Unikaj siedzenia twarzą bezpośrednio do Południa (zakaz konfrontacji z Tai Sui). Miej Południe za plecami dla oparcia. Zakaz wiercenia i remontów w S.
+• Sui Po (Rozbijacz Roku): Sektor Północny (N, 0°). Unikaj hałasu i intensywnego przebywania.
+• 5 Żółta (Wu Wang): Sektor Północno-Wschodni (NE). Strefa bezwzględnego wyciszenia – unikaj spania w NE, zakaz świec/ognia, zastosuj remedium metalowe (mosiądz/dzwonki).
+• 2 Czarna (Gwiazda Chorób): Sektor Południowo-Zachodni (SW). Chroń zdrowie i układ pokarmowy elementem Metalu.`;
+
+  const workDirectionsGuide = `Najlepsze kierunki i sektory do pracy dla Kua ${activeKua.kua}:
+• Generowanie dochodów & Strategia (Sheng Chi): ${activeKua.shengChi}
+• Głęboka koncentracja, pisanie & analityka (Fu Wei): ${activeKua.fuWei}
+• Relacje biznesowe, negocjacje & partnerstwo (Yan Nian): ${activeKua.yanNian}
+• Regeneracja i odporność (Tian Yi): ${activeKua.tianYi}`;
+
+  const balancingPhilosophy = `Zasada Wypośrodkowania (Forma vs Kompas):
+Zasada Szkoły Formy (solidna ściana za plecami + kontrola wzrokowa nad wejściem) MA PIERWSZEŃSTWO przed kierunkiem kompasowym. Siedzenie tyłem do drzwi tylko po to, by patrzeć w kierunek Sheng Chi, wywołuje podświadomy stres układu nerwowego. Jeśli geometria pokoju nie pozwala patrzeć w Sheng Chi przy ścianie za plecami, wybierz inny sprzyjający kierunek (Fu Wei lub Yan Nian) pod lekkim kątem lub ustaw biurko w sprzyjającym sektorze pokoju.`;
+
   if (hourPillar) {
-    verdict += ` [Filar Godziny: ${hourPillar.animal} · ${hourPillar.significance}]`;
+    verdict += `\n[Filar Godziny BaZi: ${hourPillar.animal} · ${hourPillar.significance}]`;
   }
 
   return {
@@ -522,8 +538,8 @@ export function evaluateResidentPlacement(
     currentSector: currentSector.name,
     isDirectionFavorable: isFavorable,
     directionQualityName: dirQuality,
-    annualStar2026: `${currentSector.annual2026Star}: ${currentSector.annualAdvice}`,
-    evaluationVerdict: verdict,
+    annualStar2026: `${currentSector.annual2026Star}: ${currentSector.annualAdvice}\n${annualAfflictionNotice}`,
+    evaluationVerdict: `${verdict}\n\n${workDirectionsGuide}\n\n${balancingPhilosophy}`,
     correctionRecommendation: correction
   };
 }

@@ -145,7 +145,7 @@ export function FengShuiWorkspace({
 
   // Consultation Goals & Parameters
   const [consultationPurpose, setConsultationPurpose] = useState(
-    "Poprawa jakości snu, maksymalizacja koncentracji w pracy zdalnej oraz harmonizacja relacji domowników"
+    "Wszystko (Kompleksowy audyt: sen, praca, relacje, finanse, zdrowie)"
   );
   const [usableAreaM2, setUsableAreaM2] = useState(64);
   const [levelsCount, setLevelsCount] = useState(1);
@@ -310,13 +310,13 @@ export function FengShuiWorkspace({
   }
 
   function handleCanvasClick(event: MouseEvent<HTMLDivElement>) {
-    if (Date.now() - lastMarkerPointerTimeRef.current < 300) return;
+    if (Date.now() - lastMarkerPointerTimeRef.current < 350) return;
     if (suppressScanClickRef.current) {
       suppressScanClickRef.current = false;
       return;
     }
     const target = event.target as HTMLElement;
-    if (target.closest(".marker-floating-actions, .floating-north-compass, button")) return;
+    if (target.closest(".marker-floating-actions, .floating-north-compass, .plan-marker, .plan-marker-wrapper, button")) return;
 
     if (scanTool === "north") return;
 
@@ -1078,20 +1078,20 @@ export function FengShuiWorkspace({
                     onChange={(e) => setConsultationPurpose(e.target.value)}
                     style={{ width: "100%", fontSize: "0.8rem", padding: "6px 8px" }}
                   >
-                    <option value="Poprawa jakości snu, maksymalizacja koncentracji w pracy zdalnej oraz harmonizacja relacji domowników">
-                      Sen, praca zdalna i harmonizacja relacji
+                    <option value="Wszystko (Kompleksowy audyt: sen, praca, relacje, finanse, zdrowie)">
+                      Wszystko (Kompleksowy audyt: sen, praca, relacje, finanse, zdrowie)
                     </option>
-                    <option value="Głęboka regeneracja nocna, usunięcie bezsenności i ochrona sypialni (Sen & Zdrowie)">
-                      Sen & Zdrowie: regeneracja i ochrona sypialni
+                    <option value="Sen & Zdrowie (Głęboka regeneracja nocna i ochrona sypialni)">
+                      Sen & Zdrowie (Głęboka regeneracja nocna i ochrona sypialni)
                     </option>
-                    <option value="Maksymalizacja koncentracji, pozycji dowodzenia i rozwoju kariery (Kariera & Biznes)">
-                      Kariera & Biznes: skupienie i dochody
+                    <option value="Kariera & Biznes (Maksymalizacja koncentracji, pozycji dowodzenia i dochodów)">
+                      Kariera & Biznes (Maksymalizacja koncentracji i dochodów)
                     </option>
-                    <option value="Harmonizacja relacji domowników, redukcja napięć i spokój w rodzinie (Relacje)">
-                      Relacje & Rodzina: spokój i zgoda
+                    <option value="Relacje & Rodzina (Harmonizacja domowników, spokój i redukcja napięć)">
+                      Relacje & Rodzina (Harmonizacja domowników i spokój)
                     </option>
-                    <option value="Kompleksowy audyt nowego lokalu przed zakupem lub wykończeniem (Zakup / Aranżacja)">
-                      Audyt przed zakupem / wykończeniem
+                    <option value="Zakup / Wykończenie (Audyt przedzakupowy lokalu i aranżacja przestrzeni)">
+                      Zakup / Wykończenie (Audyt przedzakupowy i aranżacja)
                     </option>
                   </select>
                 </div>
@@ -1420,12 +1420,17 @@ function renderCadSymbolSvg(furn: string) {
   if (furn === "Sofa") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        <rect x="12" y="16" width="48" height="10" fill="#D4A757" stroke="#1A2B27" strokeWidth="1.8" />
-        <line x1="36" y1="16" x2="36" y2="26" stroke="#1A2B27" strokeWidth="1.4" strokeDasharray="2 2" />
-        <rect x="12" y="26" width="9" height="30" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        <rect x="51" y="26" width="9" height="30" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        <rect x="21" y="26" width="15" height="30" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.6" />
-        <rect x="36" y="26" width="15" height="30" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.6" />
+        {/* Dark backrest with clear depth */}
+        <rect x="10" y="12" width="52" height="14" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Dark armrest left */}
+        <rect x="10" y="26" width="11" height="34" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Dark armrest right */}
+        <rect x="51" y="26" width="11" height="34" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Clear lighter cushions */}
+        <rect x="21" y="26" width="15" height="32" rx="1" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.5" />
+        <rect x="36" y="26" width="15" height="32" rx="1" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.5" />
+        {/* Subtle cushion contour line */}
+        <line x1="36" y1="26" x2="36" y2="58" stroke="#1A2B27" strokeWidth="1.4" />
       </svg>
     );
   }
@@ -1441,17 +1446,16 @@ function renderCadSymbolSvg(furn: string) {
   if (furn === "Szafa" || furn === "Garderoba") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg storage-svg" aria-hidden="true">
-        {/* Main carcass - 60cm proportion */}
-        <rect x="8" y="14" width="56" height="34" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        {/* Internal partition / hanger rail */}
-        <line x1="8" y1="28" x2="64" y2="28" stroke="#D1C7B7" strokeWidth="1.2" strokeDasharray="3 2" />
-        <line x1="36" y1="14" x2="36" y2="48" stroke="#1A2B27" strokeWidth="1.4" />
-        {/* Front sliding/opening doors indicator */}
-        <rect x="8" y="48" width="29" height="4" fill="#C49544" stroke="#1A2B27" strokeWidth="1.2" />
-        <rect x="35" y="51" width="29" height="4" fill="#DFC085" stroke="#1A2B27" strokeWidth="1.2" />
-        {/* Front Opening Direction Arrows */}
-        <path d="M 36 57 L 36 65 M 32 62 L 36 66 L 40 62" stroke="#C49544" strokeWidth="1.6" fill="none" strokeLinecap="square" />
-        <text x="36" y="71" fontSize="5.5" fontWeight="bold" fill="#C49544" textAnchor="middle">DRZWI / FRONT</text>
+        {/* Main carcass */}
+        <rect x="8" y="10" width="56" height="36" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Internal hanger rail */}
+        <line x1="12" y1="24" x2="60" y2="24" stroke="#8C6D38" strokeWidth="1.4" strokeDasharray="3 2" />
+        {/* Left ajar door */}
+        <line x1="8" y1="46" x2="22" y2="64" stroke="#1A2B27" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M 8 46 A 24 24 0 0 0 22 64" fill="none" stroke="#C49544" strokeWidth="1.2" strokeDasharray="2 2" />
+        {/* Right ajar door */}
+        <line x1="64" y1="46" x2="50" y2="64" stroke="#1A2B27" strokeWidth="2.2" strokeLinecap="round" />
+        <path d="M 64 46 A 24 24 0 0 1 50 64" fill="none" stroke="#C49544" strokeWidth="1.2" strokeDasharray="2 2" />
       </svg>
     );
   }
