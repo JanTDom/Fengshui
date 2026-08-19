@@ -5,18 +5,28 @@ import { hasSupabaseConfig, supabase } from "./supabase";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 
-// Initialize VFS fonts immediately at bundle load time
-const pdfVfs =
-  (pdfFonts as any)?.pdfMake?.vfs ||
-  (pdfFonts as any)?.vfs ||
-  (pdfMake as any)?.vfs ||
-  pdfFonts;
+export function getPdfVfs(): Record<string, string> {
+  const fontSources = [
+    (pdfFonts as any)?.pdfMake?.vfs,
+    (pdfFonts as any)?.vfs,
+    (pdfFonts as any)?.default?.pdfMake?.vfs,
+    (pdfFonts as any)?.default?.vfs,
+    (pdfFonts as any)?.default,
+    (window as any)?.pdfMake?.vfs,
+    (window as any)?.vfs,
+    (pdfMake as any)?.vfs,
+    pdfFonts
+  ];
 
-if (pdfVfs) {
-  (pdfMake as any).vfs = pdfVfs;
+  for (const src of fontSources) {
+    if (src && typeof src === "object" && typeof src["Roboto-Regular.ttf"] === "string") {
+      return src;
+    }
+  }
+  return {};
 }
 
-(pdfMake as any).fonts = {
+const standardPdfFonts = {
   Roboto: {
     normal: "Roboto-Regular.ttf",
     bold: "Roboto-Medium.ttf",
@@ -24,6 +34,12 @@ if (pdfVfs) {
     bolditalics: "Roboto-MediumItalic.ttf"
   }
 };
+
+const initialVfs = getPdfVfs();
+if (Object.keys(initialVfs).length > 0) {
+  (pdfMake as any).vfs = initialVfs;
+}
+(pdfMake as any).fonts = standardPdfFonts;
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_MIME_TYPES = new Set([
@@ -636,12 +652,27 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
-function loadImageElement(src: string) {
+function loadImageElement(src: string): Promise<HTMLImageElement> {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("Nie udało się przygotować skanu do mapy sektorów."));
+    const timeout = setTimeout(() => {
+      resolve(image);
+    }, 4000);
+
+    image.onload = () => {
+      clearTimeout(timeout);
+      resolve(image);
+    };
+    image.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error("Nie udało się przygotować skanu do mapy sektorów."));
+    };
     image.src = src;
+
+    if (image.complete && image.naturalWidth > 0) {
+      clearTimeout(timeout);
+      resolve(image);
+    }
   });
 }
 
@@ -1833,7 +1864,13 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     ]
   };
 
-  const pdfDocument = (pdfMake as any).createPdf(docDefinition);
+  const vfs = getPdfVfs();
+  if (Object.keys(vfs).length > 0) {
+    (pdfMake as any).vfs = vfs;
+  }
+  (pdfMake as any).fonts = standardPdfFonts;
+
+  const pdfDocument = (pdfMake as any).createPdf(docDefinition, undefined, standardPdfFonts, vfs);
   const fileName = `plan-harmonii-raport-${Date.now()}.pdf`;
 
   const blob = await new Promise<Blob>((resolve, reject) => {
@@ -1841,18 +1878,35 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       reject(new Error("Generator PDF przekroczył limit czasu (15s)."));
     }, 15000);
 
-    try {
-      pdfDocument.getBlob((generatedBlob: Blob) => {
-        window.clearTimeout(timeout);
-        if (generatedBlob instanceof Blob && generatedBlob.size > 0) {
-          resolve(generatedBlob);
-          return;
-        }
-        reject(new Error("Generator PDF nie zwrócił poprawnego pliku Blob."));
-      });
-    } catch (error) {
+    let isSettled = false;
+    const finish = (generatedBlob: Blob) => {
+      if (isSettled) return;
+      isSettled = true;
       window.clearTimeout(timeout);
-      reject(error);
+      if (generatedBlob instanceof Blob && generatedBlob.size > 0) {
+        resolve(generatedBlob);
+      } else {
+        reject(new Error("Generator PDF nie zwrócił poprawnego pliku Blob."));
+      }
+    };
+
+    try {
+      const res = pdfDocument.getBlob(finish);
+      if (res && typeof res.then === "function") {
+        res.then((b: Blob) => finish(b)).catch((err: any) => {
+          if (!isSettled) {
+            isSettled = true;
+            window.clearTimeout(timeout);
+            reject(err);
+          }
+        });
+      }
+    } catch (error) {
+      if (!isSettled) {
+        isSettled = true;
+        window.clearTimeout(timeout);
+        reject(error);
+      }
     }
   });
 
