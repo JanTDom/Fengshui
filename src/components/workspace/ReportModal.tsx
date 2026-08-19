@@ -64,9 +64,9 @@ export function ReportModal({
           <div className="report-modal-title">
             <div className="report-badge">
               <Sparkles size={16} />
-              <span>Wyniki Kompleksowego Audytu Feng Shui</span>
+              <span>Wyniki kompleksowego audytu Feng Shui</span>
             </div>
-            <h2>Raport Strategiczny i Zalecenia dla Twojego Lokalu</h2>
+            <h2>Raport strategiczny i zalecenia dla Twojego lokalu</h2>
           </div>
           <button type="button" className="checkout-close-btn" onClick={onClose} aria-label="Zamknij">
             <X size={20} />
@@ -77,7 +77,7 @@ export function ReportModal({
           {/* Executive Overview Header */}
           <div className="report-cover-box">
             <div className="report-score-block">
-              <span className="score-label">Wskaźnik Harmonii Układu</span>
+              <span className="score-label">Wskaźnik harmonii układu</span>
               <div className="score-number-row">
                 <strong>{report.score}</strong>
                 <span>/100</span>
@@ -86,14 +86,14 @@ export function ReportModal({
             </div>
 
             <div className="report-decision-block">
-              <span className="decision-label">Rekomendacja Decyzyjna</span>
+              <span className="decision-label">Rekomendacja decyzyjna</span>
               <p className="decision-text">{report.purchase_decision}</p>
             </div>
           </div>
 
           {/* Executive Summary */}
           <div className="report-summary-box">
-            <h3>Podsumowanie Wykonawcze</h3>
+            <h3>Podsumowanie wykonawcze</h3>
             <p>{report.executive_summary}</p>
           </div>
 
@@ -106,7 +106,7 @@ export function ReportModal({
               disabled={isDownloading}
             >
               <Download size={18} />
-              <span>{isDownloading ? "Generowanie i pobieranie PDF..." : "Pobierz Pełny Raport PDF (Wydanie do Druku)"}</span>
+              <span>{isDownloading ? "Generowanie i pobieranie PDF..." : "Pobierz pełny raport PDF (wydanie do druku)"}</span>
             </button>
 
             <button
@@ -141,7 +141,7 @@ export function ReportModal({
                 rel="noopener noreferrer"
                 style={{ background: "#2D5A46", color: "#FFFFFF", padding: "6px 14px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}
               >
-                Otwórz / Zapisz PDF w nowej karcie ↗
+                Otwórz lub zapisz PDF w nowej karcie ↗
               </a>
             </div>
           ) : null}
@@ -156,8 +156,8 @@ export function ReportModal({
           {report.sector_map && report.sector_map.length > 0 ? (
             <div className="report-bagua-sectors-section" style={{ marginTop: "24px", marginBottom: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", margin: 0 }}>Siatka 9 Stref Bagua & Wpływy Roczne (Luo Shu 2026)</h3>
-                <span style={{ fontSize: "0.75rem", background: "rgba(45, 90, 70, 0.1)", color: "#2D5A46", padding: "4px 8px", borderRadius: "6px", fontWeight: 700 }}>9 Pałaców Lokalu</span>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", margin: 0 }}>Siatka 9 stref Bagua i wpływy roczne (Luo Shu 2026)</h3>
+                <span style={{ fontSize: "0.75rem", background: "rgba(45, 90, 70, 0.1)", color: "#2D5A46", padding: "4px 8px", borderRadius: "6px", fontWeight: 700 }}>9 pałaców lokalu</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
                 {report.sector_map.map((sec, idx) => (
@@ -178,7 +178,7 @@ export function ReportModal({
           {/* RESIDENT INTEL IN REPORT MODAL */}
           {report.resident_analysis && report.resident_analysis.length > 0 ? (
             <div className="report-residents-section" style={{ marginTop: "24px", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Weryfikacja Ustawień Mebli Domowników (Kua & Rok 2026)</h3>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Weryfikacja ustawień mebli domowników (Kua i rok 2026)</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
                 {report.resident_analysis.map((res, idx) => (
                   <article key={idx} style={{ background: "#FFFFFF", border: "1px solid var(--line)", borderRadius: "10px", padding: "14px 16px" }}>
@@ -205,7 +205,7 @@ export function ReportModal({
           {/* Key Room Diagnostics */}
           {report.room_recommendations && report.room_recommendations.length > 0 ? (
             <div className="report-rooms-section">
-              <h3>Diagnoza Stref i Pomieszczeń</h3>
+              <h3>Diagnoza stref i pomieszczeń</h3>
               <div className="report-rooms-grid">
                 {report.room_recommendations.map((room, idx) => (
                   <article key={idx} className="report-room-card">
@@ -229,7 +229,7 @@ export function ReportModal({
           {/* Priority Actions */}
           {report.priority_actions && report.priority_actions.length > 0 ? (
             <div className="report-remedies-section">
-              <h3>Kluczowe Działania o Najwyższym Wpływie</h3>
+              <h3>Kluczowe działania o najwyższym wpływie</h3>
               <div className="remedies-list">
                 {report.priority_actions.map((action, idx) => (
                   <div key={idx} className="remedy-item">

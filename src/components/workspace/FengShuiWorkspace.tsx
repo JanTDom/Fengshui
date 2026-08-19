@@ -987,7 +987,7 @@ export function FengShuiWorkspace({
                     title="Przełącz schematyczny filtr architektoniczny CAD"
                   >
                     <Sparkles size={15} />
-                    <span>{cadFilterMode ? "Styl CAD (Włączony)" : "Oczyść do CAD"}</span>
+                    <span>{cadFilterMode ? "Styl CAD (włączony)" : "Oczyść do CAD"}</span>
                   </button>
 
                   <button
@@ -996,7 +996,7 @@ export function FengShuiWorkspace({
                     onClick={() => setShowBaguaOverlay((s) => !s)}
                   >
                     <Layers size={15} />
-                    <span>{showBaguaOverlay ? "Ukryj Bagua" : "Pokaż Siatkę Bagua"}</span>
+                    <span>{showBaguaOverlay ? "Ukryj siatkę Bagua" : "Pokaż siatkę Bagua"}</span>
                   </button>
                 </div>
 
@@ -1007,7 +1007,7 @@ export function FengShuiWorkspace({
                   disabled={isGenerating}
                 >
                   <Sparkles size={18} />
-                  <span>{isGenerating ? "Generowanie analizy..." : "ANALIZUJ FENG SHUI"}</span>
+                  <span>{isGenerating ? "Generowanie analizy..." : "Analizuj Feng Shui"}</span>
                 </button>
               </div>
 
@@ -1037,7 +1037,7 @@ export function FengShuiWorkspace({
         <aside className="workspace-intel-panel" aria-label="Inteligencja Feng Shui">
           <div className="intel-panel-header">
             <Sparkles size={18} />
-            <h2>Inteligentny Asystent Feng Shui</h2>
+            <h2>Inteligentny asystent Feng Shui</h2>
           </div>
 
           <div className="intel-panel-scroll">
@@ -1085,7 +1085,7 @@ export function FengShuiWorkspace({
             <div className="intel-card">
               <div className="intel-card-head">
                 <UserRound size={16} />
-                <strong>Domownicy & Osobiste Kua ({residents.length})</strong>
+                <strong>Domownicy i osobiste Kua ({residents.length})</strong>
               </div>
 
               <div className="residents-intel-list">
@@ -1172,7 +1172,7 @@ export function FengShuiWorkspace({
             <div className="intel-card">
               <div className="intel-card-head">
                 <CalendarClock size={16} />
-                <strong>Okres Budynku & Gwiazdy</strong>
+                <strong>Okres budynku i gwiazdy</strong>
               </div>
               <div className="building-period-intel">
                 <div className="form-row-compact">

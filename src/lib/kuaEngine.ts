@@ -345,56 +345,56 @@ export function getBaguaSectorForPoint(xPercent: number, yPercent: number, north
   // Uwzględnienie obrotu północy
   const compassMap: Record<string, { name: string; element: string; trigram: string; star: string; advice: string }> = {
     N: {
-      name: "Północ · Kariera & Droga Życiowa",
+      name: "Północ · Kariera i droga życiowa",
       element: "Woda",
       trigram: "Kan (Woda)",
       star: "Sui Po (Rozbijacz Roku) & Gwiazda 8 (Ziemia)",
       advice: "W 2026 roku strefa Północna wymaga ciszy. Śpij z wezgłowiem stabilnym, unikaj ciężkich wyburzeń w tym sektorze."
     },
     NE: {
-      name: "Północny Wschód · Wiedza & Spokój Umysłu",
+      name: "Północny Wschód · Wiedza i spokój umysłu",
       element: "Ziemia",
       trigram: "Gen (Góra)",
       star: "Gwiazda 5 Żółta (Wu Wang)",
       advice: "W 2026 roku sektor NE gości gwiazdę 5 Żółtą. Bezwzględnie wycisz ten obszar, unikaj świec/czerwieni, zastosuj remedium Metalowe lub dźwięk dzwonków."
     },
     E: {
-      name: "Wschód · Zdrowie & Rodzina",
+      name: "Wschód · Zdrowie i rodzina",
       element: "Drewno",
       trigram: "Zhen (Grzmot)",
       star: "Gwiazda 1 Biała (Zwycięstwo & Mądrość)",
       advice: "Sektor Wschodni jest w 2026 roku bardzo korzystny dla rozwoju i regeneracji. Sprzyja odpoczynkowi i nauce."
     },
     SE: {
-      name: "Południowy Wschód · Bogactwo & Obfitość",
+      name: "Południowy Wschód · Bogactwo i obfitość",
       element: "Drewno",
       trigram: "Xun (Wiatr)",
       star: "Gwiazda 9 Fioletowa (Główny Dobrobyt Okresu 9)",
       advice: "Jeden z najsilniejszych sektorów w 2026 roku. Doskonałe miejsce na salon, gabinet lub aktywne rośliny biofilne."
     },
     S: {
-      name: "Południe · Sława & Uznanie",
+      name: "Południe · Sława i uznanie",
       element: "Ogień",
       trigram: "Li (Ogień)",
       star: "Tai Sui (Władca Roku 2026 - Rok Konia)",
       advice: "W 2026 roku Tai Sui rezyduje na Południu. Nie siadaj twarzą bezpośrednio naprzeciw Południa (nie konfrontuj Tai Sui), lecz miej Południe za plecami jako oparcie."
     },
     SW: {
-      name: "Południowy Zachód · Relacje & Partnerstwo",
+      name: "Południowy Zachód · Relacje i partnerstwo",
       element: "Ziemia",
       trigram: "Kun (Ziemia)",
       star: "Gwiazda 2 Czarna (Choroba)",
       advice: "W 2026 roku w sektorze SW zaleca się wzmocnienie odporności i dodanie akcentów Metalowych (np. mosiężna lampa, jasne tkaniny)."
     },
     W: {
-      name: "Zachód · Dzieci & Kreatywność",
+      name: "Zachód · Dzieci i kreatywność",
       element: "Metal",
       trigram: "Dui (Jezioro)",
       star: "Gwiazda 6 Biała (Autorytet Niebiański)",
       advice: "Sektor Zachodni sprzyja w 2026 roku podejmowaniu strategicznych decyzji zawodowych i dyscyplinie pracy."
     },
     NW: {
-      name: "Północny Zachód · Pomocni Ludzie & Podróże",
+      name: "Północny Zachód · Pomocni ludzie i podróże",
       element: "Metal",
       trigram: "Qian (Niebo)",
       star: "Gwiazda 4 Zielona (Edukacja & Romans)",
@@ -459,22 +459,22 @@ export function evaluateResidentPlacement(
 
   if (currentDir.code === tianYiCode) {
     isFavorable = true;
-    dirQuality = "Tian Yi (Doktor Niebios · Zdrowie, Regeneracja i Spokojny Sen)";
+    dirQuality = "Tian Yi (Doktor Niebios · zdrowie, regeneracja i spokojny sen)";
   } else if (currentDir.code === shengChiCode) {
     isFavorable = true;
-    dirQuality = "Sheng Qi (Generowanie Energii · Sukces Finansowy i Witalność)";
+    dirQuality = "Sheng Qi (Generowanie Energii · sukces finansowy i witalność)";
   } else if (currentDir.code === yanNianCode) {
     isFavorable = true;
-    dirQuality = "Yan Nian (Długowieczność · Harmonia Małżeńska i Relacje)";
+    dirQuality = "Yan Nian (Długowieczność · harmonia małżeńska i relacje)";
   } else if (currentDir.code === fuWeiCode) {
     isFavorable = true;
-    dirQuality = "Fu Wei (Stabilność · Wewnętrzny Spokój i Koncentracja)";
+    dirQuality = "Fu Wei (Stabilność · wewnętrzny spokój i koncentracja)";
   } else {
     // Niekorzystne
     isFavorable = false;
     const matchedInauspicious = activeKua.inauspicious.find((ina) => ina.includes(`(${currentDir.code})`));
     if (matchedInauspicious) {
-      dirQuality = `Kierunek Niekorzystny: ${matchedInauspicious}`;
+      dirQuality = `Kierunek niekorzystny: ${matchedInauspicious}`;
     } else {
       dirQuality = `Kierunek poza grupą pomyślną ${activeKua.group}`;
     }
@@ -488,23 +488,23 @@ export function evaluateResidentPlacement(
 
   if (isBed) {
     if (isFavorable) {
-      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} jest w 100% ZGODNE z osobistym Kua ${activeKua.kua} (${dirQuality}). Zapewnia głęboką regenerację fazy REM.`;
+      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} jest w 100% zgodne z osobistym Kua ${activeKua.kua} (${dirQuality}). Zapewnia głęboką regenerację fazy REM.`;
       correction = `Utrzymaj obecny kierunek wezgłowia (${currentDir.label}). Zadbaj o pełne oparcie ściany za głową i brak ostrego światła.`;
     } else {
-      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} KOLIDUJE z osobistym profilem Kua ${activeKua.kua} (${dirQuality}). Może powodować płytki sen, mikrowybudzenia lub poranne zmęczenie.`;
-      correction = `Zalecana korekta: Obróć wezgłowie łóżka w stronę ${activeKua.tianYi} (optymalne dla snu) lub ${activeKua.fuWei} (spokój psychiczny).`;
+      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} koliduje z osobistym profilem Kua ${activeKua.kua} (${dirQuality}). Może powodować płytki sen, mikrowybudzenia lub poranne zmęczenie.`;
+      correction = `Zalecana korekta: obróć wezgłowie łóżka w stronę ${activeKua.tianYi} (optymalne dla snu) lub ${activeKua.fuWei} (spokój psychiczny).`;
     }
   } else if (isDesk) {
     if (isFavorable) {
-      verdict = `Wzrok przy biurku skierowany na ${currentDir.label} jest w pełni ZGODNY z Kua ${activeKua.kua} (${dirQuality}). Sprzyja jasności myśli i sukcesom zawodowym.`;
-      correction = `Bardzo dobre ustawienie. Zadbaj dodatkowo o to, aby mieć za plecami pełną ścianę (Pozycja Dowodzenia).`;
+      verdict = `Wzrok przy biurku skierowany na ${currentDir.label} jest w pełni zgodny z Kua ${activeKua.kua} (${dirQuality}). Sprzyja jasności myśli i sukcesom zawodowym.`;
+      correction = `Bardzo dobre ustawienie. Zadbaj dodatkowo o to, aby mieć za plecami pełną ścianę (pozycja dowodzenia).`;
     } else {
       verdict = `Kierunek pracy przy biurku (${currentDir.label}) znajduje się w strefie osłabiającej Kua ${activeKua.kua} (${dirQuality}), co może sprzyjać rozpraszaniu uwagi.`;
       correction = `Zalecany obrót biurka twarzą na ${activeKua.shengChi} (sukces finansowy) lub ${activeKua.fuWei} (koncentracja analityczna).`;
     }
   } else {
     verdict = `Mebel w sektorze ${currentSector.name} oddziałuje na domownika energią ${currentSector.element}.`;
-    correction = `Zadbaj o równowagę 5 Żywiołów w tej strefie.`;
+    correction = `Zadbaj o równowagę 5 żywiołów w tej strefie.`;
   }
 
   if (hourPillar) {

@@ -1588,7 +1588,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       pdfText(section.title),
       pdfText(section.body),
       pdfList(section.bullets, "wniosek").slice(0, 4),
-      "Szkoła Formy & Tradycja"
+      "Szkoła Formy i tradycja"
     )
   );
 
@@ -1597,7 +1597,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       pdfText(section.title),
       pdfText(section.body),
       pdfList(section.bullets, "wniosek").slice(0, 4),
-      "Ergonomia & Architektura Wnętrz"
+      "Ergonomia i architektura wnętrz"
     )
   );
 
@@ -1610,13 +1610,13 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       pdfText(source.source),
       pdfText(source.used_for),
       [`Pewność metody: ${pdfConfidenceLabel(source.confidence)}`],
-      "Rejestr Źródeł"
+      "Rejestr źródeł"
     )
   );
 
   const residentCards = (report.resident_analysis || []).map((res) =>
     pdfCard(
-      `${pdfText(res.name)} ${res.kua_number ? `· KUA ${res.kua_number} (${res.element})` : ""}`,
+      `${pdfText(res.name)} ${res.kua_number ? `· Kua ${res.kua_number} (${res.element})` : ""}`,
       `${pdfText(res.role || "Domownik")}${res.gender ? ` · ${res.gender}` : ""}${res.group ? ` · ${res.group}` : ""}\n\n${pdfText(res.placement_advice)}${res.yearly_warning ? `\n\n⚡ Wskazówka roczna: ${pdfText(res.yearly_warning)}` : ""}`,
       [
         ...(res.favorable_directions?.length
@@ -1629,7 +1629,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
           ? [`Przypisany mebel/strefa: ${res.assigned_furniture.join(", ")}`]
           : [])
       ].slice(0, 4),
-      "Profil Energetyczny Mieszkańca (Ba Zhai)"
+      "Profil energetyczny mieszkańca (Ba Zhai)"
     )
   );
 
@@ -1679,7 +1679,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     content: [
       // 1. HEADER & EXECUTIVE SUMMARY (Fluid, No Hard Page Breaks)
       { text: "PLAN HARMONII · RAPORT AUDYTOWY", style: "kicker" },
-      { text: "Analiza Układu Przestrzennego & Feng Shui", style: "title" },
+      { text: "Analiza układu przestrzennego i Feng Shui", style: "title" },
       {
         text: "Raport łączy tradycyjną Szkołę Formy (Luan Tou), siatkę 9 stref Bagua i orientację kompasową z nowoczesną ergonomią, akustyką i doświetleniem.",
         style: "subtitle"
@@ -1730,10 +1730,10 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         margin: [0, 0, 0, 10]
       },
 
-      // 2. SCHEMATYCZNY RZUT CAD & MAPA 9 STREF BAGUA (Z NANIESIONYMI MEBLAMI)
+      // 2. SCHEMATYCZNY RZUT CAD & MAPA 9 STREF BAGUA
       {
         stack: [
-          { text: "Schematyczny Rzut Architektoniczny (CAD) & Siatka 9 Sektorów Bagua", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Schematyczny rzut architektoniczny (CAD) i siatka 9 sektorów Bagua", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: `Wektory ścian, orientacja N (${northAngle}°) oraz naniesione elementy wyposażenia wnętrza.`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           planOverlayImage
             ? {
@@ -1753,16 +1753,16 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         ? [
             {
               stack: [
-                { text: "Wykres Urodzeniowy Budynku (Xuan Kong Fei Xing – Latające Gwiazdy)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+                { text: "Wykres urodzeniowy budynku (Xuan Kong Fei Xing – Latające Gwiazdy)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
                 { text: `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
                 pdfNatalChartMatrix(natalChart),
                 pdfCard(
-                  "Strategia Energetyczna w Okresie 9 (2024–2043)",
+                  "Strategia energetyczna w Okresie 9 (2024–2043)",
                   natalChart.period9_strategy,
                   [
-                    "Główny punkt koncentracji dobrostanu: Sektory z Gwiazdą 9 (Władca Okresu)",
-                    "Strefa przyszłego wzrostu: Sektory z Gwiazdą 1 (Woda / Mądrość)",
-                    "Rekomendacja: Wycisz sektory 5 i 2 elementami żywiołu Metalu (biel, mosiądz, obłe formy)"
+                    "Główny punkt koncentracji dobrostanu: sektory z Gwiazdą 9 (Władca Okresu)",
+                    "Strefa przyszłego wzrostu: sektory z Gwiazdą 1 (Woda / Mądrość)",
+                    "Rekomendacja: wycisz sektory 5 i 2 elementami żywiołu Metalu (biel, mosiądz, obłe formy)"
                   ],
                   "Transformacja Okresu 9 · Cykl 20-letni"
                 )
@@ -1772,12 +1772,12 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
           ]
         : []),
 
-      // 4. RESIDENT PROFILE & KUA NUMBERS (If available)
+      // 4. RESIDENT PROFILE & KUA NUMBERS
       ...(residentCards.length > 0
         ? [
             {
               stack: [
-                { text: "Profil Energetyczny Mieszkańców (Liczby Kua & Żywioły)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+                { text: "Profil energetyczny mieszkańców (liczby Kua i żywioły)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
                 { text: "Kalkulacja Ba Zhai (Osiem Pałaców): optymalne kierunki snu, pracy i dopasowanie mebli do domowników.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
                 pdfCardGrid(residentCards, 2)
               ],
@@ -1789,7 +1789,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 5. PRIORITY ACTIONS
       {
         stack: [
-          { text: "Najważniejsze Priorytety Działań", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Najważniejsze priorytety działań", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Kolejność wdrożenia: od korekt o najwyższym wpływie na regenerację do poprawek niskonakładowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfCardGrid(priorityCards, 2)
         ],
@@ -1799,7 +1799,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 6. ROOM-BY-ROOM AUDIT
       {
         stack: [
-          { text: "Audyt Pomieszczeń Pokój po Pokoju", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Audyt pomieszczeń pokój po pokoju", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Konkretne wnioski dla każdej strefy: atuty, ryzyka i zalecenia aranżacyjne.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfCardGrid(roomCards, 2)
         ],
@@ -1811,7 +1811,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         ? [
             {
               stack: [
-                { text: "Meble i Pozycja Dominująca (Command Position)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+                { text: "Meble i pozycja dominująca (pozycja dowodzenia)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
                 { text: "Oparcie wezgłowia (Czarny Żółw), biurka i wyposażenia względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
                 pdfCardGrid(furnitureCards, 2)
               ],
@@ -1823,7 +1823,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 8. FORM SCHOOL & ERGONOMICS
       {
         stack: [
-          { text: "Szkoła Formy & Ergonomia Współczesna", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Szkoła Formy i ergonomia współczesna", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Połączenie klasycznych zasad 4 Niebiańskich Zwierząt ze standardami doświetlenia i akustyki.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfCardGrid([...traditionalCards, ...practicalCards], 2)
         ],
@@ -1833,7 +1833,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 9. PRACTICAL CHANGES & METHOD LEDGER
       {
         stack: [
-          { text: "Lista Rekomendowanych Zmian Bez Remontu", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Lista rekomendowanych zmian bez remontu", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Natychmiastowe działania o wysokim zwrocie z inwestycji bez prac wyburzeniowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           {
             ol: report.practical_changes.slice(0, 6).map((change) => ({
@@ -1843,7 +1843,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
             style: "bodyText",
             margin: [0, 0, 0, 8]
           },
-          { text: "Wykres Metod i Rejestr Źródeł", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
+          { text: "Wykres metod i rejestr źródeł", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Pełna transparentność metodologiczna i poziomy pewności rekomendacji.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
           pdfMethodScoreChart(report),
           pdfCardGrid(sourceCards, 2),
