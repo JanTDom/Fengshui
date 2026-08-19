@@ -40,15 +40,18 @@ export function ReportModal({
     setIsDownloading(true);
     setDownloadError(null);
     try {
-      await downloadReportPdf(report, {
+      const res = await downloadReportPdf(report, {
         planFile: planFile ?? null,
         northAngleDeg,
         planMarkers
       });
+      if (res?.blobUrl) {
+        setGeneratedPdfUrl(res.blobUrl);
+      }
       triggerBrandConfetti();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Błąd generowania PDF:", err);
-      setDownloadError("Wystąpił błąd generatora PDF. Użyj przycisku eksportu JSON lub ponów próbę.");
+      setDownloadError(`Błąd generowania PDF: ${err?.message || "Spróbuj ponownie"}.`);
     } finally {
       setIsDownloading(false);
     }
@@ -124,6 +127,24 @@ export function ReportModal({
               <span>Nowa analiza</span>
             </button>
           </div>
+
+          {generatedPdfUrl ? (
+            <div style={{ marginTop: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", background: "rgba(45, 90, 70, 0.08)", border: "1px solid #2D5A46", padding: "10px 14px", borderRadius: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <CheckCircle2 size={18} color="#2D5A46" />
+                <span style={{ fontSize: "0.86rem", color: "#10221F", fontWeight: 600 }}>Plik PDF został pomyślnie utworzony:</span>
+              </div>
+              <a
+                href={generatedPdfUrl}
+                download={`plan-harmonii-raport-${Date.now()}.pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ background: "#2D5A46", color: "#FFFFFF", padding: "6px 14px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}
+              >
+                Otwórz / Zapisz PDF w nowej karcie ↗
+              </a>
+            </div>
+          ) : null}
 
           {downloadError ? (
             <div className="report-error-banner" style={{ background: "#FDF2F2", border: "1px solid #F87171", padding: "10px 14px", borderRadius: "8px", color: "#B91C1C", fontSize: "0.85rem", marginTop: "10px" }}>

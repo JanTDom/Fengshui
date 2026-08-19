@@ -2,6 +2,28 @@ import type { AuditApiResponse, AuditFilePayload, AuditReport, AuditRequestPaylo
 import { calculateBuildingNatalChart } from "./natalChartEngine";
 import { calculateKua, calculateBaZiHourPillar, getBaguaSectorForPoint, evaluateResidentPlacement } from "./kuaEngine";
 import { hasSupabaseConfig, supabase } from "./supabase";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+
+// Initialize VFS fonts immediately at bundle load time
+const pdfVfs =
+  (pdfFonts as any)?.pdfMake?.vfs ||
+  (pdfFonts as any)?.vfs ||
+  (pdfMake as any)?.vfs ||
+  pdfFonts;
+
+if (pdfVfs) {
+  (pdfMake as any).vfs = pdfVfs;
+}
+
+(pdfMake as any).fonts = {
+  Roboto: {
+    normal: "Roboto-Regular.ttf",
+    bold: "Roboto-Medium.ttf",
+    italics: "Roboto-Italic.ttf",
+    bolditalics: "Roboto-MediumItalic.ttf"
+  }
+};
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const SUPPORTED_MIME_TYPES = new Set([
@@ -1472,38 +1494,6 @@ function pdfNatalChartMatrix(chart?: BuildingNatalChart) {
 }
 
 export async function downloadReportPdf(report: AuditReport, options: ReportPdfOptions = {}) {
-  const [pdfMakeModule, pdfFontsModule] = await Promise.all([
-    import("pdfmake/build/pdfmake"),
-    import("pdfmake/build/vfs_fonts")
-  ]);
-  const pdfMake = (pdfMakeModule.default ?? pdfMakeModule) as any;
-  const fontPayload = (pdfFontsModule.default ?? pdfFontsModule) as any;
-
-  const virtualFileSystem =
-    fontPayload?.pdfMake?.vfs ||
-    fontPayload?.vfs ||
-    (pdfFontsModule as any)?.pdfMake?.vfs ||
-    (pdfFontsModule as any)?.vfs ||
-    (window as any)?.pdfMake?.vfs ||
-    (window as any)?.vfs ||
-    fontPayload;
-
-  if (virtualFileSystem) {
-    if (typeof pdfMake.addVirtualFileSystem === "function") {
-      pdfMake.addVirtualFileSystem(virtualFileSystem);
-    }
-    pdfMake.vfs = virtualFileSystem;
-  }
-
-  pdfMake.fonts = pdfMake.fonts ?? {
-    Roboto: {
-      normal: "Roboto-Regular.ttf",
-      bold: "Roboto-Medium.ttf",
-      italics: "Roboto-Italic.ttf",
-      bolditalics: "Roboto-MediumItalic.ttf"
-    }
-  };
-
   const northAngle = Number(options.northAngleDeg ?? 0);
   let planOverlayImage: string | null = null;
   try {
@@ -1843,21 +1833,12 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     ]
   };
 
-  const pdfDocument = pdfMake.createPdf(docDefinition);
+  const pdfDocument = (pdfMake as any).createPdf(docDefinition);
   const fileName = `plan-harmonii-raport-${Date.now()}.pdf`;
-
-  try {
-    if (typeof pdfDocument.download === "function") {
-      pdfDocument.download(fileName);
-      return;
-    }
-  } catch (directErr) {
-    console.warn("pdfMake.download failed, falling back to Blob:", directErr);
-  }
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
-      reject(new Error("Generator PDF przekroczył limit czasu."));
+      reject(new Error("Generator PDF przekroczył limit czasu (15s)."));
     }, 15000);
 
     try {
@@ -1867,8 +1848,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
           resolve(generatedBlob);
           return;
         }
-
-        reject(new Error("Generator PDF nie zwrócił pliku."));
+        reject(new Error("Generator PDF nie zwrócił poprawnego pliku Blob."));
       });
     } catch (error) {
       window.clearTimeout(timeout);
@@ -1876,12 +1856,24 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     }
   });
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+  const blobUrl = URL.createObjectURL(blob);
+  
+  // Trigger direct browser download
+  try {
+    const downloadLink = document.createElement("a");
+    downloadLink.href = blobUrl;
+    downloadLink.download = fileName;
+    downloadLink.target = "_blank";
+    downloadLink.rel = "noopener noreferrer";
+    downloadLink.style.display = "none";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    setTimeout(() => {
+      downloadLink.remove();
+    }, 2000);
+  } catch (linkErr) {
+    console.warn("Direct download link trigger failed:", linkErr);
+  }
+
+  return { blob, blobUrl, fileName };
 }
