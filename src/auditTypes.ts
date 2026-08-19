@@ -214,10 +214,146 @@ export type BuildingNatalChart = {
   period9_strategy: string;
 };
 
+export type PropertyMetadata = {
+  property_type_label: string;
+  usable_area_m2: number;
+  levels_count: number;
+  address_note: string;
+  analysis_date: string;
+  measurement_date: string;
+  analyst: string;
+  report_version: string;
+  project_id: string;
+};
+
+export type ConsultationGoal = {
+  primary_goal: string;
+  focus_areas: string[];
+  expected_outcomes: string[];
+};
+
+export type MethodologyScope = {
+  applied_schools: string[];
+  scope_description: string;
+  exclusions: string[];
+  sources_bibliography: string[];
+};
+
+export type InputDataRecord = {
+  floor_plan_status: string;
+  compass_north_azimuth: string;
+  facing_sitting: string;
+  period_and_timeline: string;
+  residents_count: number;
+  rooms_count: number;
+  furniture_count: number;
+};
+
+export type MacroEnvironmentAudit = {
+  terrain_and_landform: string;
+  surrounding_buildings: string;
+  traffic_and_roads: string;
+  sha_qi_external: string;
+  sheng_qi_sources: string;
+  recommendations: string[];
+};
+
+export type BuildingMorphologyAudit = {
+  building_shape: string;
+  facing_sitting_verdict: string;
+  missing_sectors: string;
+  entry_and_vertical_circulation: string;
+  dwelling_relation_to_core: string;
+  recommendations: string[];
+};
+
+export type QiFlowAudit = {
+  entry_qi_dynamics: string;
+  door_window_axes: string;
+  corridor_and_circulation_speed: string;
+  stagnation_pockets: string;
+  tai_qi_central_state: string;
+  recommendations: string[];
+};
+
+export type MingTangAudit = {
+  foyer_quality: string;
+  energy_accumulation_capacity: string;
+  bottlenecks_and_clutter: string;
+  welcome_lighting_and_flow: string;
+  remedies: string[];
+};
+
+export type KeyFurniturePillars = {
+  bed?: FurnitureRecommendation;
+  desk?: FurnitureRecommendation;
+  stove?: FurnitureRecommendation;
+  other: FurnitureRecommendation[];
+};
+
+export type WuXingAudit = {
+  dominant_elements: string[];
+  deficient_elements: string[];
+  generative_cycle_advice: string;
+  controlling_cycle_advice: string;
+  elemental_palette: Array<{ element: string; colors: string; materials: string; purpose: string }>;
+};
+
+export type PrioritizedIssue = {
+  code: "P1" | "P2" | "P3" | "P4";
+  priority_label: string;
+  title: string;
+  category: string;
+  diagnosis: string;
+  impact_risk: string;
+  remedy_action: string;
+};
+
+export type TieredRecommendations = {
+  no_renovation_quick_wins: Array<{ action: string; impact: string; cost: string }>;
+  light_interventions: Array<{ action: string; impact: string; cost: string }>;
+  architectural_renovations: Array<{ action: string; impact: string; cost: string }>;
+};
+
+export type ImplementationRoadmap = {
+  stage1_immediate_7days: string[];
+  stage2_intermediate_30days: string[];
+  stage3_longterm_renovation: string[];
+};
+
+export type BeforeAfterShift = {
+  id: number;
+  item_or_zone: string;
+  before_state: string;
+  after_recommendation: string;
+  expected_gain: string;
+};
+
+export type ExecutiveSummaryPoints = {
+  top_three_assets: string[];
+  top_three_challenges: string[];
+  top_five_instant_actions: string[];
+};
+
 export type AuditReport = {
   score: number;
   confidence: AuditConfidence;
   executive_summary: string;
+  executive_summary_points?: ExecutiveSummaryPoints;
+  property_metadata?: PropertyMetadata;
+  consultation_goal?: ConsultationGoal;
+  methodology_scope?: MethodologyScope;
+  input_data_record?: InputDataRecord;
+  macro_environment?: MacroEnvironmentAudit;
+  building_morphology?: BuildingMorphologyAudit;
+  qi_flow?: QiFlowAudit;
+  ming_tang?: MingTangAudit;
+  key_furniture?: KeyFurniturePillars;
+  wu_xing?: WuXingAudit;
+  prioritized_issues?: PrioritizedIssue[];
+  tiered_recommendations?: TieredRecommendations;
+  implementation_roadmap?: ImplementationRoadmap;
+  before_after_shifts?: BeforeAfterShift[];
   detected_inputs: string[];
   missing_inputs: string[];
   priority_actions: AuditAction[];

@@ -11,15 +11,15 @@ export type BuildingPeriodInfo = {
 };
 
 export const PERIOD_DEFINITIONS: Record<number, BuildingPeriodInfo> = {
-  1: { period: 1, name: "Okres 1", range: "1864–1883", element: "Woda", trigram: "Kan (坎)", rulingEnergy: "Początek cyklu, energia Wody i dalekosiężnej mądrości." },
-  2: { period: 2, name: "Okres 2", range: "1884–1903", element: "Ziemia", trigram: "Kun (坤)", rulingEnergy: "Energia Ziemi matczynej, płodności i nieruchomości." },
-  3: { period: 3, name: "Okres 3", range: "1904–1923", element: "Drewno", trigram: "Zhen (震)", rulingEnergy: "Energia dynamicznego wzrostu, innowacji i ekspansji." },
-  4: { period: 4, name: "Okres 4", range: "1924–1943", element: "Drewno", trigram: "Xun (巽)", rulingEnergy: "Energia edukacji, sztuki, kultury i komunikacji." },
+  1: { period: 1, name: "Okres 1", range: "1864–1883", element: "Woda", trigram: "Kan (Woda)", rulingEnergy: "Początek cyklu, energia Wody i dalekosiężnej mądrości." },
+  2: { period: 2, name: "Okres 2", range: "1884–1903", element: "Ziemia", trigram: "Kun (Ziemia)", rulingEnergy: "Energia Ziemi matczynej, płodności i nieruchomości." },
+  3: { period: 3, name: "Okres 3", range: "1904–1923", element: "Drewno", trigram: "Zhen (Grzmot)", rulingEnergy: "Energia dynamicznego wzrostu, innowacji i ekspansji." },
+  4: { period: 4, name: "Okres 4", range: "1924–1943", element: "Drewno", trigram: "Xun (Wiatr)", rulingEnergy: "Energia edukacji, sztuki, kultury i komunikacji." },
   5: { period: 5, name: "Okres 5", range: "1944–1963", element: "Ziemia", trigram: "Tai Qi (Centrum)", rulingEnergy: "Centralny okres wielkich przemian i odbudowy." },
-  6: { period: 6, name: "Okres 6", range: "1964–1983", element: "Metal", trigram: "Qian (乾)", rulingEnergy: "Energia autorytetu, prawa, dyscypliny i stabilnych struktur." },
-  7: { period: 7, name: "Okres 7", range: "1984–2003", element: "Metal", trigram: "Dui (兌)", rulingEnergy: "Energia handlu, wymiany informacji, radości i mediów." },
-  8: { period: 8, name: "Okres 8", range: "2004–2023", element: "Ziemia", trigram: "Gen (艮)", rulingEnergy: "Energia młodości, rozwoju technologii, wiedzy i nieruchomości." },
-  9: { period: 9, name: "Okres 9", range: "2024–2043", element: "Ogień", trigram: "Li (離)", rulingEnergy: "Obecny 20-letni cykl: transformacja, technologie AI, widoczność, uduchowienie i jasność." }
+  6: { period: 6, name: "Okres 6", range: "1964–1983", element: "Metal", trigram: "Qian (Niebo)", rulingEnergy: "Energia autorytetu, prawa, dyscypliny i stabilnych struktur." },
+  7: { period: 7, name: "Okres 7", range: "1984–2003", element: "Metal", trigram: "Dui (Jezioro)", rulingEnergy: "Energia handlu, wymiany informacji, radości i mediów." },
+  8: { period: 8, name: "Okres 8", range: "2004–2023", element: "Ziemia", trigram: "Gen (Góra)", rulingEnergy: "Energia młodości, rozwoju technologii, wiedzy i nieruchomości." },
+  9: { period: 9, name: "Okres 9", range: "2024–2043", element: "Ogień", trigram: "Li (Ogień)", rulingEnergy: "Obecny 20-letni cykl: transformacja, technologie AI, widoczność, uduchowienie i jasność." }
 };
 
 export function getBuildingPeriod(yearStr?: string | number): BuildingPeriodInfo {

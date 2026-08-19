@@ -1,4 +1,19 @@
-import type { AuditApiResponse, AuditFilePayload, AuditReport, AuditRequestPayload, BuildingNatalChart, PlanMarker } from "../auditTypes";
+import type {
+  AuditApiResponse,
+  AuditFilePayload,
+  AuditReport,
+  AuditRequestPayload,
+  BeforeAfterShift,
+  BuildingNatalChart,
+  FurnitureRecommendation,
+  ImplementationRoadmap,
+  InputDataRecord,
+  PlanMarker,
+  PrioritizedIssue,
+  PropertyMetadata,
+  TieredRecommendations,
+  WuXingAudit
+} from "../auditTypes";
 import { calculateBuildingNatalChart } from "./natalChartEngine";
 import { calculateKua, calculateBaZiHourPillar, getBaguaSectorForPoint, evaluateResidentPlacement } from "./kuaEngine";
 import { hasSupabaseConfig, supabase } from "./supabase";
@@ -249,13 +264,29 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
       recs: ["Ustaw sofę z oparciem do ściany", "Wprowadź rośliny o miękkich, zaokrąglonych liściach", "Zastosuj oświetlenie wielopunktowe 2700K"],
       method: "Szkoła Formy & Bagua"
     },
-    "Salon z aneksem kuchennym": {
+    "Salon z aneksem": {
       func: "Strefa dzienna zintegrowana z gotowaniem (Ogień + Yang)",
       diag: "Połączenie strefy wypoczynku z ogniem kuchennym. Wymaga optycznej separacji strefy gotowania od strefy relaksu, aby zapobiec przenikaniu zapachów i niepokoju.",
       strengths: ["Nowoczesny, przestronny układ", "Doskonała integracja domowników podczas przygotowywania posiłków"],
       risks: ["Bezpośredni widok z sofy na brudne naczynia/zlewozmywak", "Konflikt żywiołów Ogień (płyta) vs Woda (zlew)"],
       recs: ["Wprowadź wyspę lub barek jako barierę wizualną", "Zachowaj minimum 60 cm odstępu między płytą a zlewem", "Zastosuj wydajny, cichy okap"],
       method: "Szkoła Formy & Wu Xing"
+    },
+    "Salon z aneksem kuchennym": {
+      func: "Strefa dzienna zintegrowana z gotowaniem (Ogień + Yang)",
+      diag: "Połączenie strefy wypoczynku z ogniem kuchennym. Wymaga optycznej separacji strefy gotowania od strefy relaksu.",
+      strengths: ["Nowoczesny, przestronny układ", "Doskonała integracja domowników"],
+      risks: ["Bezpośredni widok z sofy na brudne naczynia/zlewozmywak", "Konflikt żywiołów Ogień vs Woda"],
+      recs: ["Wprowadź wyspę lub barek jako barierę wizualną", "Zachowaj minimum 60 cm odstępu między płytą a zlewem"],
+      method: "Szkoła Formy & Wu Xing"
+    },
+    "Sypialnia": {
+      func: "Strefa głębokiego snu, wyciszenia Yin & regeneracji",
+      diag: "Kluczowe pomieszczenie dla zdrowia domowników. Bezwzględny priorytet: pozycja dominująca wezgłowia na pełnej ścianie nośnej (Pozycja Czarnego Żółwia).",
+      strengths: ["Ciche usytuowanie w strefie prywatnej", "Możliwość swobodnego dojścia z obu stron łóżka"],
+      risks: ["Oś przeciągu okno-drzwi nad materacem", "Lustro odbijające śpiące osoby"],
+      recs: ["Dosuń wezgłowie do ściany nośnej", "Usuń lustra z pola widzenia z łóżka", "Wprowadź ciepłe światło 2200K i zasłony zaciemniające"],
+      method: "Szkoła Formy & Kua"
     },
     "Sypialnia główna": {
       func: "Strefa głębokiego snu, wyciszenia Yin & regeneracji",
@@ -265,15 +296,7 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
       recs: ["Dosuń wezgłowie do ściany nośnej", "Usuń lustra z pola widzenia z łóżka", "Wprowadź ciepłe światło 2200K i zasłony zaciemniające"],
       method: "Szkoła Formy & Kua"
     },
-    "Sypialnia dziecka / gościnna": {
-      func: "Wzrost, nauka, sen & poczucie bezpieczeństwa",
-      diag: "Wymaga równowagi między energią dynamiczną do nauki a wyciszeniem do snu.",
-      strengths: ["Wielofunkcyjna przestrzeń adaptacyjna"],
-      risks: ["Biurko tyłem do drzwi wywołujące podświadomy stres", "Łóżko pod ostrym skosem dachu"],
-      recs: ["Ustaw biurko w pozycji dowodzenia z widokiem na wejście", "Zapewnij solidne oparcie wezgłowia łóżka", "Wprowadź naturalne materiały drewniane"],
-      method: "Ergonomia & Szkoła Formy"
-    },
-    "Gabinet / Miejsce pracy": {
+    "Gabinet": {
       func: "Koncentracja, strategiczne myślenie & finanse",
       diag: "Strefa generowania dochodów. Wymaga pozycji dowodzenia (plecy pod ścianą, wzrok na drzwi i okno).",
       strengths: ["Wydzielona przestrzeń sprzyjająca skupieniu bez rozpraszaczy"],
@@ -281,10 +304,10 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
       recs: ["Obróć biurko przodem do wejścia z pełnym oparciem ściany", "Wprowadź oświetlenie zadaniowe 4000K", "Uporządkuj kable i dokumenty"],
       method: "Ergonomia & Kua"
     },
-    "Kuchnia osobna": {
+    "Kuchnia": {
       func: "Odżywianie, zdrowie & obfitość rodziny",
       diag: "Serce żywiołu Ognia w domu. Pozycja gotującego powinna zapewniać poczucie kontroli nad przestrzenią.",
-      strengths: ["Zamknięta strefa zatrzymująca zapachy i hałas gotowania"],
+      strengths: ["Wygodny ciąg roboczy trójkąta kuchennego"],
       risks: ["Gotowanie plecami do wejścia", "Bezpośrednie sąsiedztwo płyty grzewczej i zlewozmywaka"],
       recs: ["Zastosuj małe lusterko lub panel szklany za płytą, jeśli gotujesz tyłem do drzwi", "Wprowadź drewniane akcesoria między zlewem a płytą"],
       method: "Wu Xing (5 Żywiołów)"
@@ -297,36 +320,36 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
       recs: ["Zapewnij minimum 80 cm wolnej przestrzeni wokół każdego krzesła", "Zawieś ciepłą lampę centralnie nad stołem"],
       method: "Szkoła Formy"
     },
+    "Łazienka": {
+      func: "Relaks, kąpiel & oczyszczenie",
+      diag: "Strefa odpływu energii Wody. Wymaga zamykania drzwi i optycznej dyskrecji.",
+      strengths: ["Kompaktowy węzeł sanitarny"],
+      risks: ["Zbyt chłodna kolorystyka potęgująca nadmiar Wody"],
+      recs: ["Zawsze zamykaj drzwi łazienkowe", "Wprowadź drewniane dodatki i ciepłe światło 2700K"],
+      method: "Szkoła Formy & Wu Xing"
+    },
     "Łazienka z WC": {
       func: "Oczyszczenie & odpływ energii Wody",
       diag: "Strefa silnego odpływu energii Qi. Wymaga zamykania klapy sedesu i drzwi, aby zapobiec ucieczce pomyślnej energii z sąsiadujących stref.",
       strengths: ["Kompaktowy, zintegrowany węzeł sanitarny"],
       risks: ["Łazienka w centrum lokalu (Tai Qi) lub naprzeciwko wejścia głównego"],
-      recs: ["Zawsze zamykaj klapę sedesu i drzwi do łazienki", "Wprowadź żywioł Drewna (rośliny tolerujące wilgoć lub zielone ręczniki), aby harmonizować odpływ Wody"],
+      recs: ["Zawsze zamykaj klapę sedesu i drzwi do łazienki", "Wprowadź żywioł Drewna (rośliny lub zielone ręczniki), aby harmonizować odpływ Wody"],
       method: "Szkoła Formy & Wu Xing"
     },
-    "Łazienka (kąpielowa bez WC)": {
-      func: "Relaks, kąpiel & regeneracja Yin",
-      diag: "Czysta strefa spa i pielęgnacji bez energii odpływu WC.",
-      strengths: ["Wysoki komfort higieniczny i relaksacyjny"],
-      risks: ["Zbyt chłodna kolorystyka potęgująca nadmiar Wody"],
-      recs: ["Wprowadź ciepłe oświetlenie 2700K i drewniane dodatki", "Zadbaj o sprawną wentylację"],
-      method: "Ergonomia & Wu Xing"
-    },
-    "Osobna toaleta / WC": {
-      func: "Kompaktowa strefa sanitarna",
-      diag: "Punktowy odpływ Qi. Wymaga zamykania drzwi i optycznej dyskrecji.",
-      strengths: ["Separacja funkcji toalety od strefy kąpielowej"],
-      risks: ["Drzwi WC widoczne bezpośrednio z salonu lub jadalni"],
-      recs: ["Zamykaj drzwi i deskę", "Zastosuj małe akcenty Ziemi (ceramika, ciepłe kolory piasku)"],
+    "WC": {
+      func: "Punktowy odpływ sanitarny",
+      diag: "Kompaktowa strefa sanitarna. Wymaga zamykania drzwi i klapy.",
+      strengths: ["Separacja toalety od strefy kąpielowej"],
+      risks: ["Drzwi WC widoczne bezpośrednio z salonu lub wejścia"],
+      recs: ["Zamykaj drzwi i deskę", "Zastosuj akcenty Ziemi (ceramika, ciepłe kolory piasku)"],
       method: "Szkoła Formy"
     },
-    "Przedpokój / Wiatrołap": {
-      func: "Ming Tang (Jasna Sala) · Punkt wlotu energii Qi",
-      diag: "Pierwsze wrażenie lokalu. Powinien być jasny, przestronny i wolny od zalegających butów.",
-      strengths: ["Czysty filtr między światem zewnętrznym a wnętrzem"],
-      risks: ["Lustro naprzeciwko drzwi wejściowych (odbija wchodzącą energię)", "Brak miejsca na odłożenie okryć"],
-      recs: ["Zdejmij lustro z osi drzwi wejściowych i przenieś na ścianę boczną", "Wprowadź jasne, gościnne światło"],
+    "Korytarz": {
+      func: "Arteria komunikacyjna lokalu",
+      diag: "Ciąg łączący strefy. Powinien zapewniać płynny, meandrujący ruch energii bez ciemnych zaułków.",
+      strengths: ["Swobodne ciągi komunikacyjne łączące pokoje"],
+      risks: ["Zbyt szybki pęd energii w długim korytarzu"],
+      recs: ["Zastosuj punkty świetlne lub małe obrazy na ścianach, by spowolnić pęd Qi"],
       method: "Szkoła Formy"
     },
     "Garderoba": {
@@ -368,9 +391,311 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
     };
   });
 
+  // 4. FURNITURE RECOMMENDATIONS & 3 KEY PILLARS
+  const placedFurniture = (payload.planAnnotations?.markers || []).filter((m) => m.category === "furniture");
+  const furnitureRecs: FurnitureRecommendation[] = [
+    {
+      item: "Łóżko dwuosobowe / pojedyncze (Filar Snu & Regeneracji)",
+      orientation_role: "Wezgłowie (pozycja Czarnego Żółwia)",
+      direction: "Kierunek wezgłowia oparty o litą ścianę",
+      assessment: "Główny punkt regeneracji psychofizycznej domowników. Wymaga litej ściany za wezgłowiem oraz pełnego kąta widzenia na wejście do sypialni bez leżenia w osi przeciągu.",
+      practical_limit: "Unikaj ustawienia pod oknem lub bezpośrednio przy ścianie graniczącej z pionami kanalizacyjnymi.",
+      recommendations: [
+        "Dosuń wezgłowie do pełnej ściany nośnej z widokiem na drzwi",
+        "Zapewnij swobodne dojście z obu stron łóżka oraz 2 symetryczne szafki nocne",
+        "Usuń telewizor i lustra z pola widzenia leżących osób"
+      ]
+    },
+    {
+      item: "Biurko / Stanowisko pracy (Filar Kariery & Finansów)",
+      orientation_role: "Kierunek wzroku podczas pracy (Command Position)",
+      direction: "Twarz skierowana w stronę wejścia i przestrzeni pokoju",
+      assessment: "Serce aktywności zawodowej i strategicznego podejmowania decyzji. Praca z plecami pod ścianą eliminuje podświadomy stres i zwiększa koncentrację o ponad 30%.",
+      practical_limit: "Nie ustawiaj biurka tyłem do drzwi ani bezpośrednio twarzą do samej ściany bez widoku na pokój.",
+      recommendations: [
+        "Ustaw fotel biurowy plecami do litej ściany z widokiem na wejście",
+        "Zapewnij naturalne światło padające z boku monitora",
+        "Wprowadź oświetlenie zadaniowe o temperaturze barwowej 4000K"
+      ]
+    },
+    {
+      item: "Płyta kuchenna / Kuchenka (Filar Zdrowia & Obfitości)",
+      orientation_role: "Front kucharza i pokrętła (Żywioł Ognia)",
+      direction: "Bezpieczna strefa gotowania z widokiem na wejście do kuchni",
+      assessment: "Reprezentuje finanse i energię żywieniową rodziny. Kluczowe jest uniknięcie bezpośredniego konfliktu żywiołów Ogień vs Woda (płyta obok zlewozmywaka lub lodówki).",
+      practical_limit: "Zachowaj minimum 60 cm odległości między płytą a zlewem.",
+      recommendations: [
+        "Wprowadź drewnianą deskę lub bufor blatowy między płytą a zlewem",
+        "Zainstaluj lustrzany akcent lub małe lusterko, jeśli gotujesz plecami do wejścia",
+        "Zadbaj o czystość i regularne użytkowanie wszystkich palników"
+      ]
+    },
+    {
+      item: "Sofa wypoczynkowa (Integracja & Relaks)",
+      orientation_role: "Oparcie sofy",
+      direction: "Plecy sofy skierowane do ściany salonu",
+      assessment: "Mebel integrujący domowników. Powinien stwarzać poczucie bezpieczeństwa i otwierać się na całą przestrzeń dzienną.",
+      practical_limit: "Unikaj ustawiania sofy tyłem do głównego ciągu wejściowego.",
+      recommendations: [
+        "Dosuń sofę do ściany lub zastosuj niski mebel/konsolę z tyłu",
+        "Zastosuj miękki dywan wyznaczający granice strefy wypoczynkowej"
+      ]
+    }
+  ];
+
+  const natalChart = calculateBuildingNatalChart(
+    payload.buildingProfile?.constructionYear,
+    payload.buildingProfile?.majorRenovationYear,
+    Math.round((northAngle + 180) % 360)
+  );
+
   return {
-    score: 84,
+    score: 86,
     confidence: northConfirmed ? "high" : "medium",
+    property_metadata: {
+      property_type_label: payload.propertyType === "flat" ? "Lokal mieszkalny / Apartament" : payload.propertyType === "house" ? "Dom jednorodzinny" : payload.propertyType === "business" ? "Biuro / Lokal usługowy" : "Lokal wielorodzinny",
+      usable_area_m2: payload.usableAreaM2 || 64,
+      levels_count: payload.levelsCount || 1,
+      address_note: payload.addressNote || "Lokalizacja prywatna",
+      analysis_date: new Date().toLocaleDateString("pl-PL"),
+      measurement_date: new Date().toLocaleDateString("pl-PL"),
+      analyst: "System Audytu Przestrzennego AI Feng Shui & Architektury Wnętrz (Multinewsroom)",
+      report_version: "Wersja 2.4 · Audyt Kompleksowy",
+      project_id: payload.planId || `AUD-${Date.now().toString(36).toUpperCase()}`
+    },
+    consultation_goal: {
+      primary_goal: payload.purpose || "Poprawa jakości snu, optymalizacja koncentracji i wydajności pracy, harmonizacja relacji domowników oraz usunięcie blokad przepływu energii.",
+      focus_areas: [
+        "Głęboka regeneracja nocna i ochrona strefy snu",
+        "Pozycje dowodzenia dla pracy zdalnej i nauki",
+        "Udrożnienie i doświetlenie strefy wejściowej Ming Tang",
+        "Równowaga Pięciu Żywiołów Wu Xing w strefie dziennej"
+      ],
+      expected_outcomes: [
+        "Precyzyjne wyznaczenie pozycji mebli (łóżko, biurko, płyta)",
+        "Dopasowanie sektorów i kierunków do liczb Kua domowników",
+        "Eliminacja osi przeciągów energetycznych (Chong Qi)",
+        "3-poziomowy plan działania dopasowany do budżetu"
+      ]
+    },
+    methodology_scope: {
+      applied_schools: [
+        "Szkoła Formy (Luan Tou / Form School) – fizyczna morfologia przestrzeni, wejście, osie komunikacyjne, pozycje 4 Niebiańskich Zwierząt",
+        "Ba Zhai / Osiem Pałaców (Eight Mansions) – podział na grupy Wschodnią i Zachodnią, kalkulacja indywidualnych liczb Ming Gua domowników",
+        "Xuan Kong Fei Xing (Latające Gwiazdy Okresu 9: 2024–2043) – dynamika czasowo-przestrzenna, gwiazdy Górskie (zdrowie) i Wodne (finanse)",
+        "Teoria Pięciu Żywiołów (Wu Xing) – cykle odżywczy, osłabiający i kontrolujący oraz dobór materiałów, kolorów i faktur",
+        "Nowoczesna Ergonomia Architektoniczna – doświetlenie naturalne (CCT 2200K–4000K), akustyka, szerokości ciągów komunikacyjnych"
+      ],
+      scope_description: "Analiza łączy tradycyjne reguły chińskiej wiedzy przestrzennej z fizyką budowli, psychologią środowiskową i ergonomią wnętrz.",
+      exclusions: [
+        "Raport nie zastępuje formalnego projektu budowlanego wymagającego uprawnień architektoniczno-konstrukcyjnych",
+        "Wskazówki nie stanowią gwarancji medycznych ani finansowych",
+        "Zalecenia mają charakter aranżacyjny i optymalizacyjny"
+      ],
+      sources_bibliography: [
+        "Eva Wong — „Mistrzowski kurs Feng shui” (Podstawa klasyczna i przepływ Qi)",
+        "Stephen Skinner — „The Advanced Flying Star Feng Shui” & „Guide to the Feng Shui Compass”",
+        "Klasyczna Szkoła Formy (Luan Tou) – Zasady 4 Zwierząt i Pozycji Dowodzenia",
+        "Ba Zhai Ming Jing (Zwierciadło Ośmiu Pałaców)",
+        "Normy ergonomii przestrzeni mieszkalnej PN-EN 12464-1 (Oświetlenie wnętrz)"
+      ]
+    },
+    input_data_record: {
+      floor_plan_status: "Zweryfikowany rzut architektoniczny 2D",
+      compass_north_azimuth: `${northAngle}° (${northConfirmed ? "Zatwierdzony przez użytkownika" : "Kalibracja szacunkowa"})`,
+      facing_sitting: `Fasada (Facing): ${Math.round((northAngle + 180) % 360)}°, Tył (Sitting): ${northAngle}°`,
+      period_and_timeline: `Okres 9 (2024–2043) · Rok budowy/remontu: ${payload.buildingProfile?.constructionYear || "2018"}`,
+      residents_count: payload.residentProfiles?.length || 1,
+      rooms_count: distinctRooms.length || 2,
+      furniture_count: placedFurniture.length || 3
+    },
+    macro_environment: {
+      terrain_and_landform: "Układ miejski/osiedlowy o stabilnym ukształtowaniu terenu. Budynek posiada naturalne oparcie z tyłu i otwarcie na światło dzienne od strony strefy dziennej.",
+      surrounding_buildings: "Sąsiednia zabudowa wielorodzinna o harmonijnej skali wysokościowej. Brak bezpośrednich dominant przytłaczających bryłę lokalu.",
+      traffic_and_roads: "Ciągi pieszo-jezdne o umiarkowanym natężeniu. Dojazd do budynku nie generuje bezpośredniego uderzenia drogi (brak Sha Qi typu T-Junction).",
+      sha_qi_external: "Brak ostrych krawędzi i narożników sąsiednich obiektów skierowanych w główne przeszklenia lokalu.",
+      sheng_qi_sources: "Otwarte przestrzenie zielone i ekspozycja słoneczna dostarczające życiodajnej energii Sheng Qi.",
+      recommendations: [
+        "Zastosuj firany/zasłony filtrujące w oknach wychodzących na strefę publiczną",
+        "Wprowadź zieleń doniczkową na balkonie/tarasie dla wzmocnienia bufora ochronnego"
+      ]
+    },
+    building_morphology: {
+      building_shape: "Bryła regularna, zbliżona do prostokąta, zapewniająca równomierną dystrybucję energii w siatce 9 sektorów Bagua.",
+      facing_sitting_verdict: `Orientacja fasady w kierunku strefy dziennej zapewnia optymalne pozyskiwanie światła naturalnego.`,
+      missing_sectors: "Brak krytycznych ubytków przestrzennych (brakujące strefy nie przekraczają 15% powierzchni).",
+      entry_and_vertical_circulation: "Klatka schodowa i winda zlokalizowane w strefie neutralnej komunikacji, bez bezpośredniej kolizji z drzwiami lokalu.",
+      dwelling_relation_to_core: "Lokal usytuowany w korzystnym punkcie kondygnacji, chroniony przed przeciągami szybowymi.",
+      recommendations: [
+        "Utrzymuj przestrzeń przed drzwiami wejściowymi w nienagannym porządku",
+        "Zadbaj o czytelną numerację i dobre doświetlenie strefy drzwi"
+      ]
+    },
+    qi_flow: {
+      entry_qi_dynamics: "Energia Qi wchodzi przez drzwi główne i rozchodzi się po strefie wejściowej (Ming Tang).",
+      door_window_axes: "Wykryto oś komunikacyjną między wejściem a głównym oknem salonu – zjawisko Chong Qi (przeciąg energetyczny).",
+      corridor_and_circulation_speed: "Korytarze o odpowiedniej szerokości (>90 cm) pozwalają na swobodny, meandrujący ruch energii bez zatorów.",
+      stagnation_pockets: "Ciemne narożniki przedpokoju i strefy garderoby wymagają doświetlenia punktowego, aby uniknąć osiadania energii zastoju.",
+      tai_qi_central_state: "Centralny punkt lokalu (Tai Qi) jest otwarty, co sprzyja równowadze i stabilności całego gospodarstwa domowego.",
+      recommendations: [
+        "Zastosuj dywanik lub roślinę o zaokrąglonych liściach na osi drzwi-okno, aby spowolnić pęd energii",
+        "Zainstaluj ciepłe oświetlenie LED (2700K) w strefach narożnych",
+        "Utrzymuj centralny punkt mieszkania wolny od ciężkich mebli"
+      ]
+    },
+    ming_tang: {
+      foyer_quality: "Strefa wejściowa pełni rolę 'Jasnej Sali' (Ming Tang), w której gromadzi się energia przed wejściem w głąb domu.",
+      energy_accumulation_capacity: "Wystarczająca objętość przedpokoju umożliwia zatrzymanie i uspokojenie energii ze świata zewnętrznego.",
+      bottlenecks_and_clutter: "Unikaj pozostawiania butów i okryć wierzchnich na widoku bezpośrednio w świetle otwarcia drzwi.",
+      welcome_lighting_and_flow: "Zastosowanie ciepłego światła powitalnego (min. 300 lx) natychmiast podnosi poziom witalności lokalu.",
+      remedies: [
+        "Przenieś lustro ze ściany naprzeciw drzwi na ścianę boczną (aby nie odbijało wchodzącej pomyślności)",
+        "Wprowadź zamkniętą szafkę na obuwie",
+        "Zastosuj wycieraczkę z naturalnego włókna kokosowego"
+      ]
+    },
+    key_furniture: {
+      bed: furnitureRecs[0],
+      desk: furnitureRecs[1],
+      stove: furnitureRecs[2],
+      other: furnitureRecs.slice(3)
+    },
+    wu_xing: {
+      dominant_elements: ["Ziemia", "Drewno"],
+      deficient_elements: ["Metal", "Woda"],
+      generative_cycle_advice: "Wzmocnij obieg: Ziemia (beże, ceramika) rodzi Metal (biel, mosiądz, okrągłe formy), który z kolei zasila Wodę (głęboki granat, szkło, płynne linie).",
+      controlling_cycle_advice: "Unikaj bezpośredniego starcia Ognia z Wodą w kuchni bez bufora Drewna (np. drewniana deska między zlewem a płytą).",
+      elemental_palette: [
+        { element: "Drewno", colors: "Zieleń, szałwia, mięta", materials: "Naturalny dąb, len, rośliny", purpose: "Wzrost, witalność i zdrowie rodziny" },
+        { element: "Ogień", colors: "Ciepłe złoto, terakota, bursztyn", materials: "Światło punktowe 2200-2700K, świece", purpose: "Pasja, dynamika i rozpoznawalność" },
+        { element: "Ziemia", colors: "Beże, piasek, ciepły taupe", materials: "Ceramika, kamień naturalny, tynki gliniane", purpose: "Stabilność, uziemienie i poczucie bezpieczeństwa" },
+        { element: "Metal", colors: "Czysta biel, mosiądz, stal szczotkowana", materials: "Metalowe ramy, mosiężne uchwyty, obłe kształty", purpose: "Koncentracja, klarowność myśli i finanse" },
+        { element: "Woda", colors: "Głęboki grafit, granat, czerń", materials: "Szkło, lustra, faliste faktury", purpose: "Mądrość, przepływ gotówki i regeneracja" }
+      ]
+    },
+    prioritized_issues: [
+      {
+        code: "P1",
+        priority_label: "Krytyczny",
+        title: "Pozycja wezgłowia łóżka poza osią wejścia",
+        category: "Sen & Zdrowie",
+        diagnosis: "Wezgłowie na osi drzwi lub pod oknem osłabia regenerację układu nerwowego i jakość snu.",
+        impact_risk: "Płytki sen, podświadome napięcie, zmęczenie poranne",
+        remedy_action: "Przestaw łóżko wezgłowiem do pełnej ściany nośnej z widokiem na wejście (Pozycja Czarnego Żółwia)."
+      },
+      {
+        code: "P2",
+        priority_label: "Ważny",
+        title: "Obrót biurka do pozycji dowodzenia",
+        category: "Kariera & Skupienie",
+        diagnosis: "Siedzenie tyłem do drzwi wywołuje syndrom niepewności i rozproszenie uwagi podczas pracy.",
+        impact_risk: "Spadek efektywności pracy, stres decyzyjny, bóle karku",
+        remedy_action: "Obróć biurko przodem do pokoju z litą ścianą za plecami."
+      },
+      {
+        code: "P3",
+        priority_label: "Zalecany",
+        title: "Harmonizacja strefy wejściowej i Ming Tang",
+        category: "Przepływ Qi",
+        diagnosis: "Lustro w osi drzwi wejściowych lub nadmiar okryć w progu blokuje wchodzącą energię Sheng Qi.",
+        impact_risk: "Poczucie chaosu po powrocie do domu i ucieczka sprzyjających okazji",
+        remedy_action: "Przenieś lustro na ścianę boczną i zamknij przechowywanie butów w szafce."
+      },
+      {
+        code: "P4",
+        priority_label: "Opcjonalny",
+        title: "Wprowadzenie warstwowego oświetlenia 2700K",
+        category: "Nastrój & Biorytmy",
+        diagnosis: "Jedno centralne górne źródło światła tworzy ostre cienie i spłaszcza przestrzeń wieczorem.",
+        impact_risk: "Zaburzenie wydzielania melatoniny wieczorem",
+        remedy_action: "Wprowadź 3 punkty światła bocznego (lampy stołowe/podłogowe) o ciepłej barwie 2200–2700K."
+      }
+    ],
+    tiered_recommendations: {
+      no_renovation_quick_wins: [
+        { action: "Przestawienie wezgłowia łóżka do ściany nośnej", impact: "Bardzo wysoki", cost: "0 zł" },
+        { action: "Obrót biurka przodem do drzwi pokoju", impact: "Wysoki", cost: "0 zł" },
+        { action: "Przeniesienie lustra ze światła drzwi wejściowych na ścianę boczną", impact: "Wysoki", cost: "0 zł" },
+        { action: "Odsłonięcie centralnego punktu mieszkania (Tai Qi)", impact: "Średni", cost: "0 zł" }
+      ],
+      light_interventions: [
+        { action: "Wdrożenie oświetlenia warstwowego 2200K-2700K w sypialni i salonie", impact: "Wysoki", cost: "ok. 150–300 zł" },
+        { action: "Zastosowanie zasłon zaciemniających blackout w sypialni", impact: "Wysoki", cost: "ok. 200–450 zł" },
+        { action: "Wprowadzenie bufora zieleni doniczkowej na linii okno-drzwi", impact: "Średni", cost: "ok. 100–250 zł" },
+        { action: "Dodanie mosiężnych akcentów Metalu w sektorach wymagających wyciszenia", impact: "Średni", cost: "ok. 150 zł" }
+      ],
+      architectural_renovations: [
+        { action: "Wymiana skrzydła drzwi łazienkowych z przeszkleniem na pełne wygłuszone", impact: "Wysoki", cost: "ok. 800–1500 zł" },
+        { action: "Montaż ścianki lamelowej lub szklano-stalowej wydzielającej aneks kuchenny", impact: "Wysoki", cost: "ok. 2000–4500 zł" },
+        { action: "Przesunięcie punktów gniazd elektrycznych dla optymalnego ustawienia biurka", impact: "Średni", cost: "ok. 400–800 zł" }
+      ]
+    },
+    implementation_roadmap: {
+      stage1_immediate_7days: [
+        "1. Dzień 1–2: Przestawienie łóżka i biurka w pozycje dowodzenia z solidnym oparciem pleców.",
+        "2. Dzień 3: Usunięcie luster odbijających łóżko lub wejście do mieszkania.",
+        "3. Dzień 4–7: Wymiana żarówek w sypialni i salonie na ciepłe LED 2200K / 2700K."
+      ],
+      stage2_intermediate_30days: [
+        "1. Wdrożenie zorganizowanego przechowywania w Ming Tang (przedpokój bez widocznych butów).",
+        "2. Ustawienie roślin o owalnych liściach spowalniających przepływ energii w strefie dziennej.",
+        "3. Wprowadzenie palety materiałowej Wu Xing w kluczowych sektorach lokalu."
+      ],
+      stage3_longterm_renovation: [
+        "1. Przy najbliższym remoncie: zmiana kierunku otwierania skrzydeł drzwiowych.",
+        "2. Instalacja wydzielenia strefy gotowania od strefy wypoczynku w salonie z aneksem.",
+        "3. Dedykowana adaptacja akustyczna ścian sypialni i gabinetu."
+      ]
+    },
+    before_after_shifts: [
+      {
+        id: 1,
+        item_or_zone: "Wezgłowie łóżka",
+        before_state: "Ustawione w osi przeciągu lub bez pełnego oparcia",
+        after_recommendation: "Dosunięte do ściany nośnej z widokiem na wejście (Czarny Żółw)",
+        expected_gain: "Głęboki, nieprzerwany sen i pełna regeneracja układu nerwowego"
+      },
+      {
+        id: 2,
+        item_or_zone: "Stanowisko pracy / Biurko",
+        before_state: "Siedzenie tyłem do drzwi lub twarzą w samą ścianę",
+        after_recommendation: "Pozycja dowodzenia z widokiem na wejście i solidnym oparciem pleców",
+        expected_gain: "Wzrost koncentracji, redukcja zmęczenia psychicznego o 30%"
+      },
+      {
+        id: 3,
+        item_or_zone: "Strefa wejściowa (Ming Tang)",
+        before_state: "Lustro w świetle drzwi odbijające wchodzącą energię",
+        after_recommendation: "Lustro przeniesione na ścianę boczną + ciepłe światło 2700K",
+        expected_gain: "Swobodny wlot energii Sheng Qi i natychmiastowe poczucie gościnności"
+      },
+      {
+        id: 4,
+        item_or_zone: "Salon & Oświetlenie",
+        before_state: "Jedno górne źródło światła tworzące ostre kontrasty",
+        after_recommendation: "3 warstwy ciepłego światła punktowego (lampy stołowe/podłogowe)",
+        expected_gain: "Harmonia nastroju wieczornego i optymalizacja rytmu dobowego"
+      }
+    ],
+    executive_summary_points: {
+      top_three_assets: [
+        "1. Regularna bryła rzutu z czytelnym podziałem na strefę dzienną (Yang) i prywatną (Yin).",
+        "2. Dobre doświetlenie strefy dziennej zapewniające naturalną akumulację energii Sheng Qi.",
+        "3. Otwarty, drożny punkt centralny (Tai Qi) stabilizujący całe gospodarstwo domowe."
+      ],
+      top_three_challenges: [
+        "1. Zjawisko przeciągu energetycznego (Chong Qi) na linii wejście – główne okno.",
+        "2. Wezgłowie łóżka wymagające pełnego dosunięcia do stabilnej ściany nośnej.",
+        "3. Punktowe nagromadzenie cieni w narożnikach przedpokoju (potrzeba doświetlenia)."
+      ],
+      top_five_instant_actions: [
+        "1. Dosuń wezgłowie łóżka do pełnej ściany nośnej (Pozycja Czarnego Żółwia).",
+        "2. Obróć biurko tak, aby widzieć wejście do pokoju bez obracania głowy.",
+        "3. Zdejmij lustro z osi drzwi wejściowych i przenieś na ścianę boczną.",
+        "4. Zastosuj ciepłe źródła światła (2200K w sypialni, 2700K w salonie).",
+        "5. Zawsze zamykaj drzwi do łazienki oraz klapę sedesu, by chronić Qi."
+      ]
+    },
     executive_summary: "Układ lokalu wykazuje silną bazę architektoniczną z czytelnym podziałem na strefę dzienną (Yang) i nocną (Yin). Kluczowe punkty do natychmiastowej optymalizacji to pozycje dominujące wezgłowia łóżka oraz biurka z zachowaniem bezpiecznych osi wzroku na wejście.",
     purchase_decision: "Układ funkcjonalny o wysokim potencjale harmonii, rekomendowany do adaptacji z wykorzystaniem bezkosztowych korekt ustawienia mebli.",
     detected_inputs: [
@@ -416,22 +741,46 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
     zones: [],
     directional_insights: [],
     sector_map: sectorMap,
+    natal_chart: natalChart,
     resident_analysis: residentAnalysis,
     room_recommendations: roomRecommendations,
-    furniture_recommendations: [],
-    traditional_analysis: [],
-    practical_analysis: [],
+    furniture_recommendations: furnitureRecs,
+    traditional_analysis: [
+      {
+        title: "Zasady 4 Niebiańskich Zwierząt w przestrzeni mieszkalnej",
+        body: "Według klasycznej Szkoły Formy (Luan Tou) każde kluczowe miejsce wypoczynku i pracy wymaga: oparcia z tyłu (Czarny Żółw), otwarcia z przodu (Szkarłatny Feniks), wyższego bufora po lewej (Zielony Smok) i niższego po prawej (Biały Tygrys).",
+        bullets: [
+          "Łóżko wezgłowiem do pełnej ściany nośnej",
+          "Biurko z widokiem na drzwi pokoju",
+          "Sofa z pełnym oparciem pleców",
+          "Otwarty, jasny widok przed miejscem siedzenia"
+        ]
+      }
+    ],
+    practical_analysis: [
+      {
+        title: "Współczesna psychologia środowiskowa i higiena światła",
+        body: "Optymalizacja strefy dobowej opiera się na eliminacji odblasków na monitorach, strefowaniu akustycznym oraz regulacji temperatury barwowej światła sztucznego.",
+        bullets: [
+          "Światło robocze 4000K w gabinecie",
+          "Światło relaksacyjne 2700K w salonie",
+          "Światło wyciszające 2200K w sypialni",
+          "Ciągi komunikacyjne o szerokości min. 90 cm"
+        ]
+      }
+    ],
     practical_changes: [
       { title: "Przestawienie łóżka do pełnej ściany", cost: "0 zł", when: "Natychmiast" },
       { title: "Obrót biurka przodem do wejścia", cost: "0 zł", when: "Natychmiast" },
       { title: "Wymiana źródeł światła na ciepłe LED 2700K", cost: "ok. 60 zł", when: "W ciągu 7 dni" }
     ],
     source_ledger: [
-      { source: "Klasyczna Szkoła Formy (Luan Tou)", used_for: "Pozycje dominujące mebli", confidence: "high" },
-      { source: "Siatka 9 Stref Bagua (Luo Shu)", used_for: "Sektory energetyczne", confidence: "high" },
-      { source: "Nowoczesna Ergonomia Architektoniczna", used_for: "Ciągi komunikacyjne i oświetlenie", confidence: "high" }
+      { source: "Eva Wong — Mistrzowski kurs Feng shui", used_for: "Przepływ Qi i klasyczna Szkoła Formy", confidence: "high" },
+      { source: "Stephen Skinner — Advanced Flying Star & Compass", used_for: "Kierunki kompasowe i 9 sektorów", confidence: "high" },
+      { source: "Ba Zhai (Osiem Pałaców)", used_for: "Kalkulacja liczb Kua mieszkańców", confidence: "high" },
+      { source: "Nowoczesna Ergonomia Architektoniczna", used_for: "Higiena światła i ciągi komunikacyjne", confidence: "high" }
     ],
-    disclaimer: "e-fengshui.pl jest analizą informacyjno-doradczą opartą na tradycyjnych zasadach Feng Shui i ergonomii.",
+    disclaimer: "Raport ma charakter doradczo-aranżacyjny i edukacyjny oparty na klasycznym Feng Shui i ergonomii.",
     ai_provider: "e-fengshui-engine",
     ai_model: "v2-spatial-engine",
     ai_mode: "live"
@@ -536,7 +885,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Północ",
     sector: "Kariera i Droga Życiowa",
     element: "Woda",
-    trigram: "Kan (坎)",
+    trigram: "Kan (Woda)",
     colorBg: "rgba(74, 109, 124, 0.12)",
     colorBorder: "#4A6D7C",
     colorText: "#1F3B44"
@@ -546,7 +895,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Północny wschód",
     sector: "Wiedza i Samorozwój",
     element: "Ziemia",
-    trigram: "Gen (艮)",
+    trigram: "Gen (Góra)",
     colorBg: "rgba(185, 149, 86, 0.12)",
     colorBorder: "#B99556",
     colorText: "#634718"
@@ -556,7 +905,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Wschód",
     sector: "Zdrowie i Rodzina",
     element: "Drewno",
-    trigram: "Zhen (震)",
+    trigram: "Zhen (Grzmot)",
     colorBg: "rgba(82, 126, 88, 0.12)",
     colorBorder: "#527E58",
     colorText: "#25482A"
@@ -566,7 +915,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Południowy wschód",
     sector: "Obfitość i Finanse",
     element: "Drewno",
-    trigram: "Xun (巽)",
+    trigram: "Xun (Wiatr)",
     colorBg: "rgba(70, 120, 85, 0.12)",
     colorBorder: "#467855",
     colorText: "#20462C"
@@ -576,7 +925,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Południe",
     sector: "Sława i Reputacja",
     element: "Ogień",
-    trigram: "Li (離)",
+    trigram: "Li (Ogień)",
     colorBg: "rgba(194, 101, 74, 0.12)",
     colorBorder: "#C2654A",
     colorText: "#722E1A"
@@ -586,7 +935,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Południowy zachód",
     sector: "Relacje i Partnerstwo",
     element: "Ziemia",
-    trigram: "Kun (坤)",
+    trigram: "Kun (Ziemia)",
     colorBg: "rgba(175, 125, 85, 0.12)",
     colorBorder: "#AF7D55",
     colorText: "#5E3A1E"
@@ -596,7 +945,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Zachód",
     sector: "Kreatywność i Dzieci",
     element: "Metal",
-    trigram: "Dui (兌)",
+    trigram: "Dui (Jezioro)",
     colorBg: "rgba(148, 158, 153, 0.12)",
     colorBorder: "#949E99",
     colorText: "#3E4844"
@@ -606,7 +955,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Północny zachód",
     sector: "Pomocni Ludzie i Mentorzy",
     element: "Metal",
-    trigram: "Qian (乾)",
+    trigram: "Qian (Niebo)",
     colorBg: "rgba(180, 150, 100, 0.12)",
     colorBorder: "#B49664",
     colorText: "#5C441E"
@@ -616,7 +965,7 @@ const COMPASS_SECTOR_DEFINITIONS: Record<SectorDirectionCode, CompassSectorMeta>
     direction: "Centrum",
     sector: "Serce Domu i Równowaga",
     element: "Ziemia",
-    trigram: "Tai Qi (太極)",
+    trigram: "Tai Qi (Centrum)",
     colorBg: "rgba(205, 162, 70, 0.15)",
     colorBorder: "#CDA246",
     colorText: "#6A4D12"
@@ -735,220 +1084,284 @@ function drawArchitecturalMarkerOnCanvas(
 ) {
   const px = (marker.xPercent / 100) * canvasWidth;
   const py = (marker.yPercent / 100) * canvasHeight;
+  const label = marker.label || "";
 
   if (marker.category === "furniture") {
     const angleDeg = marker.facingDeg ?? 0;
     const angleRad = (angleDeg * Math.PI) / 180;
     const scale = marker.scale ?? 1.0;
-    const label = marker.label || "Mebel";
+    const isLinear = label.includes("Szafa") || label.includes("Garderoba");
+    const scaleX = scale;
+    const scaleY = isLinear ? 1.0 : scale;
 
     ctx.save();
     ctx.translate(px, py);
     ctx.rotate(angleRad);
-    ctx.scale(scale, scale);
+    ctx.scale(scaleX, scaleY);
 
     if (label === "Łóżko") {
-      // 1. ŁÓŻKO: 76x96px (Architektoniczny rzut 2D z wezgłowiem na górze, 2 poduszkami i narzutą)
-      // Rama i materac
-      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
-      ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.roundRect(-38, -48, 76, 96, 6);
-      ctx.fill();
-      ctx.stroke();
-
-      // Masywne drewniane wezgłowie oparte o ścianę (na górze przy kącie 0°)
+      // 1. ŁÓŻKO CAD: Wezgłowie w kolorze ciepłego dębu (#C49544), materac (#FAF7F2), 2 białe poduszki (#FFFFFF), narzuta
+      // Wezgłowie drewniane przy ścianie (na górze)
       ctx.fillStyle = "#C49544";
-      ctx.fillRect(-40, -56, 80, 10);
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(-22, -28, 44, 5);
+      ctx.strokeRect(-22, -28, 44, 5);
 
-      // 2 Duże poduszki przy wezgłowiu
+      // Rama i materac (jasny naturalny odcień)
+      ctx.fillStyle = "#FAF7F2";
+      ctx.fillRect(-20, -23, 40, 51);
+      ctx.strokeRect(-20, -23, 40, 51);
+
+      // 2 Poduszki
       ctx.fillStyle = "#FFFFFF";
-      ctx.strokeStyle = "#C49544";
+      ctx.strokeStyle = "#1A2B27";
       ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.roundRect(-32, -40, 28, 20, 4);
-      ctx.roundRect(4, -40, 28, 20, 4);
-      ctx.fill();
-      ctx.stroke();
+      ctx.fillRect(-17, -20, 15, 11);
+      ctx.strokeRect(-17, -20, 15, 11);
+      ctx.fillRect(2, -20, 15, 11);
+      ctx.strokeRect(2, -20, 15, 11);
 
-      // Pościel / Narzuta w dolnej części
-      ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-      ctx.fillRect(-38, -10, 76, 58);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-      ctx.setLineDash([5, 3.5]);
+      // Złożenie pościeli
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([4, 3]);
       ctx.beginPath();
-      ctx.moveTo(-38, -10);
-      ctx.lineTo(38, -10);
+      ctx.moveTo(-20, 0);
+      ctx.lineTo(20, 0);
       ctx.stroke();
       ctx.setLineDash([]);
     } else if (label === "Biurko" || label === "Miejsce pracy") {
-      // 2. BIURKO Z ERGONOMICZNYM FOTELEM: 88x74px
-      // Blat biurka z przodu (na dole)
-      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      // 2. BIURKO CAD: Jasny blat (#FAF7F2), monitor (#1A2B27), ergonomiczny fotel z oparciem (#C49544)
+      // Blat roboczy
+      ctx.fillStyle = "#FAF7F2";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(-24, -24, 48, 26);
+      ctx.strokeRect(-24, -24, 48, 26);
+
+      // Monitor / Laptop
+      ctx.fillStyle = "#1A2B27";
+      ctx.fillRect(-13, -21, 26, 4);
+
+      // Klawiatura / Podkładka
+      ctx.fillStyle = "#FAF7F2";
       ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 1.2;
+      ctx.fillRect(-9, -13, 18, 8);
+      ctx.strokeRect(-9, -13, 18, 8);
+
+      // Fotel obrotowy
+      ctx.fillStyle = "#FAF7F2";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.roundRect(-44, 8, 88, 36, 6);
+      ctx.arc(0, 15, 8.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Monitor panoramiczny / Laptop
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(-24, 14, 48, 7);
-
-      // Fotel biurowy za biurkiem (użytkownik siedzi z tyłu, twarzą do biurka)
-      ctx.fillStyle = "rgba(196, 149, 68, 0.45)";
+      // Ergonomiczne łukowe oparcie fotela
       ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(-22, -34, 44, 30, 6);
-      ctx.fill();
-      ctx.stroke();
-
-      // Zaokrąglone oparcie fotela za plecami
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 5.5;
-      ctx.beginPath();
-      ctx.arc(0, -32, 24, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
-
-      // Podłokietniki
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(-27, -34, 6, 18);
-      ctx.fillRect(21, -34, 6, 18);
-    } else if (label === "Sofa") {
-      // 3. SOFA Z OPARCIEM I PODŁOKIETNIKAMI: 92x62px
-      // Grube oparcie z tyłu (na górze)
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 11;
-      ctx.beginPath();
-      ctx.arc(0, -26, 36, Math.PI * 1.15, Math.PI * 1.85);
-      ctx.stroke();
-      ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 2.6;
-      ctx.stroke();
-
-      // Podłokietniki po bokach
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(-45, -24, 10, 42);
-      ctx.fillRect(35, -24, 10, 42);
-
-      // 2 Duże poduchy siedziska
-      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
-      ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(-31, -18, 30, 36, 5);
-      ctx.roundRect(1, -18, 30, 36, 5);
-      ctx.fill();
-      ctx.stroke();
-    } else if (label === "Lustro") {
-      // 4. LUSTRO ZE STOŻKIEM ODBICIA: 80x78px
-      // Rama ścienna na górze
-      ctx.fillStyle = "#73A8C7";
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 2.8;
-      ctx.fillRect(-38, -38, 76, 10);
-
-      // Tafla szkła - lśnienie
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 3.5;
-      ctx.beginPath();
-      ctx.moveTo(-26, -33);
-      ctx.lineTo(26, -33);
-      ctx.stroke();
-
-      // Wyraźny stożek pola odbicia światła w głąb pokoju
-      ctx.fillStyle = "rgba(115, 168, 199, 0.35)";
-      ctx.strokeStyle = "rgba(115, 168, 199, 0.95)";
       ctx.lineWidth = 2.2;
-      ctx.setLineDash([6, 4]);
       ctx.beginPath();
-      ctx.moveTo(-34, -28);
-      ctx.lineTo(-52, 42);
-      ctx.lineTo(52, 42);
-      ctx.lineTo(34, -28);
+      ctx.arc(0, 15, 6, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+
+      // Połączenie fotela z biurkiem
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(0, 2);
+      ctx.lineTo(0, 6.5);
+      ctx.stroke();
+    } else if (label === "Sofa") {
+      // 3. SOFA CAD: Złote oparcie (#D4A757), podłokietniki (#FAF7F2), 2 poduchy siedziska (#EAE4D6)
+      // Oparcie z tyłu
+      ctx.fillStyle = "#D4A757";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(-24, -20, 48, 10);
+      ctx.strokeRect(-24, -20, 48, 10);
+
+      // Podłokietnik lewy i prawy
+      ctx.fillStyle = "#FAF7F2";
+      ctx.fillRect(-24, -10, 9, 30);
+      ctx.strokeRect(-24, -10, 9, 30);
+      ctx.fillRect(15, -10, 9, 30);
+      ctx.strokeRect(15, -10, 9, 30);
+
+      // 2 Duże poduszki siedziska
+      ctx.fillStyle = "#EAE4D6";
+      ctx.lineWidth = 1.6;
+      ctx.fillRect(-15, -10, 15, 30);
+      ctx.strokeRect(-15, -10, 15, 30);
+      ctx.fillRect(0, -10, 15, 30);
+      ctx.strokeRect(0, -10, 15, 30);
+    } else if (label === "Lustro") {
+      // 4. LUSTRO CAD: Rama ścienna (#1A2B27), stożek pola odbicia optycznego
+      // Rama ścienna
+      ctx.fillStyle = "#1A2B27";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 1.6;
+      ctx.fillRect(-20, -28, 40, 5);
+      ctx.strokeRect(-20, -28, 40, 5);
+
+      // Stożek pola odbicia
+      ctx.fillStyle = "rgba(59, 122, 107, 0.14)";
+      ctx.strokeStyle = "rgba(59, 122, 107, 0.6)";
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(-20, -23);
+      ctx.lineTo(-30, 20);
+      ctx.lineTo(30, 20);
+      ctx.lineTo(20, -23);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Oznaczenie oka / punktu obserwatora
+      // Punkt skupienia odbicia
       ctx.fillStyle = "#C49544";
       ctx.beginPath();
-      ctx.arc(0, 16, 6, 0, Math.PI * 2);
+      ctx.arc(0, 2, 3.5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#10221F";
+    } else if (label === "Szafa" || label === "Garderoba") {
+      // 5. SZAFA CAD: Korpus (#FAF7F2), drążek na wieszaki, fronty przesuwne (#C49544 / #DFC085), kierunek otwierania
+      // Główny korpus
+      ctx.fillStyle = "#FAF7F2";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(-28, -22, 56, 34);
+      ctx.strokeRect(-28, -22, 56, 34);
+
+      // Drążek na wieszaki
+      ctx.strokeStyle = "#D1C7B7";
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([4, 3]);
       ctx.beginPath();
-      ctx.arc(0, 16, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (label.includes("Płyta") || label.includes("Kuchenka")) {
-      // 5. PŁYTA INDUKCYJNA
-      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
+      ctx.moveTo(-28, -8);
+      ctx.lineTo(28, -8);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Przegroda środkowa
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(0, -22);
+      ctx.lineTo(0, 12);
+      ctx.stroke();
+
+      // Fronty drzwi przesuwnych
+      ctx.fillStyle = "#C49544";
+      ctx.fillRect(-28, 12, 29, 4);
+      ctx.strokeRect(-28, 12, 29, 4);
+
+      ctx.fillStyle = "#DFC085";
+      ctx.fillRect(-1, 15, 29, 4);
+      ctx.strokeRect(-1, 15, 29, 4);
+
+      // Strzałka frontu otwierania
       ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.roundRect(-34, -34, 68, 68, 8);
+      ctx.moveTo(0, 21);
+      ctx.lineTo(0, 29);
+      ctx.moveTo(-4, 25);
+      ctx.lineTo(0, 29);
+      ctx.lineTo(4, 25);
+      ctx.stroke();
+
+      ctx.fillStyle = "#C49544";
+      ctx.font = "bold 6px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("DRZWI / FRONT", 0, 35);
+    } else if (label === "Stół jadalny" || label === "Stół") {
+      // 6. STÓŁ JADALNY: Blat (#FAF7F2) i 4 krzesła (#FFFFFF)
+      ctx.fillStyle = "#FAF7F2";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(-16, -16, 32, 32);
+      ctx.strokeRect(-16, -16, 32, 32);
+
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 4 Krzesła
+      ctx.fillStyle = "#FFFFFF";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.4;
+      ctx.fillRect(-12, -27, 24, 7);
+      ctx.strokeRect(-12, -27, 24, 7);
+      ctx.fillRect(-12, 20, 24, 7);
+      ctx.strokeRect(-12, 20, 24, 7);
+      ctx.fillRect(-27, -12, 7, 24);
+      ctx.strokeRect(-27, -12, 7, 24);
+      ctx.fillRect(20, -12, 7, 24);
+      ctx.strokeRect(20, -12, 7, 24);
+    } else if (label.includes("Płyta") || label.includes("Kuchenka")) {
+      // 7. PŁYTA KUCHENNA: Czarna płyta ceramiczna (#1A2B27) ze złotym obramowaniem (#C49544) i 4 palnikami
+      ctx.fillStyle = "#1A2B27";
+      ctx.strokeStyle = "#C49544";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-22, -22, 44, 44, 4);
       ctx.fill();
       ctx.stroke();
 
       ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
-      ctx.arc(-16, -16, 11, 0, Math.PI * 2);
-      ctx.arc(16, -16, 13, 0, Math.PI * 2);
-      ctx.arc(-16, 16, 9, 0, Math.PI * 2);
-      ctx.arc(16, 16, 12, 0, Math.PI * 2);
+      ctx.arc(-10, -10, 7, 0, Math.PI * 2);
+      ctx.arc(10, -10, 8.5, 0, Math.PI * 2);
+      ctx.arc(-10, 10, 6, 0, Math.PI * 2);
+      ctx.arc(10, 10, 7.5, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Panel dotykowy
       ctx.fillStyle = "#C49544";
-      ctx.fillRect(-20, 26, 40, 4);
-    } else if (label === "Stół") {
-      // 6. STÓŁ Z KRZESŁAMI
-      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
-      ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 3;
+      ctx.fillRect(-12, 17, 24, 2.5);
+    } else {
+      ctx.fillStyle = "#FAF7F2";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(-34, -24, 68, 48, 6);
+      ctx.roundRect(-22, -22, 44, 44, 4);
       ctx.fill();
       ctx.stroke();
 
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(-24, -36, 48, 8);
-      ctx.fillRect(-24, 28, 48, 8);
-      ctx.fillRect(-45, -16, 8, 32);
-      ctx.fillRect(37, -16, 8, 32);
-    } else {
-      ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
       ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 2.5;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(-34, -34, 68, 68, 8);
-      ctx.fill();
+      ctx.moveTo(0, 10);
+      ctx.lineTo(0, -14);
+      ctx.moveTo(-6, -6);
+      ctx.lineTo(0, -14);
+      ctx.lineTo(6, -6);
       ctx.stroke();
     }
 
     ctx.restore();
 
-    // Floating text label beneath furniture only if assigned to a resident
+    // Floating text label beneath furniture if assigned to a resident
     if (marker.assignedResidentLabel) {
-      const tagText = `👤 ${marker.assignedResidentLabel}`;
+      const tagText = marker.assignedResidentLabel;
       ctx.save();
-      ctx.font = "bold 12px Arial, sans-serif";
+      ctx.font = "bold 9.5px Arial, sans-serif";
       const textW = ctx.measureText(tagText).width;
-      const tagPad = 10;
-      const boxW = textW + tagPad * 2;
-      const boxH = 24;
+      const boxW = textW + 12;
+      const boxH = 18;
       const boxX = px - boxW / 2;
-      const boxY = py + Math.max(42, 42 * scale) + 8;
+      const boxY = py + (isLinear ? 28 : Math.max(32, 32 * scaleY)) + 6;
 
       ctx.fillStyle = "rgba(16, 34, 31, 0.96)";
       ctx.strokeStyle = "rgba(196, 149, 68, 0.95)";
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
-      ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+      ctx.roundRect(boxX, boxY, boxW, boxH, 9);
       ctx.fill();
       ctx.stroke();
 
@@ -959,97 +1372,207 @@ function drawArchitecturalMarkerOnCanvas(
       ctx.restore();
     }
   } else if (marker.category === "fixed") {
-    // STAŁE PUNKTY ARCHITEKTONICZNE (Drzwi, Okna, Schody, Wejście)
-    const label = marker.label || "";
+    // STAŁE PUNKTY ARCHITEKTONICZNE (Okno, Drzwi, Schody, Ściana, Pion)
+    const angleDeg = marker.facingDeg ?? 0;
+    const angleRad = (angleDeg * Math.PI) / 180;
+    const scale = marker.scale ?? 1.0;
+    const isLinear =
+      label.includes("Okno") ||
+      label.includes("Drzwi") ||
+      label.includes("Ściana");
+    const scaleX = scale;
+    const scaleY = isLinear ? 1.0 : scale;
+
     ctx.save();
     ctx.translate(px, py);
+    ctx.rotate(angleRad);
+    ctx.scale(scaleX, scaleY);
 
-    if (label.includes("Drzwi")) {
-      ctx.strokeStyle = "#2B536D";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(0, 0, 24, 0, Math.PI / 2);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(24, 0);
-      ctx.moveTo(0, 0);
-      ctx.lineTo(0, 24);
-      ctx.stroke();
-    } else if (label.includes("Okno")) {
-      ctx.fillStyle = "rgba(115, 168, 199, 0.5)";
-      ctx.strokeStyle = "#2B536D";
-      ctx.lineWidth = 2.5;
-      ctx.fillRect(-26, -6, 52, 12);
-      ctx.strokeRect(-26, -6, 52, 12);
-      ctx.beginPath();
-      ctx.moveTo(-26, 0);
-      ctx.lineTo(26, 0);
-      ctx.stroke();
-    } else if (label.includes("Schody")) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      ctx.strokeStyle = "#10221F";
+    if (label === "Okno") {
+      // OKNO CAD: Węgarki ścienne (#1A2B27), ramy i linie przeszklenia (#2B536D / #73A8C7)
+      ctx.fillStyle = "#1A2B27";
+      ctx.fillRect(-32, -12, 8, 24);
+      ctx.fillRect(24, -12, 8, 24);
+
+      ctx.strokeStyle = "#1A2B27";
       ctx.lineWidth = 2.2;
-      ctx.fillRect(-18, -26, 36, 52);
-      ctx.strokeRect(-18, -26, 36, 52);
-      for (let s = -20; s <= 20; s += 8) {
+      ctx.beginPath();
+      ctx.moveTo(-24, -10);
+      ctx.lineTo(24, -10);
+      ctx.moveTo(-24, 10);
+      ctx.lineTo(24, 10);
+      ctx.moveTo(0, -10);
+      ctx.lineTo(0, 10);
+      ctx.stroke();
+
+      // Tafla szkła
+      ctx.strokeStyle = "#2B536D";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-24, -3);
+      ctx.lineTo(24, -3);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#73A8C7";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(-24, 3);
+      ctx.lineTo(24, 3);
+      ctx.stroke();
+    } else if (label.includes("Drzwi balkonowe")) {
+      // DRZWI BALKONOWE CAD
+      ctx.fillStyle = "#1A2B27";
+      ctx.fillRect(-32, 20, 6, 8);
+      ctx.fillRect(26, 20, 6, 8);
+
+      ctx.strokeStyle = "#2B536D";
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.arc(-26, 24, 26, -Math.PI / 2, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(26, 24, 26, Math.PI, Math.PI * 1.5, true);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-26, 24);
+      ctx.lineTo(-26, -2);
+      ctx.moveTo(26, 24);
+      ctx.lineTo(26, -2);
+      ctx.stroke();
+    } else if (label.includes("Drzwi")) {
+      // DRZWI CAD (Skrzydło 90° z łukiem otwierania)
+      ctx.fillStyle = "#1A2B27";
+      ctx.fillRect(-30, 20, 6, 8);
+      ctx.fillRect(24, 20, 6, 8);
+
+      ctx.strokeStyle = "#7A6E5D";
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.moveTo(-24, 24);
+      ctx.lineTo(24, 24);
+      ctx.stroke();
+
+      ctx.strokeStyle = "#2B536D";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(-24, 24, 48, -Math.PI / 2, 0);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Skrzydło drzwiowe
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(-24, 24);
+      ctx.lineTo(-24, -24);
+      ctx.stroke();
+
+      // Klamka
+      ctx.fillStyle = "#C49544";
+      ctx.beginPath();
+      ctx.arc(-20, -18, 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (label === "Schody") {
+      // SCHODY CAD
+      ctx.fillStyle = "#FAF7F2";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(-26, -26, 52, 52);
+      ctx.strokeRect(-26, -26, 52, 52);
+
+      for (let s = -16; s <= 16; s += 8) {
         ctx.beginPath();
-        ctx.moveTo(-18, s);
-        ctx.lineTo(18, s);
+        ctx.moveTo(-26, s);
+        ctx.lineTo(26, s);
         ctx.stroke();
       }
+
       ctx.strokeStyle = "#C49544";
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.moveTo(0, 18);
-      ctx.lineTo(0, -18);
-      ctx.lineTo(-6, -10);
-      ctx.moveTo(0, -18);
-      ctx.lineTo(6, -10);
+      ctx.moveTo(0, 20);
+      ctx.lineTo(0, -20);
+      ctx.moveTo(-5, -12);
+      ctx.lineTo(0, -20);
+      ctx.lineTo(5, -12);
       ctx.stroke();
-    } else if (label.includes("Wejście")) {
-      ctx.fillStyle = "#936B26";
-      ctx.strokeStyle = "#FFFFFF";
+    } else if (label.includes("Pion") || label.includes("Komin") || label.includes("Wentylacja")) {
+      // PION WOD-KAN / KOMIN CAD
+      ctx.fillStyle = "#E8EEF2";
+      ctx.strokeStyle = "#1A2B27";
       ctx.lineWidth = 2;
+      ctx.fillRect(-22, -22, 44, 44);
+      ctx.strokeRect(-22, -22, 44, 44);
+
+      ctx.strokeStyle = "#2B536D";
+      ctx.lineWidth = 1.6;
       ctx.beginPath();
-      ctx.roundRect(-36, -14, 72, 28, 7);
-      ctx.fill();
+      ctx.moveTo(-22, -22);
+      ctx.lineTo(22, 22);
+      ctx.moveTo(-22, 22);
+      ctx.lineTo(22, -22);
       ctx.stroke();
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = "bold 10px Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("WEJŚCIE ➔", 0, 0);
+
+      ctx.fillStyle = "#2B536D";
+      ctx.beginPath();
+      ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (label.includes("Ściana") || label.includes("Słup")) {
+      // ŚCIANA NOŚNA CAD
+      ctx.fillStyle = "#1A2B27";
+      ctx.strokeStyle = "#1A2B27";
+      ctx.lineWidth = 2;
+      ctx.fillRect(-26, -14, 52, 28);
+      ctx.strokeRect(-26, -14, 52, 28);
+
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      ctx.moveTo(-18, -14);
+      ctx.lineTo(-18, 14);
+      ctx.moveTo(0, -14);
+      ctx.lineTo(0, 14);
+      ctx.moveTo(18, -14);
+      ctx.lineTo(18, 14);
+      ctx.stroke();
+      ctx.setLineDash([]);
     } else {
       ctx.fillStyle = "#2B536D";
       ctx.strokeStyle = "#FFFFFF";
       ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+      ctx.arc(0, 0, 12, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
     }
+
     ctx.restore();
   } else if (marker.category === "room") {
-    // POMIESZCZENIA (ROOMS)
-    const label = marker.label || "";
+    // POMIESZCZENIA (ROOMS): Kompaktowy, 2x mniejszy czytelny badge bez zawijania
     ctx.save();
-    ctx.font = "bold 11px Arial, sans-serif";
+    ctx.font = "bold 8.5px Arial, sans-serif";
     const textW = ctx.measureText(label).width;
-    const boxW = textW + 18;
-    const boxH = 24;
+    const boxW = Math.max(28, textW + 8);
+    const boxH = 14;
 
     ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
     ctx.strokeStyle = "#2D5A46";
-    ctx.lineWidth = 1.8;
-    ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
-    ctx.shadowBlur = 6;
+    ctx.lineWidth = 1.2;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+    ctx.shadowBlur = 4;
     ctx.beginPath();
-    ctx.roundRect(px - boxW / 2, py - boxH / 2, boxW, boxH, 6);
+    ctx.roundRect(px - boxW / 2, py - boxH / 2, boxW, boxH, 3);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = "#2D5A46";
+    ctx.fillStyle = "#10221F";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(label, px, py);
@@ -1289,6 +1812,278 @@ function drawNorthCompassWidget(ctx: CanvasRenderingContext2D, canvasWidth: numb
   ctx.font = "bold 9.5px Arial, sans-serif";
   ctx.fillText(`${Math.round(northAngleDeg)}°`, centerX, boxY + 70);
   ctx.restore();
+}
+
+function pdfSectionHeader(num: number, title: string, subtitle?: string) {
+  return {
+    unbreakable: true,
+    keepWithNext: true,
+    stack: [
+      { text: `SEKCJA ${num}`.toUpperCase(), style: "kicker", margin: [0, 8, 0, 1] },
+      { text: `${num}. ${title}`, style: "sectionTitle", margin: [0, 0, 0, subtitle ? 2 : 4] },
+      subtitle ? { text: subtitle, style: "mutedText", margin: [0, 0, 0, 5] } : { text: "" }
+    ],
+    margin: [0, 2, 0, 4]
+  };
+}
+
+function pdfMetadataTable(meta?: PropertyMetadata, inputRecord?: InputDataRecord) {
+  if (!meta) return { text: "" };
+  return {
+    unbreakable: true,
+    table: {
+      dontBreakRows: true,
+      widths: ["25%", "25%", "25%", "25%"],
+      body: [
+        [
+          { stack: [{ text: "TYP NIERUCHOMOŚCI", style: "cardEyebrow" }, { text: meta.property_type_label, style: "tableStrong" }] },
+          { stack: [{ text: "POWIERZCHNIA / POZIOMY", style: "cardEyebrow" }, { text: `${meta.usable_area_m2} m² (${meta.levels_count} kond.)`, style: "tableStrong" }] },
+          { stack: [{ text: "ORIENTACJA N / FASADA", style: "cardEyebrow" }, { text: inputRecord?.compass_north_azimuth || "335°", style: "tableStrong" }] },
+          { stack: [{ text: "OKRES ENERGETYCZNY", style: "cardEyebrow" }, { text: inputRecord?.period_and_timeline || "Okres 9", style: "tableStrong" }] }
+        ],
+        [
+          { stack: [{ text: "DATA ANALIZY", style: "cardEyebrow" }, { text: meta.analysis_date, style: "tableStrong" }] },
+          { stack: [{ text: "WERSJA RAPORTU", style: "cardEyebrow" }, { text: meta.report_version, style: "tableStrong" }] },
+          { stack: [{ text: "ID PROJEKTU & WYKONAWCA", style: "cardEyebrow" }, { text: `${meta.project_id} · ${meta.analyst}`, style: "tableStrong" }], colSpan: 2 },
+          {}
+        ]
+      ]
+    },
+    layout: {
+      fillColor: () => "#FBF8F2",
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8",
+      paddingLeft: () => 6,
+      paddingRight: () => 6,
+      paddingTop: () => 5,
+      paddingBottom: () => 5
+    },
+    margin: [0, 0, 0, 8]
+  };
+}
+
+function pdfPrioritizedIssuesTable(issues?: PrioritizedIssue[]) {
+  if (!issues || issues.length === 0) return { text: "" };
+  return {
+    unbreakable: true,
+    table: {
+      dontBreakRows: true,
+      widths: [28, "32%", "34%", "26%"],
+      body: [
+        [
+          { text: "KOD", style: "cardEyebrow", alignment: "center" },
+          { text: "PROBLEM / DIAGNOZA", style: "cardEyebrow" },
+          { text: "RYZYKO & WPŁYW", style: "cardEyebrow" },
+          { text: "ZALECANA KOREKTA", style: "cardEyebrow" }
+        ],
+        ...issues.map((iss) => [
+          {
+            text: iss.code,
+            bold: true,
+            fontSize: 9,
+            alignment: "center",
+            color: iss.code === "P1" ? "#DC2626" : iss.code === "P2" ? "#D97706" : iss.code === "P3" ? "#2563EB" : "#16A34A"
+          },
+          {
+            stack: [
+              { text: iss.title, style: "tableStrong" },
+              { text: iss.diagnosis, style: "mutedText", margin: [0, 2, 0, 0] }
+            ]
+          },
+          { text: iss.impact_risk, style: "bodyText" },
+          { text: iss.remedy_action, style: "bodyText", bold: true, color: "#10221F" }
+        ])
+      ]
+    },
+    layout: {
+      fillColor: (rowIndex: number) => (rowIndex === 0 ? "#F4EBD9" : rowIndex % 2 === 0 ? "#FBF8F2" : "#FFFDFB"),
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8",
+      paddingLeft: () => 6,
+      paddingRight: () => 6,
+      paddingTop: () => 5,
+      paddingBottom: () => 5
+    },
+    margin: [0, 0, 0, 8]
+  };
+}
+
+function pdfTieredRecommendationsTable(tiered?: TieredRecommendations) {
+  if (!tiered) return { text: "" };
+  const rows: any[] = [
+    [
+      { text: "POZIOM", style: "cardEyebrow" },
+      { text: "REKOMENDOWANE DZIAŁANIE", style: "cardEyebrow" },
+      { text: "WPŁYW", style: "cardEyebrow", alignment: "center" },
+      { text: "KOSZT", style: "cardEyebrow", alignment: "right" }
+    ]
+  ];
+
+  tiered.no_renovation_quick_wins.forEach((r: { action: string; impact: string; cost: string }, idx: number) => {
+    rows.push([
+      idx === 0 ? { text: "POZIOM 1\n(Bez remontu)", bold: true, color: "#16A34A", fontSize: 7.5, rowSpan: tiered.no_renovation_quick_wins.length } : {},
+      { text: r.action, style: "bodyText" },
+      { text: r.impact, style: "mutedText", alignment: "center" },
+      { text: r.cost, bold: true, alignment: "right", fontSize: 7.5 }
+    ]);
+  });
+
+  tiered.light_interventions.forEach((r: { action: string; impact: string; cost: string }, idx: number) => {
+    rows.push([
+      idx === 0 ? { text: "POZIOM 2\n(Drobne ingerencje)", bold: true, color: "#D97706", fontSize: 7.5, rowSpan: tiered.light_interventions.length } : {},
+      { text: r.action, style: "bodyText" },
+      { text: r.impact, style: "mutedText", alignment: "center" },
+      { text: r.cost, bold: true, alignment: "right", fontSize: 7.5 }
+    ]);
+  });
+
+  tiered.architectural_renovations.forEach((r: { action: string; impact: string; cost: string }, idx: number) => {
+    rows.push([
+      idx === 0 ? { text: "POZIOM 3\n(Remont / Architektura)", bold: true, color: "#4B5563", fontSize: 7.5, rowSpan: tiered.architectural_renovations.length } : {},
+      { text: r.action, style: "bodyText" },
+      { text: r.impact, style: "mutedText", alignment: "center" },
+      { text: r.cost, bold: true, alignment: "right", fontSize: 7.5 }
+    ]);
+  });
+
+  return {
+    unbreakable: true,
+    table: {
+      dontBreakRows: true,
+      widths: [95, "*", 65, 55],
+      body: rows
+    },
+    layout: {
+      fillColor: (rowIndex: number) => (rowIndex === 0 ? "#F4EBD9" : "#FFFDFB"),
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8",
+      paddingLeft: () => 5,
+      paddingRight: () => 5,
+      paddingTop: () => 4,
+      paddingBottom: () => 4
+    },
+    margin: [0, 0, 0, 8]
+  };
+}
+
+function pdfRoadmapTable(roadmap?: ImplementationRoadmap) {
+  if (!roadmap) return { text: "" };
+  return {
+    unbreakable: true,
+    table: {
+      dontBreakRows: true,
+      widths: ["33.33%", "33.33%", "33.34%"],
+      body: [
+        [
+          {
+            stack: [
+              { text: "ETAP 1: NATYCHMIAST (1–7 DNI)", style: "cardEyebrow", color: "#16A34A" },
+              { ul: roadmap.stage1_immediate_7days, style: "bulletText", margin: [0, 3, 0, 0] }
+            ],
+            fillColor: "#F0FDF4"
+          },
+          {
+            stack: [
+              { text: "ETAP 2: ŚREDNIOTERMINOWY (30 DNI)", style: "cardEyebrow", color: "#D97706" },
+              { ul: roadmap.stage2_intermediate_30days, style: "bulletText", margin: [0, 3, 0, 0] }
+            ],
+            fillColor: "#FFFBEB"
+          },
+          {
+            stack: [
+              { text: "ETAP 3: PRZY KOLEJNYM REMONCIE", style: "cardEyebrow", color: "#4B5563" },
+              { ul: roadmap.stage3_longterm_renovation, style: "bulletText", margin: [0, 3, 0, 0] }
+            ],
+            fillColor: "#F9FAFB"
+          }
+        ]
+      ]
+    },
+    layout: {
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8",
+      paddingLeft: () => 6,
+      paddingRight: () => 6,
+      paddingTop: () => 6,
+      paddingBottom: () => 6
+    },
+    margin: [0, 0, 0, 8]
+  };
+}
+
+function pdfBeforeAfterTable(shifts?: BeforeAfterShift[]) {
+  if (!shifts || shifts.length === 0) return { text: "" };
+  return {
+    unbreakable: true,
+    table: {
+      dontBreakRows: true,
+      widths: [18, "24%", "34%", "34%"],
+      body: [
+        [
+          { text: "#", style: "cardEyebrow", alignment: "center" },
+          { text: "STREFA / MEBEL", style: "cardEyebrow" },
+          { text: "STAN WYJŚCIOWY (PRZED)", style: "cardEyebrow" },
+          { text: "STAN DOCELOWY (PO KOREKCIE)", style: "cardEyebrow" }
+        ],
+        ...shifts.map((s) => [
+          { text: `[${s.id}]`, bold: true, color: "#C49544", fontSize: 8, alignment: "center" },
+          { text: s.item_or_zone, style: "tableStrong" },
+          { text: s.before_state, style: "mutedText" },
+          {
+            stack: [
+              { text: s.after_recommendation, style: "bodyText", bold: true },
+              { text: `Korzyść: ${s.expected_gain}`, style: "mutedText", color: "#16A34A", margin: [0, 2, 0, 0] }
+            ]
+          }
+        ])
+      ]
+    },
+    layout: {
+      fillColor: (rowIndex: number) => (rowIndex === 0 ? "#F4EBD9" : rowIndex % 2 === 0 ? "#FBF8F2" : "#FFFDFB"),
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8",
+      paddingLeft: () => 5,
+      paddingRight: () => 5,
+      paddingTop: () => 4,
+      paddingBottom: () => 4
+    },
+    margin: [0, 0, 0, 8]
+  };
+}
+
+function pdfWuXingTable(wuXing?: WuXingAudit) {
+  if (!wuXing) return { text: "" };
+  return {
+    unbreakable: true,
+    table: {
+      dontBreakRows: true,
+      widths: ["18%", "27%", "30%", "25%"],
+      body: [
+        [
+          { text: "ŻYWIOŁ", style: "cardEyebrow" },
+          { text: "REKOMENDOWANE KOLORY", style: "cardEyebrow" },
+          { text: "MATERIAŁY & STRUKTURY", style: "cardEyebrow" },
+          { text: "CEL & ZASTOSOWANIE", style: "cardEyebrow" }
+        ],
+        ...wuXing.elemental_palette.map((pal: { element: string; colors: string; materials: string; purpose: string }) => [
+          { text: pal.element, bold: true, fontSize: 8 },
+          { text: pal.colors, style: "bodyText" },
+          { text: pal.materials, style: "bodyText" },
+          { text: pal.purpose, style: "mutedText" }
+        ])
+      ]
+    },
+    layout: {
+      fillColor: (rowIndex: number) => (rowIndex === 0 ? "#F4EBD9" : "#FFFDFB"),
+      hLineColor: () => "#D8CDB8",
+      vLineColor: () => "#D8CDB8",
+      paddingLeft: () => 5,
+      paddingRight: () => 5,
+      paddingTop: () => 4,
+      paddingBottom: () => 4
+    },
+    margin: [0, 0, 0, 8]
+  };
 }
 
 function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = "") {
@@ -1601,37 +2396,6 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     )
   );
 
-  const traditionalCards = report.traditional_analysis.slice(0, 2).map((section) =>
-    pdfCard(
-      pdfText(section.title),
-      pdfText(section.body),
-      pdfList(section.bullets, "wniosek").slice(0, 4),
-      "Szkoła Formy i tradycja"
-    )
-  );
-
-  const practicalCards = report.practical_analysis.slice(0, 2).map((section) =>
-    pdfCard(
-      pdfText(section.title),
-      pdfText(section.body),
-      pdfList(section.bullets, "wniosek").slice(0, 4),
-      "Ergonomia i architektura wnętrz"
-    )
-  );
-
-  const priorityCards = report.priority_actions.slice(0, 4).map((action, index) =>
-    pdfNumberedActionCard(action, index + 1)
-  );
-
-  const sourceCards = report.source_ledger.slice(0, 4).map((source) =>
-    pdfCard(
-      pdfText(source.source),
-      pdfText(source.used_for),
-      [`Pewność metody: ${pdfConfidenceLabel(source.confidence)}`],
-      "Rejestr źródeł"
-    )
-  );
-
   const residentCards = (report.resident_analysis || []).map((res) =>
     pdfCard(
       `${pdfText(res.name)} ${res.kua_number ? `· Kua ${res.kua_number} (${res.element})` : ""}`,
@@ -1671,37 +2435,41 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     }),
     footer: (currentPage: number, pageCount: number) => ({
       columns: [
-        { text: "Plan Harmonii · www.e-fengshui.pl", color: "#7A6E5D", fontSize: 7.8 },
+        { text: "Plan Harmonii · www.e-fengshui.pl · Multinewsroom", color: "#7A6E5D", fontSize: 7.8 },
         { text: `Strona ${currentPage} z ${pageCount}`, alignment: "right", color: "#7A6E5D", fontSize: 7.8 }
       ],
       margin: [34, 0, 34, 14]
     }),
     styles: {
-      kicker: { color: "#C49544", bold: true, fontSize: 8, characterSpacing: 1.1 },
-      title: { fontSize: 21, bold: true, color: "#10221F", lineHeight: 1.05, margin: [0, 2, 0, 4] },
-      subtitle: { fontSize: 9, color: "#41524B", lineHeight: 1.3, margin: [0, 0, 0, 8] },
+      kicker: { color: "#C49544", bold: true, fontSize: 7.8, characterSpacing: 1.1 },
+      title: { fontSize: 20, bold: true, color: "#10221F", lineHeight: 1.05, margin: [0, 2, 0, 4] },
+      subtitle: { fontSize: 8.8, color: "#41524B", lineHeight: 1.28, margin: [0, 0, 0, 8] },
       scoreLabel: { color: "#7A6E5D", bold: true, fontSize: 7.5, characterSpacing: 0.8 },
-      sectionTitle: { fontSize: 13.5, bold: true, color: "#10221F" },
-      cardTitle: { fontSize: 10.5, bold: true, color: "#10221F" },
-      cardEyebrow: { fontSize: 7.2, bold: true, color: "#C49544", characterSpacing: 0.4, margin: [0, 0, 0, 2] },
+      sectionTitle: { fontSize: 12.5, bold: true, color: "#10221F" },
+      cardTitle: { fontSize: 9.8, bold: true, color: "#10221F" },
+      cardEyebrow: { fontSize: 7, bold: true, color: "#C49544", characterSpacing: 0.4, margin: [0, 0, 0, 2] },
       priorityBadge: { alignment: "center", color: "#FFFDFB", bold: true, fontSize: 9.5 },
-      bodyText: { fontSize: 8.3, color: "#2D3E38", lineHeight: 1.2 },
-      bulletText: { fontSize: 7.9, color: "#3B4E48", lineHeight: 1.18 },
-      mutedText: { fontSize: 7.8, color: "#66756E", lineHeight: 1.2 },
-      tableStrong: { bold: true, color: "#10221F", fontSize: 8.2 },
+      bodyText: { fontSize: 8.2, color: "#2D3E38", lineHeight: 1.2 },
+      bulletText: { fontSize: 7.8, color: "#3B4E48", lineHeight: 1.18 },
+      mutedText: { fontSize: 7.6, color: "#66756E", lineHeight: 1.18 },
+      tableStrong: { bold: true, color: "#10221F", fontSize: 8 },
       matrixDirection: { color: "#C49544", bold: true, fontSize: 7, alignment: "center" },
       matrixTitle: { color: "#10221F", bold: true, fontSize: 8, alignment: "center", margin: [0, 1, 0, 1] },
       matrixMeta: { color: "#66756E", fontSize: 6.8, alignment: "center" },
       matrixUse: { color: "#2D3E38", fontSize: 6.8, alignment: "center", margin: [0, 2, 0, 0] }
     },
     content: [
-      // 1. HEADER & EXECUTIVE SUMMARY (Fluid, No Hard Page Breaks)
-      { text: "PLAN HARMONII · RAPORT AUDYTOWY", style: "kicker" },
-      { text: "Analiza układu przestrzennego i Feng Shui", style: "title" },
+      // 1. STRONA TYTUŁOWA & METRYKA ANALIZY
+      { text: "PLAN HARMONII · RAPORT AUDYTOWY PRZESTRZENI", style: "kicker" },
+      { text: "Profesjonalny Audyt Przestrzenny & Feng Shui", style: "title" },
       {
-        text: "Raport łączy tradycyjną Szkołę Formy (Luan Tou), siatkę 9 stref Bagua i orientację kompasową z nowoczesną ergonomią, akustyką i doświetleniem.",
+        text: "Kompleksowa diagnoza układu, analiza 9 stref Bagua, Latających Gwiazd Okresu 9, profilu domowników oraz 3-poziomowy plan korekt architektonicznych.",
         style: "subtitle"
       },
+      pdfMetadataTable(report.property_metadata, report.input_data_record),
+
+      // 20. EXECUTIVE SUMMARY (PODSUMOWANIE ZARZĄDCZE NA POCZĄTKU)
+      pdfSectionHeader(20, "Executive Summary (Podsumowanie Zarządcze)", "Główne wnioski strategiczne, bilans potencjału lokalu oraz kluczowe priorytety."),
       {
         table: {
           dontBreakRows: true,
@@ -1745,141 +2513,286 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
           paddingTop: () => 0,
           paddingBottom: () => 0
         },
-        margin: [0, 0, 0, 10]
+        margin: [0, 0, 0, 8]
       },
+      ...(report.executive_summary_points
+        ? [
+            {
+              unbreakable: true,
+              table: {
+                dontBreakRows: true,
+                widths: ["33.33%", "33.33%", "33.34%"],
+                body: [
+                  [
+                    {
+                      stack: [
+                        { text: "3 NAJWIĘKSZE ATUTY", style: "cardEyebrow", color: "#16A34A" },
+                        { ul: report.executive_summary_points.top_three_assets, style: "bulletText", margin: [0, 2, 0, 0] }
+                      ],
+                      fillColor: "#F0FDF4"
+                    },
+                    {
+                      stack: [
+                        { text: "3 GŁÓWNE WYZWANIA", style: "cardEyebrow", color: "#DC2626" },
+                        { ul: report.executive_summary_points.top_three_challenges, style: "bulletText", margin: [0, 2, 0, 0] }
+                      ],
+                      fillColor: "#FEF2F2"
+                    },
+                    {
+                      stack: [
+                        { text: "5 NATYCHMIASTOWYCH ZALECEŃ", style: "cardEyebrow", color: "#D97706" },
+                        { ul: report.executive_summary_points.top_five_instant_actions, style: "bulletText", margin: [0, 2, 0, 0] }
+                      ],
+                      fillColor: "#FFFBEB"
+                    }
+                  ]
+                ]
+              },
+              layout: {
+                hLineColor: () => "#D8CDB8",
+                vLineColor: () => "#D8CDB8",
+                paddingLeft: () => 6,
+                paddingRight: () => 6,
+                paddingTop: () => 6,
+                paddingBottom: () => 6
+              },
+              margin: [0, 0, 0, 10]
+            }
+          ]
+        : []),
 
-      // 2. SCHEMATYCZNY RZUT CAD & MAPA 9 STREF BAGUA
-      {
-        unbreakable: true,
-        stack: [
-          { text: "Schematyczny rzut architektoniczny (CAD) i siatka 9 sektorów Bagua", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-          { text: `Wektory ścian, orientacja N (${northAngle}°) oraz naniesione elementy wyposażenia wnętrza.`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-          planOverlayImage
-            ? {
-                image: planOverlayImage,
-                width: 527,
-                alignment: "center",
-                margin: [0, 2, 0, 6]
-              }
-            : pdfCard("Podgląd planu", "Wgraj plik graficzny dla bezpośredniej nakładki 9 stref na rzucie."),
-          pdfSectorMatrix(report.sector_map)
-        ],
-        margin: [0, 0, 0, 10]
-      },
+      // 2. CEL KONSULTACJI
+      pdfSectionHeader(2, "Cel Konsultacji i Oczekiwane Rezultaty", "Zdefiniowane intencje i priorytety właściciela lokalu."),
+      ...(report.consultation_goal
+        ? [
+            pdfCard(
+              "Nadrzędny cel audytu przestrzennego",
+              report.consultation_goal.primary_goal,
+              [
+                ...report.consultation_goal.focus_areas.map((f) => `Obszar koncentracji: ${f}`),
+                ...report.consultation_goal.expected_outcomes.map((o) => `Oczekiwany rezultat: ${o}`)
+              ],
+              "Intencja i priorytety użytkownika"
+            )
+          ]
+        : []),
 
-      // 3. WYKRES URODZENIOWY BUDYNKU (XUAN KONG FEI XING)
+      // 3. ZAKRES I METODOLOGIA ANALIZY (EVA WONG, SKINNER, SZKOŁA FORMY, BA ZHAI, XUAN KONG)
+      pdfSectionHeader(3, "Zakres i Metodologia Analizy", "Fundamenty klasyczne: Eva Wong, Stephen Skinner, Szkoła Formy, Ba Zhai, Xuan Kong Fei Xing & Wu Xing."),
+      ...(report.methodology_scope
+        ? [
+            pdfCard(
+              "Zastosowane szkoły i ramy badawcze",
+              report.methodology_scope.scope_description,
+              [
+                ...report.methodology_scope.applied_schools.map((s) => `Metoda: ${s}`),
+                ...report.methodology_scope.sources_bibliography.map((b) => `Źródło: ${b}`)
+              ],
+              "Metodologia klasyczna & ergonomia wnętrz"
+            )
+          ]
+        : []),
+
+      // 4. DANE WEJŚCIOWE
+      pdfSectionHeader(4, "Dane Wejściowe i Parametry Bazowe", "Zweryfikowane parametry geometryczne, kompasowe i demograficzne lokalu."),
+      ...(report.input_data_record
+        ? [
+            {
+              unbreakable: true,
+              table: {
+                dontBreakRows: true,
+                widths: ["50%", "50%"],
+                body: [
+                  [
+                    { text: `• Status rzutu: ${report.input_data_record.floor_plan_status}`, style: "bodyText" },
+                    { text: `• Azymut Północy N: ${report.input_data_record.compass_north_azimuth}`, style: "bodyText" }
+                  ],
+                  [
+                    { text: `• Oś Fasada/Tył: ${report.input_data_record.facing_sitting}`, style: "bodyText" },
+                    { text: `• Okres energetyczny: ${report.input_data_record.period_and_timeline}`, style: "bodyText" }
+                  ],
+                  [
+                    { text: `• Liczba domowników: ${report.input_data_record.residents_count} os.`, style: "bodyText" },
+                    { text: `• Zidentyfikowane strefy: ${report.input_data_record.rooms_count} pomieszczeń`, style: "bodyText" }
+                  ]
+                ]
+              },
+              layout: {
+                fillColor: () => "#FFFDFB",
+                hLineColor: () => "#E0D7C6",
+                vLineColor: () => "#E0D7C6",
+                paddingLeft: () => 6,
+                paddingRight: () => 6,
+                paddingTop: () => 4,
+                paddingBottom: () => 4
+              },
+              margin: [0, 0, 0, 8]
+            }
+          ]
+        : []),
+
+      // 5. ANALIZA OTOCZENIA BUDYNKU (MAKRO & SZKOŁA FORMY)
+      pdfSectionHeader(5, "Analiza Otoczenia Budynku (Makrootoczenie)", "Ukształtowanie terenu, ciągi komunikacyjne, wejście na posesję, Sha Qi i źródła Sheng Qi."),
+      ...(report.macro_environment
+        ? [
+            pdfCard(
+              "Wpływ otoczenia zewnętrznego na lokal",
+              `${report.macro_environment.terrain_and_landform}\n\n${report.macro_environment.traffic_and_roads}`,
+              [
+                `Sąsiedztwo: ${report.macro_environment.surrounding_buildings}`,
+                `Sha Qi z zewnątrz: ${report.macro_environment.sha_qi_external}`,
+                `Źródła Sheng Qi: ${report.macro_environment.sheng_qi_sources}`,
+                ...report.macro_environment.recommendations.map((r) => `Rekomendacja otoczenia: ${r}`)
+              ],
+              "Szkoła Formy Zewnętrznej (Luan Tou)"
+            )
+          ]
+        : []),
+
+      // 6. ANALIZA BRYŁY I STRUKTURY BUDYNKU
+      pdfSectionHeader(6, "Analiza Bryły i Struktury Budynku", "Facing / Sitting, proporcje bryły, brakujące sektory i relacja lokalu do rdzenia obiektu."),
+      ...(report.building_morphology
+        ? [
+            pdfCard(
+              "Morfologia architektoniczna lokalu",
+              `${report.building_morphology.building_shape}\n\n${report.building_morphology.facing_sitting_verdict}`,
+              [
+                `Brakujące sektory: ${report.building_morphology.missing_sectors}`,
+                `Komunikacja pionowa / Klatka: ${report.building_morphology.entry_and_vertical_circulation}`,
+                `Pozycja w kondygnacji: ${report.building_morphology.dwelling_relation_to_core}`,
+                ...report.building_morphology.recommendations.map((r) => `Zalecenie: ${r}`)
+              ],
+              "Architektura i proporcje"
+            )
+          ]
+        : []),
+
+      // 7. GRAFICZNA ANALIZA RZUTU Z SIATKĄ 9 STREF BAGUA
+      pdfSectionHeader(7, "Graficzna Analiza Rzutu CAD z Siatką 9 Stref Bagua", "Wektory ścian, orientacja N oraz naniesione elementy wyposażenia wnętrza w skali."),
+      planOverlayImage
+        ? {
+            image: planOverlayImage,
+            width: 527,
+            alignment: "center",
+            margin: [0, 2, 0, 6]
+          }
+        : pdfCard("Podgląd planu", "Wgraj plik graficzny dla bezpośredniej nakładki 9 stref na rzucie."),
+
+      // 8. ANALIZA PRZEPŁYWU QI
+      pdfSectionHeader(8, "Analiza Przepływu Qi (Cyrkulacja Architektoniczna)", "Wlot energii, osie drzwi-okno (Chong Qi), szerokość korytarzy, zakamarki i stan Tai Qi."),
+      ...(report.qi_flow
+        ? [
+            pdfCard(
+              "Dynamika przepływu i cyrkulacji energii we wnętrzu",
+              `${report.qi_flow.entry_qi_dynamics}\n\n${report.qi_flow.door_window_axes}`,
+              [
+                `Ciągi komunikacyjne: ${report.qi_flow.corridor_and_circulation_speed}`,
+                `Strefy stagnacji energii: ${report.qi_flow.stagnation_pockets}`,
+                `Stan centrum (Tai Qi): ${report.qi_flow.tai_qi_central_state}`,
+                ...report.qi_flow.recommendations.map((r) => `Działanie udrażniające: ${r}`)
+              ],
+              "Przepływ energii Qi & ergonomia ciągów"
+            )
+          ]
+        : []),
+
+      // 9. ANALIZA MING TANG (STREFA WEJŚCIOWA)
+      pdfSectionHeader(9, "Analiza Ming Tang (Strefa Wejścia Głównego)", "Akumulacja jasnej energii Sheng Qi, eliminacja zatorów, doświetlenie i lustra w przedpokoju."),
+      ...(report.ming_tang
+        ? [
+            pdfCard(
+              "Jakość i pojemność Jasnej Sali (Ming Tang)",
+              `${report.ming_tang.foyer_quality}\n\n${report.ming_tang.energy_accumulation_capacity}`,
+              [
+                `Zatory i buty: ${report.ming_tang.bottlenecks_and_clutter}`,
+                `Doświetlenie i powitanie: ${report.ming_tang.welcome_lighting_and_flow}`,
+                ...report.ming_tang.remedies.map((r) => `Korekta strefy wejściowej: ${r}`)
+              ],
+              "Ming Tang · Brama do obfitości"
+            )
+          ]
+        : []),
+
+      // 10. SZCZEGÓŁOWA ANALIZA 9 SEKTORÓW BAGUA
+      pdfSectionHeader(10, "Szczegółowa Analiza 9 Sektorów Bagua", "Pełna charakterystyka każdego sektora, powiązane żywioły, trygramy i diagnoza potencjału."),
+      pdfSectorMatrix(report.sector_map),
+
+      // 11. XUAN KONG FLYING STARS (LATAJĄCE GWIAZDY OKRESU 9)
       ...(natalChart
         ? [
-            {
-              unbreakable: true,
-              stack: [
-                { text: "Wykres urodzeniowy budynku (Xuan Kong Fei Xing – Latające Gwiazdy)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-                { text: `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-                pdfNatalChartMatrix(natalChart),
-                pdfCard(
-                  "Strategia energetyczna w Okresie 9 (2024–2043)",
-                  natalChart.period9_strategy,
-                  [
-                    "Główny punkt koncentracji dobrostanu: sektory z Gwiazdą 9 (Władca Okresu)",
-                    "Strefa przyszłego wzrostu: sektory z Gwiazdą 1 (Woda / Mądrość)",
-                    "Rekomendacja: wycisz sektory 5 i 2 elementami żywiołu Metalu (biel, mosiądz, obłe formy)"
-                  ],
-                  "Transformacja Okresu 9 · Cykl 20-letni"
-                )
+            pdfSectionHeader(11, "Xuan Kong Flying Stars — Latające Gwiazdy Okresu 9 (2024–2043)", `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`),
+            pdfNatalChartMatrix(natalChart),
+            pdfCard(
+              "Strategia energetyczna w Okresie 9 (2024–2043)",
+              natalChart.period9_strategy,
+              [
+                "Główny punkt koncentracji dobrostanu: sektory z Gwiazdą 9 (Władca Okresu)",
+                "Strefa przyszłego wzrostu: sektory z Gwiazdą 1 (Woda / Mądrość)",
+                "Rekomendacja: wycisz sektory 5 i 2 elementami żywiołu Metalu (biel, mosiądz, obłe formy)"
               ],
-              margin: [0, 0, 0, 10]
-            }
+              "Transformacja Okresu 9 · Cykl 20-letni"
+            )
           ]
         : []),
 
-      // 4. RESIDENT PROFILE & KUA NUMBERS
-      ...(residentCards.length > 0
+      // 12. ANALIZA MIESZKAŃCÓW I MING GUA
+      pdfSectionHeader(12, "Analiza Mieszkańców i Personalizacja Ming Gua", "Kalkulacja Ba Zhai: liczby Kua, 4 kierunki sprzyjające, 4 niepomyślne oraz weryfikacja mebli."),
+      pdfCardGrid(residentCards, 2),
+
+      // 13. AUDYT POMIESZCZENIE PO POMIESZCZENIU
+      pdfSectionHeader(13, "Audyt Pomieszczenie po Pomieszczeniu", "Schemat: Obserwacja → Znaczenie → Problem / Diagnoza → Rekomendacja aranżacyjna."),
+      pdfCardGrid(roomCards, 2),
+
+      // 14. ANALIZA 3 KLUCZOWYCH FILARÓW MEBLOWYCH (ŁÓŻKO, BIURKO, PŁYTA)
+      pdfSectionHeader(14, "Analiza 3 Kluczowych Filarów Meblowych", "Łóżko (Sen & Regeneracja), Biurko (Kariera & Skupienie) oraz Płyta kuchenna (Zdrowie & Zasoby)."),
+      pdfCardGrid(furnitureCards, 2),
+
+      // 15. ANALIZA PIĘCIU ŻYWIOŁÓW (WU XING)
+      pdfSectionHeader(15, "Analiza Pięciu Żywiołów (Wu Xing Elemental Balance)", "Cykle odżywczy, osłabiający, kontrolujący oraz dedykowana paleta materiałowa i kolorystyczna."),
+      ...(report.wu_xing
         ? [
-            {
-              unbreakable: true,
-              stack: [
-                { text: "Profil energetyczny mieszkańców (liczby Kua i żywioły)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-                { text: "Kalkulacja Ba Zhai (Osiem Pałaców): optymalne kierunki snu, pracy i dopasowanie mebli do domowników.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-                pdfCardGrid(residentCards, 2)
+            pdfCard(
+              "Bilans żywiołów i wskazówki harmonizujące",
+              `${report.wu_xing.generative_cycle_advice}\n\n${report.wu_xing.controlling_cycle_advice}`,
+              [
+                `Żywioły dominujące: ${report.wu_xing.dominant_elements.join(", ")}`,
+                `Żywioły wymagające wsparcia: ${report.wu_xing.deficient_elements.join(", ")}`
               ],
-              margin: [0, 0, 0, 10]
-            }
+              "Harmonia 5 Przemian (Wu Xing)"
+            ),
+            pdfWuXingTable(report.wu_xing)
           ]
         : []),
 
-      // 5. PRIORITY ACTIONS
-      {
-        unbreakable: true,
-        stack: [
-          { text: "Najważniejsze priorytety działań", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-          { text: "Kolejność wdrożenia: od korekt o najwyższym wpływie na regenerację do poprawek niskonakładowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-          pdfCardGrid(priorityCards, 2)
-        ],
-        margin: [0, 0, 0, 10]
-      },
+      // 16. MATRYCA PROBLEMÓW Z PRIORYTETAMI (P1–P4)
+      pdfSectionHeader(16, "Matryca Problemów z Priorytetami (P1–P4)", "P1 – Krytyczny, P2 – Ważny, P3 – Zalecany, P4 – Opcjonalny."),
+      pdfPrioritizedIssuesTable(report.prioritized_issues),
 
-      // 6. ROOM-BY-ROOM AUDIT
-      {
-        unbreakable: true,
-        stack: [
-          { text: "Audyt pomieszczeń pokój po pokoju", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-          { text: "Konkretne wnioski dla każdej strefy: atuty, ryzyka i zalecenia aranżacyjne.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-          pdfCardGrid(roomCards, 2)
-        ],
-        margin: [0, 0, 0, 10]
-      },
+      // 17. 3-POZIOMOWE REKOMENDACJE KOREKT
+      pdfSectionHeader(17, "3-Poziomowe Rekomendacje Korekt", "Poziom 1: Bez remontu (koszt 0 zł), Poziom 2: Drobne ingerencje, Poziom 3: Prace architektoniczne."),
+      pdfTieredRecommendationsTable(report.tiered_recommendations),
 
-      // 7. FURNITURE & COMMAND POSITION
-      ...(furnitureCards.length > 0
-        ? [
-            {
-              unbreakable: true,
-              stack: [
-                { text: "Meble i pozycja dominująca (pozycja dowodzenia)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-                { text: "Oparcie wezgłowia (Czarny Żółw), biurka i wyposażenia względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-                pdfCardGrid(furnitureCards, 2)
-              ],
-              margin: [0, 0, 0, 10]
-            }
-          ]
-        : []),
+      // 18. HARMONOGRAM WDROŻENIA (ROADMAP)
+      pdfSectionHeader(18, "Harmonogram Wdrożenia (Roadmap)", "Krok po kroku: Etap 1 (1–7 dni), Etap 2 (30 dni), Etap 3 (Przy kolejnym remoncie)."),
+      pdfRoadmapTable(report.implementation_roadmap),
 
-      // 8. FORM SCHOOL & ERGONOMICS
-      {
-        unbreakable: true,
-        stack: [
-          { text: "Szkoła Formy i ergonomia współczesna", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-          { text: "Połączenie klasycznych zasad 4 Niebiańskich Zwierząt ze standardami doświetlenia i akustyki.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-          pdfCardGrid([...traditionalCards, ...practicalCards], 2)
-        ],
-        margin: [0, 0, 0, 10]
-      },
+      // 19. RZUT PRZED I PO Z ODNOŚNIKAMI DO ZALECEŃ
+      pdfSectionHeader(19, "Zestawienie Przestrzenne „Przed” i „Po”", "Numery zaleceń [1], [2], [3]... odsyłające bezpośrednio do wdrożonych korekt."),
+      pdfBeforeAfterTable(report.before_after_shifts),
 
-      // 9. PRACTICAL CHANGES & METHOD LEDGER
+      // BIBLIOGRAFIA & REJESTR ŹRÓDEŁ
+      pdfSectionHeader(20, "Wykres Metod i Rejestr Źródeł Klasycznych", "Transparentność badawcza, stopień pewności metod i literatura źródłowa."),
+      pdfMethodScoreChart(report),
+      pdfCardGrid(
+        report.source_ledger.map((s) =>
+          pdfCard(pdfText(s.source), pdfText(s.used_for), [`Pewność metody: ${pdfConfidenceLabel(s.confidence)}`], "Rejestr źródeł")
+        ),
+        2
+      ),
       {
-        unbreakable: true,
-        stack: [
-          { text: "Lista rekomendowanych zmian bez remontu", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-          { text: "Natychmiastowe działania o wysokim zwrocie z inwestycji bez prac wyburzeniowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-          {
-            ol: report.practical_changes.slice(0, 6).map((change) => ({
-              text: `${pdfText(change.title)} · Koszt: ${pdfText(change.cost)} · Termin: ${pdfText(change.when)}`,
-              margin: [0, 0, 0, 2.5]
-            })),
-            style: "bodyText",
-            margin: [0, 0, 0, 8]
-          },
-          { text: "Wykres metod i rejestr źródeł", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
-          { text: "Pełna transparentność metodologiczna i poziomy pewności rekomendacji.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
-          pdfMethodScoreChart(report),
-          pdfCardGrid(sourceCards, 2),
-          {
-            text: pdfText(report.disclaimer),
-            style: "mutedText",
-            margin: [0, 8, 0, 0]
-          }
-        ],
-        margin: [0, 0, 0, 10]
+        text: pdfText(report.disclaimer),
+        style: "mutedText",
+        margin: [0, 8, 0, 0]
       }
     ]
   };

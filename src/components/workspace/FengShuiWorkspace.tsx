@@ -55,20 +55,18 @@ interface FengShuiWorkspaceProps {
 type AnnotationMode = "room" | "fixed" | "furniture";
 
 const roomFunctionOptions = [
-  "Salon z aneksem kuchennym",
   "Salon",
-  "Sypialnia główna",
-  "Sypialnia dziecka / gościnna",
-  "Gabinet / Miejsce pracy",
-  "Kuchnia osobna",
-  "Jadalnia",
+  "Salon z aneksem",
+  "Sypialnia",
+  "Gabinet",
+  "Kuchnia",
+  "Łazienka",
   "Łazienka z WC",
-  "Łazienka (kąpielowa bez WC)",
-  "Osobna toaleta / WC",
-  "Przedpokój / Wiatrołap",
+  "WC",
+  "Korytarz",
   "Garderoba",
   "Balkon / Taras",
-  "Pralnia / Pomieszczenie gosp."
+  "Jadalnia"
 ];
 
 const fixedElementOptions = [
@@ -144,6 +142,14 @@ export function FengShuiWorkspace({
   const [furnitureOrientationRole, setFurnitureOrientationRole] = useState(
     defaultFurnitureOrientationRole("Łóżko")
   );
+
+  // Consultation Goals & Parameters
+  const [consultationPurpose, setConsultationPurpose] = useState(
+    "Poprawa jakości snu, maksymalizacja koncentracji w pracy zdalnej oraz harmonizacja relacji domowników"
+  );
+  const [usableAreaM2, setUsableAreaM2] = useState(64);
+  const [levelsCount, setLevelsCount] = useState(1);
+  const [addressNote, setAddressNote] = useState("Lokalizacja prywatna");
 
   // Residents
   const [residents, setResidents] = useState<ResidentProfile[]>([
@@ -452,10 +458,10 @@ export function FengShuiWorkspace({
         email: userEmail || "kontakt@multinewsroom.pl",
         planId: selectedPlanId,
         propertyType: propertyKey,
-        levelsCount: 1,
-        usableAreaM2: 64,
-        purpose: "Aranżacja mebli i optymalizacja harmonii wnętrza",
-        addressNote: "",
+        levelsCount,
+        usableAreaM2,
+        purpose: consultationPurpose,
+        addressNote,
         orientationNote: northConfirmed ? "Północ zatwierdzona przez użytkownika." : "",
         entryNote: "Drzwi wejściowe oznaczone na planie",
         constraintsNote: "Bez wyburzania ścian nośnych",
@@ -809,6 +815,15 @@ export function FengShuiWorkspace({
                       const isSelected = marker.id === selectedPlanMarkerId;
                       const isFurniture = marker.category === "furniture";
                       const isFixed = marker.category === "fixed";
+                      const isLinear = marker.label?.includes("Okno") ||
+                        marker.label?.includes("Drzwi") ||
+                        marker.label?.includes("Szafa") ||
+                        marker.label?.includes("Garderoba") ||
+                        marker.label?.includes("Ściana");
+
+                      const scaleVal = marker.scale ?? 1.0;
+                      const scaleX = scaleVal;
+                      const scaleY = isLinear ? 1.0 : scaleVal;
 
                       return (
                         <div
@@ -824,7 +839,9 @@ export function FengShuiWorkspace({
                             className={`plan-marker ${marker.category} ${isSelected ? "selected" : ""}`}
                             style={{
                               "--marker-facing": `${marker.facingDeg ?? 0}deg`,
-                              "--marker-scale": marker.scale ?? 1.0
+                              "--marker-scale": scaleVal,
+                              "--marker-scale-x": scaleX,
+                              "--marker-scale-y": scaleY
                             } as CSSProperties}
                             onPointerDown={(e) => handleMarkerPointerDown(marker, e)}
                           >
@@ -1043,6 +1060,66 @@ export function FengShuiWorkspace({
                 )}
               </div>
             ) : null}
+
+            {/* CONSULTATION GOALS & METADATA CARD */}
+            <div className="intel-card">
+              <div className="intel-card-head">
+                <Lightbulb size={16} />
+                <strong>Cel konsultacji & Parametry</strong>
+              </div>
+              <div className="consultation-intel-body" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <label className="res-field-label" style={{ display: "block", marginBottom: "4px", fontSize: "0.75rem", fontWeight: 700, color: "var(--ink)" }}>
+                    Główny cel audytu:
+                  </label>
+                  <select
+                    className="res-name-input"
+                    value={consultationPurpose}
+                    onChange={(e) => setConsultationPurpose(e.target.value)}
+                    style={{ width: "100%", fontSize: "0.8rem", padding: "6px 8px" }}
+                  >
+                    <option value="Poprawa jakości snu, maksymalizacja koncentracji w pracy zdalnej oraz harmonizacja relacji domowników">
+                      Sen, praca zdalna i harmonizacja relacji
+                    </option>
+                    <option value="Głęboka regeneracja nocna, usunięcie bezsenności i ochrona sypialni (Sen & Zdrowie)">
+                      Sen & Zdrowie: regeneracja i ochrona sypialni
+                    </option>
+                    <option value="Maksymalizacja koncentracji, pozycji dowodzenia i rozwoju kariery (Kariera & Biznes)">
+                      Kariera & Biznes: skupienie i dochody
+                    </option>
+                    <option value="Harmonizacja relacji domowników, redukcja napięć i spokój w rodzinie (Relacje)">
+                      Relacje & Rodzina: spokój i zgoda
+                    </option>
+                    <option value="Kompleksowy audyt nowego lokalu przed zakupem lub wykończeniem (Zakup / Aranżacja)">
+                      Audyt przed zakupem / wykończeniem
+                    </option>
+                  </select>
+                </div>
+
+                <div className="form-row-compact" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <label>
+                    <span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>Metraż (m²):</span>
+                    <input
+                      type="number"
+                      value={usableAreaM2}
+                      onChange={(e) => setUsableAreaM2(Number(e.target.value) || 0)}
+                      style={{ width: "100%", padding: "4px 6px", fontSize: "0.8rem" }}
+                    />
+                  </label>
+                  <label>
+                    <span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>Kondygnacje:</span>
+                    <input
+                      type="number"
+                      value={levelsCount}
+                      min={1}
+                      max={4}
+                      onChange={(e) => setLevelsCount(Number(e.target.value) || 1)}
+                      style={{ width: "100%", padding: "4px 6px", fontSize: "0.8rem" }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
 
             {/* RESIDENTS PROFILE CARD */}
             <div className="intel-card">
