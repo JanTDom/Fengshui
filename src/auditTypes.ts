@@ -152,6 +152,8 @@ export type SectorReport = {
   assessment: string;
   advice: string;
   priority: string;
+  trigram?: string;
+  remedies?: string[];
 };
 
 export type RoomRecommendation = {

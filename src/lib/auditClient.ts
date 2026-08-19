@@ -1,6 +1,6 @@
 import type { AuditApiResponse, AuditFilePayload, AuditReport, AuditRequestPayload, BuildingNatalChart, PlanMarker } from "../auditTypes";
 import { calculateBuildingNatalChart } from "./natalChartEngine";
-import { calculateKua, calculateBaZiHourPillar } from "./kuaEngine";
+import { calculateKua, calculateBaZiHourPillar, getBaguaSectorForPoint, evaluateResidentPlacement } from "./kuaEngine";
 import { hasSupabaseConfig, supabase } from "./supabase";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -93,40 +93,218 @@ export async function generateAuditReport(payload: AuditRequestPayload): Promise
 }
 
 function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
+  const northAngle = Number(payload.orientationData?.northAngleDeg ?? 0);
   const northConfirmed = Boolean(payload.orientationData?.confirmed);
   const markersCount = payload.planAnnotations?.markers?.length ?? 0;
   const residentsCount = payload.residentProfiles?.length ?? 1;
   const activeResident = payload.residentProfiles?.[0];
 
+  // 1. DYNAMIC 9 BAGUA SECTOR MATRIX GENERATION
+  const sectorCodes = ["NW", "N", "NE", "W", "CENTER", "E", "SW", "S", "SE"];
+  const sectorMap = sectorCodes.map((code) => {
+    const coordsMap: Record<string, [number, number]> = {
+      NW: [16, 16], N: [50, 16], NE: [84, 16],
+      W: [16, 50], CENTER: [50, 50], E: [84, 50],
+      SW: [16, 84], S: [50, 84], SE: [84, 84]
+    };
+    const [x, y] = coordsMap[code] || [50, 50];
+    const sec = getBaguaSectorForPoint(x, y, northAngle);
+
+    const matchingMarkers = (payload.planAnnotations?.markers || []).filter((m) => {
+      const mSec = getBaguaSectorForPoint(m.xPercent, m.yPercent, northAngle);
+      return mSec.code === code;
+    });
+
+    const currentUse = matchingMarkers.length > 0
+      ? matchingMarkers.map((m) => m.label).join(", ")
+      : "Strefa lokalu";
+
+    return {
+      sector: sec.name,
+      direction: code,
+      trigram: sec.trigram,
+      element: sec.element,
+      current_use: currentUse,
+      assessment: `${sec.annual2026Star}. ${sec.annualAdvice}`,
+      advice: sec.annualAdvice,
+      priority: "wysoki",
+      remedies: [
+        `Wzmocnienie żywiołu ${sec.element}`,
+        `Harmonizacja roczna 2026: ${sec.annual2026Star.split("(")[0].trim()}`
+      ]
+    };
+  });
+
+  // 2. EVALUATIVE RESIDENT PLACEMENT (FAKTYCZNE USTAWIENIE + KUA + ROK 2026)
   const residentAnalysis = (payload.residentProfiles || []).map((res) => {
-    const kuaData = res.birthDate ? calculateKua(res.birthDate, res.gender) : null;
-    const hourPillar = res.birthTime ? calculateBaZiHourPillar(res.birthTime) : null;
+    const assignedMarker = (payload.planAnnotations?.markers || []).find(
+      (m) => m.assignedResidentLabel === res.label || (m.category === "furniture" && (m.label === "Łóżko" || m.label === "Biurko"))
+    );
 
-    const favDirs = kuaData
-      ? [`Sheng Qi (Witalność/Sukces): ${kuaData.shengChi}`, `Tian Yi (Zdrowie/Sen): ${kuaData.tianYi}`, `Yan Nian (Harmonia): ${kuaData.yanNian}`, `Fu Wei (Spokój): ${kuaData.fuWei}`]
-      : ["Wschód (E)", "Południe (S)", "Północ (N)"];
-    const unfavDirs = kuaData?.inauspicious ?? ["Północny Zachód (NW)", "Zachód (W)"];
+    const evaluation = evaluateResidentPlacement(res, assignedMarker, northAngle);
+    const rawKua = res.birthDate ? calculateKua(res.birthDate, res.gender || "male") : null;
+    const kuaData = rawKua || { kua: 1, shengChi: "Wschód (E)", tianYi: "Południowy Wschód (SE)", yanNian: "Południe (S)", fuWei: "Północ (N)", inauspicious: ["Zachód (W)", "Północny Zachód (NW)"] };
 
-    let placementAdvice = kuaData
-      ? `Wezgłowie łóżka: ${kuaData.bedAdvice} · Biurko: ${kuaData.deskAdvice}`
-      : "Zapewnij stabilne oparcie wezgłowia na pełnej ścianie nośnej z widokiem na wejście.";
+    const favDirs = [
+      `Sheng Qi (Sukces): ${kuaData.shengChi}`,
+      `Tian Yi (Zdrowie): ${kuaData.tianYi}`,
+      `Yan Nian (Relacje): ${kuaData.yanNian}`,
+      `Fu Wei (Spokój): ${kuaData.fuWei}`
+    ];
+    const unfavDirs = kuaData.inauspicious;
 
-    if (hourPillar) {
-      placementAdvice += `\n[Filar Godziny: ${hourPillar.animal} (${hourPillar.element}) — ${hourPillar.significance}]`;
-    }
+    const detailedAdvice = `【Ocena faktycznego ustawienia mebla】: ${evaluation.evaluationVerdict}\n\n【Wpływ roczny 2026】: ${evaluation.annualStar2026}\n\n【Zalecana korekta】: ${evaluation.correctionRecommendation}`;
 
     return {
       name: res.label || "Główny domownik",
       role: res.role || "Domownik",
       gender: res.gender === "female" ? "Kobieta" : "Mężczyzna",
-      kua_number: kuaData?.kua ?? 1,
-      group: kuaData?.group ?? "Grupa Wschodnia",
-      element: kuaData?.element ?? "Woda",
+      kua_number: evaluation.kua,
+      group: evaluation.group,
+      element: evaluation.element,
       favorable_directions: favDirs,
       unfavorable_directions: unfavDirs,
-      assigned_furniture: [res.role?.toLowerCase().includes("praca") ? "Biurko dowodzenia" : "Łóżko główne"],
-      placement_advice: placementAdvice,
-      yearly_warning: kuaData?.yearlyAdvice
+      assigned_furniture: [evaluation.assignedFurnitureLabel],
+      placement_advice: detailedAdvice,
+      yearly_warning: evaluation.annualStar2026
+    };
+  });
+
+  // 3. STRICT ROOM FILTERING — ONLY ANALYZE ROOMS ACTUALLY MARKED ON THE PLAN
+  const markedRooms = (payload.planAnnotations?.markers || [])
+    .filter((m) => m.category === "room")
+    .map((m) => m.label);
+
+  const distinctRooms = Array.from(new Set(markedRooms));
+  const roomsToAnalyze = distinctRooms.length > 0
+    ? distinctRooms
+    : ["Salon z aneksem kuchennym", "Sypialnia główna", "Łazienka z WC"];
+
+  const roomKnowledgeMap: Record<string, { func: string; diag: string; strengths: string[]; risks: string[]; recs: string[]; method: string }> = {
+    "Salon": {
+      func: "Główna strefa dzienna Yang & integracja domowników",
+      diag: "Centrum życia towarzyskiego. Wymaga jasnego, dynamicznego przepływu energii oraz stabilnego oparcia dla mebli wypoczynkowych.",
+      strengths: ["Duże doświetlenie naturalne", "Otwarta przestrzeń sprzyjająca swobodnej cyrkulacji"],
+      risks: ["Zbyt szybki ciąg energii przy braku wydzielonych stref", "Sofa tyłem do wejścia"],
+      recs: ["Ustaw sofę z oparciem do ściany", "Wprowadź rośliny o miękkich, zaokrąglonych liściach", "Zastosuj oświetlenie wielopunktowe 2700K"],
+      method: "Szkoła Formy & Bagua"
+    },
+    "Salon z aneksem kuchennym": {
+      func: "Strefa dzienna zintegrowana z gotowaniem (Ogień + Yang)",
+      diag: "Połączenie strefy wypoczynku z ogniem kuchennym. Wymaga optycznej separacji strefy gotowania od strefy relaksu, aby zapobiec przenikaniu zapachów i niepokoju.",
+      strengths: ["Nowoczesny, przestronny układ", "Doskonała integracja domowników podczas przygotowywania posiłków"],
+      risks: ["Bezpośredni widok z sofy na brudne naczynia/zlewozmywak", "Konflikt żywiołów Ogień (płyta) vs Woda (zlew)"],
+      recs: ["Wprowadź wyspę lub barek jako barierę wizualną", "Zachowaj minimum 60 cm odstępu między płytą a zlewem", "Zastosuj wydajny, cichy okap"],
+      method: "Szkoła Formy & Wu Xing"
+    },
+    "Sypialnia główna": {
+      func: "Strefa głębokiego snu, wyciszenia Yin & regeneracji",
+      diag: "Kluczowe pomieszczenie dla zdrowia domowników. Bezwzględny priorytet: pozycja dominująca wezgłowia na pełnej ścianie nośnej.",
+      strengths: ["Ciche usytuowanie w strefie prywatnej", "Możliwość swobodnego dojścia z obu stron łóżka"],
+      risks: ["Oś przeciągu okno-drzwi nad materacem", "Lustro odbijające śpiące osoby"],
+      recs: ["Dosuń wezgłowie do ściany nośnej", "Usuń lustra z pola widzenia z łóżka", "Wprowadź ciepłe światło 2200K i zasłony zaciemniające"],
+      method: "Szkoła Formy & Kua"
+    },
+    "Sypialnia dziecka / gościnna": {
+      func: "Wzrost, nauka, sen & poczucie bezpieczeństwa",
+      diag: "Wymaga równowagi między energią dynamiczną do nauki a wyciszeniem do snu.",
+      strengths: ["Wielofunkcyjna przestrzeń adaptacyjna"],
+      risks: ["Biurko tyłem do drzwi wywołujące podświadomy stres", "Łóżko pod ostrym skosem dachu"],
+      recs: ["Ustaw biurko w pozycji dowodzenia z widokiem na wejście", "Zapewnij solidne oparcie wezgłowia łóżka", "Wprowadź naturalne materiały drewniane"],
+      method: "Ergonomia & Szkoła Formy"
+    },
+    "Gabinet / Miejsce pracy": {
+      func: "Koncentracja, strategiczne myślenie & finanse",
+      diag: "Strefa generowania dochodów. Wymaga pozycji dowodzenia (plecy pod ścianą, wzrok na drzwi i okno).",
+      strengths: ["Wydzielona przestrzeń sprzyjająca skupieniu bez rozpraszaczy"],
+      risks: ["Siedzenie tyłem do drzwi lub w osi bezpośredniego przeciągu"],
+      recs: ["Obróć biurko przodem do wejścia z pełnym oparciem ściany", "Wprowadź oświetlenie zadaniowe 4000K", "Uporządkuj kable i dokumenty"],
+      method: "Ergonomia & Kua"
+    },
+    "Kuchnia osobna": {
+      func: "Odżywianie, zdrowie & obfitość rodziny",
+      diag: "Serce żywiołu Ognia w domu. Pozycja gotującego powinna zapewniać poczucie kontroli nad przestrzenią.",
+      strengths: ["Zamknięta strefa zatrzymująca zapachy i hałas gotowania"],
+      risks: ["Gotowanie plecami do wejścia", "Bezpośrednie sąsiedztwo płyty grzewczej i zlewozmywaka"],
+      recs: ["Zastosuj małe lusterko lub panel szklany za płytą, jeśli gotujesz tyłem do drzwi", "Wprowadź drewniane akcesoria między zlewem a płytą"],
+      method: "Wu Xing (5 Żywiołów)"
+    },
+    "Jadalnia": {
+      func: "Wspólne posiłki, więzi rodzinne & spokój",
+      diag: "Strefa budowania relacji. Okrągły lub prostokątny stół z parzystą liczbą wygodnych krzeseł.",
+      strengths: ["Dedykowane miejsce sprzyjające uważnemu jedzeniu"],
+      risks: ["Stół w wąskim przejściu komunikacyjnym"],
+      recs: ["Zapewnij minimum 80 cm wolnej przestrzeni wokół każdego krzesła", "Zawieś ciepłą lampę centralnie nad stołem"],
+      method: "Szkoła Formy"
+    },
+    "Łazienka z WC": {
+      func: "Oczyszczenie & odpływ energii Wody",
+      diag: "Strefa silnego odpływu energii Qi. Wymaga zamykania klapy sedesu i drzwi, aby zapobiec ucieczce pomyślnej energii z sąsiadujących stref.",
+      strengths: ["Kompaktowy, zintegrowany węzeł sanitarny"],
+      risks: ["Łazienka w centrum lokalu (Tai Qi) lub naprzeciwko wejścia głównego"],
+      recs: ["Zawsze zamykaj klapę sedesu i drzwi do łazienki", "Wprowadź żywioł Drewna (rośliny tolerujące wilgoć lub zielone ręczniki), aby harmonizować odpływ Wody"],
+      method: "Szkoła Formy & Wu Xing"
+    },
+    "Łazienka (kąpielowa bez WC)": {
+      func: "Relaks, kąpiel & regeneracja Yin",
+      diag: "Czysta strefa spa i pielęgnacji bez energii odpływu WC.",
+      strengths: ["Wysoki komfort higieniczny i relaksacyjny"],
+      risks: ["Zbyt chłodna kolorystyka potęgująca nadmiar Wody"],
+      recs: ["Wprowadź ciepłe oświetlenie 2700K i drewniane dodatki", "Zadbaj o sprawną wentylację"],
+      method: "Ergonomia & Wu Xing"
+    },
+    "Osobna toaleta / WC": {
+      func: "Kompaktowa strefa sanitarna",
+      diag: "Punktowy odpływ Qi. Wymaga zamykania drzwi i optycznej dyskrecji.",
+      strengths: ["Separacja funkcji toalety od strefy kąpielowej"],
+      risks: ["Drzwi WC widoczne bezpośrednio z salonu lub jadalni"],
+      recs: ["Zamykaj drzwi i deskę", "Zastosuj małe akcenty Ziemi (ceramika, ciepłe kolory piasku)"],
+      method: "Szkoła Formy"
+    },
+    "Przedpokój / Wiatrołap": {
+      func: "Ming Tang (Jasna Sala) · Punkt wlotu energii Qi",
+      diag: "Pierwsze wrażenie lokalu. Powinien być jasny, przestronny i wolny od zalegających butów.",
+      strengths: ["Czysty filtr między światem zewnętrznym a wnętrzem"],
+      risks: ["Lustro naprzeciwko drzwi wejściowych (odbija wchodzącą energię)", "Brak miejsca na odłożenie okryć"],
+      recs: ["Zdejmij lustro z osi drzwi wejściowych i przenieś na ścianę boczną", "Wprowadź jasne, gościnne światło"],
+      method: "Szkoła Formy"
+    },
+    "Garderoba": {
+      func: "Przechowywanie & ład przestrzenny",
+      diag: "Uporządkowanie ubrań chroni dom przed stagnacją energii (Si Qi).",
+      strengths: ["Wydzielona przestrzeń eliminująca szafy z sypialni"],
+      risks: ["Brak cyrkulacji powietrza i bałagan"],
+      recs: ["Wprowadź systemowe oświetlenie LED w szafach", "Regularnie wietrz i usuwaj nienoszone rzeczy"],
+      method: "Ergonomia"
+    },
+    "Balkon / Taras": {
+      func: "Kontakt z otoczeniem zewnętrznym & punkt czerpania światła",
+      diag: "Zewnętrzne przedłużenie salonu lub sypialni.",
+      strengths: ["Bezpośrednie doświetlenie i świeże powietrze"],
+      risks: ["Przechowywanie rupieci blokujących widok z okna"],
+      recs: ["Uporządkuj roślinność i meble tarasowe", "Zadbaj o czystość szyb"],
+      method: "Szkoła Formy"
+    }
+  };
+
+  const roomRecommendations = roomsToAnalyze.map((roomName) => {
+    const known = roomKnowledgeMap[roomName] || {
+      func: "Strefa użytkowa lokalu",
+      diag: "Wymaga zrównoważenia ciągów komunikacyjnych i naturalnego światła.",
+      strengths: ["Funkcjonalne włączenie do układu lokalu"],
+      risks: ["Możliwa kolizja z osiami komunikacyjnymi"],
+      recs: ["Dostosuj oświetlenie do charakteru strefy", "Uporządkuj przestrzeń"],
+      method: "Ergonomia & Forma"
+    };
+
+    return {
+      room: roomName,
+      function: known.func,
+      diagnosis: known.diag,
+      strengths: known.strengths,
+      risks: known.risks,
+      recommendations: known.recs,
+      method: known.method
     };
   });
 
@@ -177,37 +355,9 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
     levels: [],
     zones: [],
     directional_insights: [],
-    sector_map: [],
+    sector_map: sectorMap,
     resident_analysis: residentAnalysis,
-    room_recommendations: [
-      {
-        room: "Sypialnia",
-        function: "Strefa snu i regeneracji",
-        diagnosis: "Strefa czystego Yin. Wymaga całkowitego wyciszenia i ochrony przed ciągiem przeciągów energii.",
-        strengths: ["Ciche usytuowanie w głębi mieszkania", "Możliwość swobodnego dojścia z obu stron łóżka"],
-        risks: ["Potencjalny tunel energetyczny okno-drzwi"],
-        recommendations: ["Dosuń wezgłowie do pełnej ściany", "Wprowadź ciepłe światło 2200K", "Zastosuj zasłony zaciemniające"],
-        method: "Szkoła Formy"
-      },
-      {
-        room: "Salon z aneksem",
-        function: "Strefa dzienna Yang",
-        diagnosis: "Główny punkt aktywności domowników. Doskonały potencjał integracyjny.",
-        strengths: ["Duża powierzchnia i dobre doświetlenie dzienne", "Możliwość wydzielenia strefy jadalni"],
-        risks: ["Zbyt duża otwartość korytarza na strefę wypoczynkową"],
-        recommendations: ["Ustaw sofę tyłem do ściany lub komody", "Wprowadź rośliny biofilne w sektorze Drewna"],
-        method: "Siatka Bagua & Wu Xing"
-      },
-      {
-        room: "Gabinet / Miejsce pracy",
-        function: "Koncentracja i finanse",
-        diagnosis: "Strefa sprzyjająca skupieniu z oparciem pleców.",
-        strengths: ["Dobre doświetlenie naturalne z lewej strony stanowiska"],
-        risks: ["Siedzenie tyłem do drzwi wywołujące podświadome napięcie"],
-        recommendations: ["Ustaw biurko w pozycji dowodzenia", "Wprowadź zorganizowane schowki eliminujące chaos"],
-        method: "Ergonomia & Kua"
-      }
-    ],
+    room_recommendations: roomRecommendations,
     furniture_recommendations: [],
     traditional_analysis: [],
     practical_analysis: [],

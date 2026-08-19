@@ -33,6 +33,7 @@ export function ReportModal({
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [generatedPdfUrl, setGeneratedPdfUrl] = useState<string | null>(null);
 
   async function handleDownloadPdf() {
     if (!report || isDownloading) return;
@@ -102,7 +103,7 @@ export function ReportModal({
               disabled={isDownloading}
             >
               <Download size={18} />
-              <span>{isDownloading ? "Generowanie raportu PDF..." : "Pobierz Pełny Raport PDF (Wydanie do Druku)"}</span>
+              <span>{isDownloading ? "Generowanie i pobieranie PDF..." : "Pobierz Pełny Raport PDF (Wydanie do Druku)"}</span>
             </button>
 
             <button
@@ -130,10 +131,33 @@ export function ReportModal({
             </div>
           ) : null}
 
+          {/* 9 BAGUA SECTORS MATRIX (SIATKA 9 STREF DOMU) */}
+          {report.sector_map && report.sector_map.length > 0 ? (
+            <div className="report-bagua-sectors-section" style={{ marginTop: "24px", marginBottom: "20px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", margin: 0 }}>Siatka 9 Stref Bagua & Wpływy Roczne (Luo Shu 2026)</h3>
+                <span style={{ fontSize: "0.75rem", background: "rgba(45, 90, 70, 0.1)", color: "#2D5A46", padding: "4px 8px", borderRadius: "6px", fontWeight: 700 }}>9 Pałaców Lokalu</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "10px" }}>
+                {report.sector_map.map((sec, idx) => (
+                  <div key={idx} style={{ background: "#FBF9F4", border: "1px solid var(--line)", borderRadius: "8px", padding: "10px 12px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <strong style={{ fontSize: "0.78rem", color: "#C59642", textTransform: "uppercase" }}>{sec.direction} {sec.trigram ? `· ${sec.trigram}` : ""}</strong>
+                      <span style={{ fontSize: "0.68rem", color: "var(--muted)", fontWeight: 600 }}>Żywioł: {sec.element}</span>
+                    </div>
+                    <span style={{ fontSize: "0.86rem", fontWeight: 800, color: "var(--ink)" }}>{sec.sector}</span>
+                    <small style={{ fontSize: "0.74rem", color: "#2E7D5A", fontWeight: 600 }}>Obecna funkcja: {sec.current_use}</small>
+                    <p style={{ fontSize: "0.75rem", color: "var(--ink-soft)", margin: "4px 0 0 0", lineHeight: 1.35 }}>{sec.assessment || sec.advice}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {/* RESIDENT INTEL IN REPORT MODAL */}
           {report.resident_analysis && report.resident_analysis.length > 0 ? (
             <div className="report-residents-section" style={{ marginTop: "24px", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Profile Energetyczne Domowników (Kua & BaZi)</h3>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Weryfikacja Ustawień Mebli Domowników (Kua & Rok 2026)</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
                 {report.resident_analysis.map((res, idx) => (
                   <article key={idx} style={{ background: "#FFFFFF", border: "1px solid var(--line)", borderRadius: "10px", padding: "14px 16px" }}>
@@ -143,9 +167,11 @@ export function ReportModal({
                         {res.kua_number ? `Kua ${res.kua_number} (${res.element})` : res.group}
                       </span>
                     </div>
-                    <p style={{ fontSize: "0.84rem", color: "var(--ink-soft)", lineHeight: 1.5, margin: "0 0 8px 0" }}>{res.placement_advice}</p>
+                    <div style={{ fontSize: "0.82rem", color: "var(--ink)", whiteSpace: "pre-line", lineHeight: 1.5, margin: "0 0 10px 0" }}>
+                      {res.placement_advice}
+                    </div>
                     {res.favorable_directions?.length ? (
-                      <div style={{ fontSize: "0.76rem", color: "#2E7D5A", fontWeight: 600, background: "rgba(46, 125, 90, 0.08)", padding: "6px 8px", borderRadius: "6px" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#2E7D5A", fontWeight: 600, background: "rgba(46, 125, 90, 0.08)", padding: "6px 8px", borderRadius: "6px" }}>
                         ✨ Kierunki sprzyjające: {res.favorable_directions.join(" · ")}
                       </div>
                     ) : null}

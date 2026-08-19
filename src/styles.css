@@ -4530,6 +4530,67 @@ body {
   transform: rotate(var(--marker-facing, 0deg)) scale(calc(var(--marker-scale, 1) * 1.05));
 }
 
+/* Floor Plan Fixed Points (Doors, Windows, Structural Elements) */
+.plan-marker.fixed {
+  position: relative;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  cursor: grab;
+  transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px))) !important;
+}
+
+.plan-marker.fixed .arch-fixed-piece {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(24px, 8.5cqi, 76px);
+  height: clamp(24px, 8.5cqi, 76px);
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transform: rotate(var(--marker-facing, 0deg)) scale(var(--marker-scale, 1));
+  transform-origin: 50% 50%;
+  transition: transform 0.15s ease;
+  filter: drop-shadow(0 2px 4px rgba(43, 83, 109, 0.35));
+}
+
+.plan-marker.fixed.selected .arch-fixed-piece {
+  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 4px 8px rgba(43, 83, 109, 0.6));
+  transform: rotate(var(--marker-facing, 0deg)) scale(calc(var(--marker-scale, 1) * 1.05));
+}
+
+.pin-marker-pill.fixed-pill {
+  background: rgba(43, 83, 109, 0.92);
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 3px;
+  height: 16px;
+  padding: 0 5px;
+  font-size: 0.60rem;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.architectural-compass-svg {
+  filter: drop-shadow(0 4px 14px rgba(16, 34, 31, 0.45));
+  transition: transform 0.15s ease;
+}
+
+.floating-north-compass {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 20;
+}
+
 .plan-marker.furniture .furniture-floating-tag {
   position: absolute;
   top: calc(100% + 5px);

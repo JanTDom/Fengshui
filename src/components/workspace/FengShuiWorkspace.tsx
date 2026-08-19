@@ -55,18 +55,20 @@ interface FengShuiWorkspaceProps {
 type AnnotationMode = "room" | "fixed" | "furniture";
 
 const roomFunctionOptions = [
+  "Salon z aneksem kuchennym",
   "Salon",
   "Sypialnia główna",
-  "Sypialnia dziecka",
-  "Gabinet / Biuro",
-  "Kuchnia",
+  "Sypialnia dziecka / gościnna",
+  "Gabinet / Miejsce pracy",
+  "Kuchnia osobna",
   "Jadalnia",
-  "Łazienka",
-  "Przedpokój / Hol",
+  "Łazienka z WC",
+  "Łazienka (kąpielowa bez WC)",
+  "Osobna toaleta / WC",
+  "Przedpokój / Wiatrołap",
   "Garderoba",
   "Balkon / Taras",
-  "Pralnia",
-  "Pomieszczenie gosp."
+  "Pralnia / Pomieszczenie gosp."
 ];
 
 const fixedElementOptions = [
@@ -301,13 +303,13 @@ export function FengShuiWorkspace({
   }
 
   function handleCanvasClick(event: MouseEvent<HTMLDivElement>) {
-    if (Date.now() - lastMarkerPointerTimeRef.current < 400) return;
+    if (Date.now() - lastMarkerPointerTimeRef.current < 300) return;
     if (suppressScanClickRef.current) {
       suppressScanClickRef.current = false;
       return;
     }
     const target = event.target as HTMLElement;
-    if (target.closest(".plan-marker-wrapper, .marker-floating-actions, .floating-north-compass, button")) return;
+    if (target.closest(".marker-floating-actions, .floating-north-compass, button")) return;
 
     if (scanTool === "north") return;
 
@@ -320,6 +322,7 @@ export function FengShuiWorkspace({
 
     const newMarkerId = `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
     const isFurniture = annotationMode === "furniture";
+    const isFixed = annotationMode === "fixed";
     const assignedResident = isFurniture && (selectedMarkerLabel === "Łóżko" || selectedMarkerLabel === "Biurko")
       ? (residents[0]?.label || null)
       : null;
@@ -330,8 +333,8 @@ export function FengShuiWorkspace({
       category: annotationMode,
       xPercent: Number(xPercent.toFixed(2)),
       yPercent: Number(yPercent.toFixed(2)),
-      facingDeg: isFurniture ? furnitureDirection : null,
-      scale: isFurniture ? furnitureScale : undefined,
+      facingDeg: isFurniture || isFixed ? furnitureDirection : null,
+      scale: isFurniture || isFixed ? furnitureScale : undefined,
       orientationRole: isFurniture ? furnitureOrientationRole : null,
       assignedResidentLabel: assignedResident
     };
@@ -341,12 +344,49 @@ export function FengShuiWorkspace({
   }
 
   function handleMarkerPointerDown(marker: PlanMarker, event: PointerEvent<HTMLDivElement>) {
+    // If the user has just selected a tool to place (and hasn't selected an active marker to edit),
+    // allow clicking anywhere (even over an existing marker) to place the new tool directly!
+    if (scanTool === "marker" && !selectedPlanMarkerId) {
+      const img = planImageRef.current;
+      const rect = img && img.clientWidth > 0 ? img.getBoundingClientRect() : (event.currentTarget.closest(".scan-preview")?.getBoundingClientRect());
+      if (rect && rect.width > 0 && rect.height > 0) {
+        const xPercent = Math.max(1, Math.min(99, ((event.clientX - rect.left) / rect.width) * 100));
+        const yPercent = Math.max(1, Math.min(99, ((event.clientY - rect.top) / rect.height) * 100));
+
+        const newMarkerId = `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
+        const isFurniture = annotationMode === "furniture";
+        const isFixed = annotationMode === "fixed";
+        const assignedResident = isFurniture && (selectedMarkerLabel === "Łóżko" || selectedMarkerLabel === "Biurko")
+          ? (residents[0]?.label || null)
+          : null;
+
+        const newMarker: PlanMarker = {
+          id: newMarkerId,
+          label: selectedMarkerLabel,
+          category: annotationMode,
+          xPercent: Number(xPercent.toFixed(2)),
+          yPercent: Number(yPercent.toFixed(2)),
+          facingDeg: isFurniture || isFixed ? furnitureDirection : null,
+          scale: isFurniture || isFixed ? furnitureScale : undefined,
+          orientationRole: isFurniture ? furnitureOrientationRole : null,
+          assignedResidentLabel: assignedResident
+        };
+
+        setPlanMarkers((curr) => [...curr, newMarker]);
+        setSelectedPlanMarkerId(newMarkerId);
+        lastMarkerPointerTimeRef.current = Date.now();
+        event.stopPropagation();
+        event.preventDefault();
+        return;
+      }
+    }
+
     lastMarkerPointerTimeRef.current = Date.now();
     event.stopPropagation();
     event.preventDefault();
     setSelectedPlanMarkerId(marker.id);
     setDraggingMarkerId(marker.id);
-    if (marker.category === "furniture") {
+    if (marker.category === "furniture" || marker.category === "fixed") {
       setFurnitureDirection(marker.facingDeg ?? 0);
       setFurnitureScale(marker.scale ?? 1.0);
       setFurnitureOrientationRole(marker.orientationRole ?? defaultFurnitureOrientationRole(marker.label));
@@ -782,33 +822,34 @@ export function FengShuiWorkspace({
                       </div>
                     ) : null}
 
-                    {/* COMPASS OVERLAY */}
+                    {/* UNAMBIGUOUS ARCHITECTURAL COMPASS ROSE */}
                     <div
                       className={`floating-north-compass ${scanTool === "north" ? "interactive" : ""}`}
                       style={{
-                        transform: `rotate(${northAngle}deg)`,
                         top: "16px",
-                        right: "16px"
+                        right: "16px",
+                        cursor: scanTool === "north" ? "grab" : "pointer"
                       }}
                       onPointerDown={() => scanTool === "north" && setIsDraggingNorth(true)}
                     >
-                      <Compass size={40} className="compass-icon" />
-                      <span className="compass-n-label">N</span>
-                      <span className="compass-deg-badge">{northAngle}°</span>
+                      {renderNorthCompassRose(northAngle)}
+                      <span className="compass-deg-badge">Północ N: {northAngle}°</span>
                     </div>
 
                     {/* PLACED PLAN MARKERS */}
                     {planMarkers.map((marker) => {
                       const isSelected = marker.id === selectedPlanMarkerId;
                       const isFurniture = marker.category === "furniture";
+                      const isFixed = marker.category === "fixed";
 
                       return (
                         <div
                           key={marker.id}
-                          className="plan-marker-wrapper"
+                          className={`plan-marker-wrapper ${marker.category} ${isSelected ? "selected" : ""}`}
                           style={{
                             left: `${marker.xPercent}%`,
-                            top: `${marker.yPercent}%`
+                            top: `${marker.yPercent}%`,
+                            zIndex: isSelected ? 15 : isFurniture ? 8 : isFixed ? 5 : 3
                           }}
                         >
                           <div
@@ -823,8 +864,16 @@ export function FengShuiWorkspace({
                               <div className="arch-furniture-piece">
                                 {renderCadSymbolSvg(marker.label)}
                               </div>
+                            ) : isFixed ? (
+                              <div className="arch-fixed-piece">
+                                {renderFixedCadSymbolSvg(marker.label) || (
+                                  <div className="pin-marker-pill fixed-pill">
+                                    <span>{marker.label}</span>
+                                  </div>
+                                )}
+                              </div>
                             ) : (
-                              <div className="pin-marker-pill">
+                              <div className="pin-marker-pill room-pill">
                                 <span>{marker.label}</span>
                               </div>
                             )}
@@ -837,7 +886,7 @@ export function FengShuiWorkspace({
                           </div>
 
                           {/* CONTEXTUAL FLOATING ACTION TOOLBAR */}
-                          {isSelected && isFurniture ? (
+                          {isSelected && (isFurniture || isFixed) ? (
                             <div className="marker-floating-actions" onClick={(e) => e.stopPropagation()}>
                               <button
                                 type="button"
@@ -849,31 +898,33 @@ export function FengShuiWorkspace({
                                 <span>{marker.facingDeg ?? 0}°</span>
                               </button>
 
-                              <div className="action-stepper">
+                              <div className="action-stepper" title="Szerokość / Skala">
                                 <button type="button" onClick={() => handleScaleSelectedMarker(-0.1)}>-</button>
                                 <span>{Math.round((marker.scale ?? 1.0) * 100)}%</span>
                                 <button type="button" onClick={() => handleScaleSelectedMarker(0.1)}>+</button>
                               </div>
 
-                              <button
-                                type="button"
-                                className="action-btn resident-pick"
-                                onClick={() => {
-                                  const curName = marker.assignedResidentLabel;
-                                  const nextRes = residents.find((r) => r.label !== curName) || null;
-                                  handleUpdateSelectedMarker({ assignedResidentLabel: nextRes ? nextRes.label : null });
-                                }}
-                                title="Przypisz domownika"
-                              >
-                                <UserRound size={13} />
-                                <span>{marker.assignedResidentLabel ? getInitials(marker.assignedResidentLabel) : "Osoba"}</span>
-                              </button>
+                              {isFurniture ? (
+                                <button
+                                  type="button"
+                                  className="action-btn resident-pick"
+                                  onClick={() => {
+                                    const curName = marker.assignedResidentLabel;
+                                    const nextRes = residents.find((r) => r.label !== curName) || null;
+                                    handleUpdateSelectedMarker({ assignedResidentLabel: nextRes ? nextRes.label : null });
+                                  }}
+                                  title="Przypisz domownika"
+                                >
+                                  <UserRound size={13} />
+                                  <span>{marker.assignedResidentLabel ? getInitials(marker.assignedResidentLabel) : "Osoba"}</span>
+                                </button>
+                              ) : null}
 
                               <button
                                 type="button"
                                 className="action-btn done"
                                 onClick={() => setSelectedPlanMarkerId(null)}
-                                title="Gotowe"
+                                title="Zatwierdź"
                               >
                                 <CheckCircle2 size={13} />
                               </button>
@@ -882,7 +933,7 @@ export function FengShuiWorkspace({
                                 type="button"
                                 className="action-btn delete"
                                 onClick={handleDeleteSelectedMarker}
-                                title="Usuń mebel"
+                                title="Usuń element"
                               >
                                 <Trash2 size={13} />
                               </button>
@@ -1182,18 +1233,119 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+function renderNorthCompassRose(angle: number) {
+  return (
+    <svg viewBox="0 0 100 100" className="architectural-compass-svg" width="68" height="68" aria-label="Róża wiatrów Północ">
+      <circle cx="50" cy="50" r="46" fill="rgba(16, 34, 31, 0.96)" stroke="#C49544" strokeWidth="2" />
+      <circle cx="50" cy="50" r="41" fill="none" stroke="rgba(196, 149, 68, 0.45)" strokeWidth="0.8" strokeDasharray="2 2" />
+
+      {/* Rotating Group */}
+      <g transform={`rotate(${angle} 50 50)`}>
+        {/* East/West small secondary wings */}
+        <polygon points="50,50 68,50 50,47" fill="#7A6E5D" />
+        <polygon points="50,50 68,50 50,53" fill="#41524B" />
+        <polygon points="50,50 32,50 50,47" fill="#7A6E5D" />
+        <polygon points="50,50 32,50 50,53" fill="#41524B" />
+
+        {/* SOUTH tail (muted small dark pin) */}
+        <polygon points="50,50 46,50 50,78" fill="#525E5A" />
+        <polygon points="50,50 54,50 50,78" fill="#303A36" />
+        <text x="50" y="87" fill="#8E9E98" fontSize="7.5" fontWeight="bold" textAnchor="middle">S</text>
+
+        {/* NORTH MAIN ARROW (Bold Gold with RED Crest) */}
+        <polygon points="50,50 44,50 50,14" fill="#C49544" stroke="#FFFDFB" strokeWidth="0.5" />
+        <polygon points="50,50 56,50 50,14" fill="#E6B862" stroke="#FFFDFB" strokeWidth="0.5" />
+
+        {/* Prominent Red Arrowhead */}
+        <polygon points="50,11 41,25 59,25" fill="#DC2626" stroke="#FFF" strokeWidth="1" />
+        <text x="50" y="10" fill="#FFD700" fontSize="11" fontWeight="900" textAnchor="middle">N</text>
+        <circle cx="50" cy="50" r="4.5" fill="#C49544" stroke="#10221F" strokeWidth="1.5" />
+      </g>
+    </svg>
+  );
+}
+
+function renderFixedCadSymbolSvg(label: string) {
+  if (label === "Drzwi wejściowe") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-fixed-svg door-svg" aria-hidden="true">
+        <rect x="6" y="56" width="6" height="8" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1" />
+        <rect x="60" y="56" width="6" height="8" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1" />
+        <line x1="12" y1="60" x2="60" y2="60" stroke="#7A6E5D" strokeWidth="1.2" strokeDasharray="2 2" />
+        <path d="M 12 12 A 48 48 0 0 1 60 60" fill="none" stroke="#2B536D" strokeWidth="1.6" strokeDasharray="3 2" />
+        <line x1="12" y1="60" x2="12" y2="12" stroke="#1A2B27" strokeWidth="2.4" />
+        <circle cx="16" cy="18" r="1.8" fill="#C49544" />
+      </svg>
+    );
+  }
+  if (label === "Drzwi balkonowe") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-fixed-svg balcony-door-svg" aria-hidden="true">
+        <rect x="4" y="56" width="6" height="8" fill="#1A2B27" />
+        <rect x="62" y="56" width="6" height="8" fill="#1A2B27" />
+        <path d="M 10 28 A 28 28 0 0 1 36 60" fill="none" stroke="#2B536D" strokeWidth="1.3" strokeDasharray="2 2" />
+        <path d="M 62 28 A 28 28 0 0 0 36 60" fill="none" stroke="#2B536D" strokeWidth="1.3" strokeDasharray="2 2" />
+        <line x1="10" y1="60" x2="10" y2="28" stroke="#1A2B27" strokeWidth="2" />
+        <line x1="62" y1="60" x2="62" y2="28" stroke="#1A2B27" strokeWidth="2" />
+      </svg>
+    );
+  }
+  if (label === "Okno") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-fixed-svg window-svg" aria-hidden="true">
+        <rect x="4" y="24" width="8" height="24" fill="#1A2B27" />
+        <rect x="60" y="24" width="8" height="24" fill="#1A2B27" />
+        <line x1="12" y1="26" x2="60" y2="26" stroke="#1A2B27" strokeWidth="2" />
+        <line x1="12" y1="46" x2="60" y2="46" stroke="#1A2B27" strokeWidth="2" />
+        <line x1="12" y1="33" x2="60" y2="33" stroke="#2B536D" strokeWidth="1.5" />
+        <line x1="12" y1="39" x2="60" y2="39" stroke="#73A8C7" strokeWidth="1.5" />
+        <line x1="36" y1="26" x2="36" y2="46" stroke="#1A2B27" strokeWidth="1.8" />
+      </svg>
+    );
+  }
+  if (label === "Pion wod-kan" || label === "Komin / Wentylacja") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-fixed-svg shaft-svg" aria-hidden="true">
+        <rect x="14" y="14" width="44" height="44" fill="#E8EEF2" stroke="#1A2B27" strokeWidth="2" />
+        <line x1="14" y1="14" x2="58" y2="58" stroke="#2B536D" strokeWidth="1.5" />
+        <line x1="14" y1="58" x2="58" y2="14" stroke="#2B536D" strokeWidth="1.5" />
+        <circle cx="36" cy="36" r="6" fill="#2B536D" />
+      </svg>
+    );
+  }
+  if (label === "Ściana nośna" || label === "Słup konstrukcyjny") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-fixed-svg wall-svg" aria-hidden="true">
+        <rect x="10" y="22" width="52" height="28" fill="#1A2B27" stroke="#1A2B27" strokeWidth="2" />
+        <line x1="18" y1="22" x2="18" y2="50" stroke="#FFFFFF" strokeWidth="1.2" strokeDasharray="2 2" />
+        <line x1="36" y1="22" x2="36" y2="50" stroke="#FFFFFF" strokeWidth="1.2" strokeDasharray="2 2" />
+        <line x1="54" y1="22" x2="54" y2="50" stroke="#FFFFFF" strokeWidth="1.2" strokeDasharray="2 2" />
+      </svg>
+    );
+  }
+  if (label === "Schody") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-fixed-svg stairs-svg" aria-hidden="true">
+        <rect x="10" y="10" width="52" height="52" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
+        <line x1="10" y1="20" x2="62" y2="20" stroke="#1A2B27" strokeWidth="1.2" />
+        <line x1="10" y1="30" x2="62" y2="30" stroke="#1A2B27" strokeWidth="1.2" />
+        <line x1="10" y1="40" x2="62" y2="40" stroke="#1A2B27" strokeWidth="1.2" />
+        <line x1="10" y1="50" x2="62" y2="50" stroke="#1A2B27" strokeWidth="1.2" />
+        <path d="M 36 56 L 36 16 M 31 22 L 36 14 L 41 22" stroke="#C49544" strokeWidth="2" fill="none" />
+      </svg>
+    );
+  }
+  return null;
+}
+
 function renderCadSymbolSvg(furn: string) {
   if (furn === "Łóżko") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg bed-svg" aria-hidden="true">
-        {/* Headboard */}
         <rect x="14" y="8" width="44" height="5" fill="#C49544" stroke="#1A2B27" strokeWidth="1.6" />
-        {/* Mattress outline */}
         <rect x="16" y="13" width="40" height="51" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
-        {/* Pillows */}
         <rect x="19" y="16" width="15" height="11" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
         <rect x="38" y="16" width="15" height="11" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
-        {/* Blanket fold line */}
         <line x1="16" y1="36" x2="56" y2="36" stroke="#C49544" strokeWidth="1.4" strokeDasharray="3 2" />
       </svg>
     );
@@ -1201,13 +1353,9 @@ function renderCadSymbolSvg(furn: string) {
   if (furn === "Biurko") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg desk-svg" aria-hidden="true">
-        {/* Desk top */}
         <rect x="12" y="12" width="48" height="26" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
-        {/* Monitor / Laptop */}
         <rect x="23" y="15" width="26" height="4" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1" />
-        {/* Keyboard / Pad */}
         <rect x="27" y="23" width="18" height="8" fill="#FAF7F2" stroke="#C49544" strokeWidth="1.1" />
-        {/* Chair */}
         <circle cx="36" cy="51" r="8.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
         <path d="M 31 51 Q 36 45 41 51" stroke="#C49544" strokeWidth="1.8" fill="none" strokeLinecap="square" />
         <line x1="36" y1="38" x2="36" y2="42.5" stroke="#1A2B27" strokeWidth="1.6" />
@@ -1217,13 +1365,10 @@ function renderCadSymbolSvg(furn: string) {
   if (furn === "Sofa") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        {/* Backrest */}
         <rect x="12" y="16" width="48" height="10" fill="#D4A757" stroke="#1A2B27" strokeWidth="1.8" />
         <line x1="36" y1="16" x2="36" y2="26" stroke="#1A2B27" strokeWidth="1.4" strokeDasharray="2 2" />
-        {/* Armrests */}
         <rect x="12" y="26" width="9" height="30" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
         <rect x="51" y="26" width="9" height="30" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        {/* Cushions */}
         <rect x="21" y="26" width="15" height="30" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.6" />
         <rect x="36" y="26" width="15" height="30" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.6" />
       </svg>
@@ -1238,14 +1383,20 @@ function renderCadSymbolSvg(furn: string) {
       </svg>
     );
   }
-  if (furn === "Szafa") {
+  if (furn === "Szafa" || furn === "Garderoba") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg storage-svg" aria-hidden="true">
-        <rect x="10" y="16" width="52" height="40" fill="#F4EFE6" stroke="#1A2B27" strokeWidth="1.8" />
-        <line x1="36" y1="16" x2="36" y2="56" stroke="#1A2B27" strokeWidth="1.4" />
-        <rect x="33" y="32" width="2" height="8" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
-        <rect x="37" y="32" width="2" height="8" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
-        <line x1="10" y1="16" x2="62" y2="16" stroke="#C49544" strokeWidth="2.2" />
+        {/* Main carcass - 60cm proportion */}
+        <rect x="8" y="14" width="56" height="34" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Internal partition / hanger rail */}
+        <line x1="8" y1="28" x2="64" y2="28" stroke="#D1C7B7" strokeWidth="1.2" strokeDasharray="3 2" />
+        <line x1="36" y1="14" x2="36" y2="48" stroke="#1A2B27" strokeWidth="1.4" />
+        {/* Front sliding/opening doors indicator */}
+        <rect x="8" y="48" width="29" height="4" fill="#C49544" stroke="#1A2B27" strokeWidth="1.2" />
+        <rect x="35" y="51" width="29" height="4" fill="#DFC085" stroke="#1A2B27" strokeWidth="1.2" />
+        {/* Front Opening Direction Arrows */}
+        <path d="M 36 57 L 36 65 M 32 62 L 36 66 L 40 62" stroke="#C49544" strokeWidth="1.6" fill="none" strokeLinecap="square" />
+        <text x="36" y="71" fontSize="5.5" fontWeight="bold" fill="#C49544" textAnchor="middle">DRZWI / FRONT</text>
       </svg>
     );
   }

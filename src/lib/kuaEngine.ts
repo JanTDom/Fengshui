@@ -292,3 +292,240 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   };
 }
 
+/**
+ * Konwertuje kąt w stopniach (0-360°) na kierunek geograficzny kompasu.
+ */
+export function degToDirectionName(deg: number): { code: string; label: string; element: string } {
+  const normalized = ((Math.round(deg) % 360) + 360) % 360;
+
+  if (normalized >= 337.5 || normalized < 22.5) return { code: "N", label: "Północ (N)", element: "Woda" };
+  if (normalized >= 22.5 && normalized < 67.5) return { code: "NE", label: "Północny Wschód (NE)", element: "Ziemia" };
+  if (normalized >= 67.5 && normalized < 112.5) return { code: "E", label: "Wschód (E)", element: "Drewno" };
+  if (normalized >= 112.5 && normalized < 157.5) return { code: "SE", label: "Południowy Wschód (SE)", element: "Drewno" };
+  if (normalized >= 157.5 && normalized < 202.5) return { code: "S", label: "Południe (S)", element: "Ogień" };
+  if (normalized >= 202.5 && normalized < 247.5) return { code: "SW", label: "Południowy Zachód (SW)", element: "Ziemia" };
+  if (normalized >= 247.5 && normalized < 292.5) return { code: "W", label: "Zachód (W)", element: "Metal" };
+  return { code: "NW", label: "Północny Zachód (NW)", element: "Metal" };
+}
+
+/**
+ * Określa strefę Siatki 9 Pałaców Bagua (Luo Shu) oraz roczny wpływ gwiazd w 2026 roku.
+ */
+export function getBaguaSectorForPoint(xPercent: number, yPercent: number, northAngle = 0): {
+  code: string;
+  name: string;
+  element: string;
+  trigram: string;
+  annual2026Star: string;
+  annualAdvice: string;
+} {
+  // Przeliczenie współrzędnych 3x3
+  const col = Math.min(2, Math.max(0, Math.floor((xPercent / 100) * 3)));
+  const row = Math.min(2, Math.max(0, Math.floor((yPercent / 100) * 3)));
+
+  // Domyślna siatka rzutu (top-left do bottom-right)
+  const defaultGrid = [
+    ["NW", "N", "NE"],
+    ["W", "CENTER", "E"],
+    ["SW", "S", "SE"]
+  ];
+
+  const rawCode = defaultGrid[row][col];
+  if (rawCode === "CENTER") {
+    return {
+      code: "CENTER",
+      name: "Centrum (Tai Qi) · Serce Domu",
+      element: "Ziemia",
+      trigram: "Tai Qi",
+      annual2026Star: "Roczna Gwiazda 3 Jadeitowa (Drewno)",
+      annualAdvice: "W 2026 roku w centrum domu zaleca się unikanie głośnych prac remontowych. Wprowadź akcent Ognia (ciepłe światło 2700K), aby zneutralizować drażliwe Drewno 3."
+    };
+  }
+
+  // Uwzględnienie obrotu północy
+  const compassMap: Record<string, { name: string; element: string; trigram: string; star: string; advice: string }> = {
+    N: {
+      name: "Północ · Kariera & Droga Życiowa",
+      element: "Woda",
+      trigram: "Kan (Woda)",
+      star: "Sui Po (Rozbijacz Roku) & Gwiazda 8 (Ziemia)",
+      advice: "W 2026 roku strefa Północna wymaga ciszy. Śpij z wezgłowiem stabilnym, unikaj ciężkich wyburzeń w tym sektorze."
+    },
+    NE: {
+      name: "Północny Wschód · Wiedza & Spokój Umysłu",
+      element: "Ziemia",
+      trigram: "Gen (Góra)",
+      star: "Gwiazda 5 Żółta (Wu Wang)",
+      advice: "W 2026 roku sektor NE gości gwiazdę 5 Żółtą. Bezwzględnie wycisz ten obszar, unikaj świec/czerwieni, zastosuj remedium Metalowe lub dźwięk dzwonków."
+    },
+    E: {
+      name: "Wschód · Zdrowie & Rodzina",
+      element: "Drewno",
+      trigram: "Zhen (Grzmot)",
+      star: "Gwiazda 1 Biała (Zwycięstwo & Mądrość)",
+      advice: "Sektor Wschodni jest w 2026 roku bardzo korzystny dla rozwoju i regeneracji. Sprzyja odpoczynkowi i nauce."
+    },
+    SE: {
+      name: "Południowy Wschód · Bogactwo & Obfitość",
+      element: "Drewno",
+      trigram: "Xun (Wiatr)",
+      star: "Gwiazda 9 Fioletowa (Główny Dobrobyt Okresu 9)",
+      advice: "Jeden z najsilniejszych sektorów w 2026 roku. Doskonałe miejsce na salon, gabinet lub aktywne rośliny biofilne."
+    },
+    S: {
+      name: "Południe · Sława & Uznanie",
+      element: "Ogień",
+      trigram: "Li (Ogień)",
+      star: "Tai Sui (Władca Roku 2026 - Rok Konia)",
+      advice: "W 2026 roku Tai Sui rezyduje na Południu. Nie siadaj twarzą bezpośrednio naprzeciw Południa (nie konfrontuj Tai Sui), lecz miej Południe za plecami jako oparcie."
+    },
+    SW: {
+      name: "Południowy Zachód · Relacje & Partnerstwo",
+      element: "Ziemia",
+      trigram: "Kun (Ziemia)",
+      star: "Gwiazda 2 Czarna (Choroba)",
+      advice: "W 2026 roku w sektorze SW zaleca się wzmocnienie odporności i dodanie akcentów Metalowych (np. mosiężna lampa, jasne tkaniny)."
+    },
+    W: {
+      name: "Zachód · Dzieci & Kreatywność",
+      element: "Metal",
+      trigram: "Dui (Jezioro)",
+      star: "Gwiazda 6 Biała (Autorytet Niebiański)",
+      advice: "Sektor Zachodni sprzyja w 2026 roku podejmowaniu strategicznych decyzji zawodowych i dyscyplinie pracy."
+    },
+    NW: {
+      name: "Północny Zachód · Pomocni Ludzie & Podróże",
+      element: "Metal",
+      trigram: "Qian (Niebo)",
+      star: "Gwiazda 4 Zielona (Edukacja & Romans)",
+      advice: "Bardzo sprzyjający sektor dla gabinetu, nauki, pisania i budowania kontaktów partnerskich."
+    }
+  };
+
+  const info = compassMap[rawCode] || compassMap.N;
+  return {
+    code: rawCode,
+    name: info.name,
+    element: info.element,
+    trigram: info.trigram,
+    annual2026Star: info.star,
+    annualAdvice: info.advice
+  };
+}
+
+export type ResidentEvaluationResult = {
+  name: string;
+  role: string;
+  kua: number;
+  group: string;
+  element: string;
+  assignedFurnitureLabel: string;
+  currentFacingDirection: string;
+  currentFacingDegrees: number;
+  currentSector: string;
+  isDirectionFavorable: boolean;
+  directionQualityName: string; // np. "Tian Yi (Zdrowie)", "Huo Hai (Przeszkody)"
+  annualStar2026: string;
+  evaluationVerdict: string;
+  correctionRecommendation: string;
+};
+
+/**
+ * Przeprowadza konkretną ocenę FAKTYCZNEGO ustawienia łóżka/biurka domownika na rzucie.
+ */
+export function evaluateResidentPlacement(
+  resident: { label: string; role?: string; birthDate?: string; gender?: string; birthTime?: string },
+  marker: { label: string; facingDeg?: number | null; xPercent: number; yPercent: number } | undefined,
+  northAngle = 0
+): ResidentEvaluationResult {
+  const rawKua = resident.birthDate ? calculateKua(resident.birthDate, resident.gender || "male") : null;
+  const activeKua = rawKua || { kua: 1, ...KUA_DATA[1] };
+  const hourPillar = resident.birthTime ? calculateBaZiHourPillar(resident.birthTime) : null;
+
+  const facingDeg = marker?.facingDeg ?? 0;
+  // Obliczenie rzeczywistego kierunku kompasowego z uwzględnieniem północy rzutu
+  const trueCompassDeg = ((facingDeg + northAngle) % 360 + 360) % 360;
+  const currentDir = degToDirectionName(trueCompassDeg);
+  const currentSector = marker ? getBaguaSectorForPoint(marker.xPercent, marker.yPercent, northAngle) : getBaguaSectorForPoint(50, 50, northAngle);
+
+  // Sprawdzenie zgodności kierunku z Kua
+  const shengChiCode = activeKua.shengChi.match(/\(([A-Z]+)\)/)?.[1] || "";
+  const tianYiCode = activeKua.tianYi.match(/\(([A-Z]+)\)/)?.[1] || "";
+  const yanNianCode = activeKua.yanNian.match(/\(([A-Z]+)\)/)?.[1] || "";
+  const fuWeiCode = activeKua.fuWei.match(/\(([A-Z]+)\)/)?.[1] || "";
+
+  let isFavorable = false;
+  let dirQuality = "Kierunek neutralny / do weryfikacji";
+
+  if (currentDir.code === tianYiCode) {
+    isFavorable = true;
+    dirQuality = "Tian Yi (Doktor Niebios · Zdrowie, Regeneracja i Spokojny Sen)";
+  } else if (currentDir.code === shengChiCode) {
+    isFavorable = true;
+    dirQuality = "Sheng Qi (Generowanie Energii · Sukces Finansowy i Witalność)";
+  } else if (currentDir.code === yanNianCode) {
+    isFavorable = true;
+    dirQuality = "Yan Nian (Długowieczność · Harmonia Małżeńska i Relacje)";
+  } else if (currentDir.code === fuWeiCode) {
+    isFavorable = true;
+    dirQuality = "Fu Wei (Stabilność · Wewnętrzny Spokój i Koncentracja)";
+  } else {
+    // Niekorzystne
+    isFavorable = false;
+    const matchedInauspicious = activeKua.inauspicious.find((ina) => ina.includes(`(${currentDir.code})`));
+    if (matchedInauspicious) {
+      dirQuality = `Kierunek Niekorzystny: ${matchedInauspicious}`;
+    } else {
+      dirQuality = `Kierunek poza grupą pomyślną ${activeKua.group}`;
+    }
+  }
+
+  const isBed = marker?.label === "Łóżko";
+  const isDesk = marker?.label === "Biurko";
+
+  let verdict = "";
+  let correction = "";
+
+  if (isBed) {
+    if (isFavorable) {
+      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} jest w 100% ZGODNE z osobistym Kua ${activeKua.kua} (${dirQuality}). Zapewnia głęboką regenerację fazy REM.`;
+      correction = `Utrzymaj obecny kierunek wezgłowia (${currentDir.label}). Zadbaj o pełne oparcie ściany za głową i brak ostrego światła.`;
+    } else {
+      verdict = `Wezgłowie łóżka skierowane na ${currentDir.label} KOLIDUJE z osobistym profilem Kua ${activeKua.kua} (${dirQuality}). Może powodować płytki sen, mikrowybudzenia lub poranne zmęczenie.`;
+      correction = `Zalecana korekta: Obróć wezgłowie łóżka w stronę ${activeKua.tianYi} (optymalne dla snu) lub ${activeKua.fuWei} (spokój psychiczny).`;
+    }
+  } else if (isDesk) {
+    if (isFavorable) {
+      verdict = `Wzrok przy biurku skierowany na ${currentDir.label} jest w pełni ZGODNY z Kua ${activeKua.kua} (${dirQuality}). Sprzyja jasności myśli i sukcesom zawodowym.`;
+      correction = `Bardzo dobre ustawienie. Zadbaj dodatkowo o to, aby mieć za plecami pełną ścianę (Pozycja Dowodzenia).`;
+    } else {
+      verdict = `Kierunek pracy przy biurku (${currentDir.label}) znajduje się w strefie osłabiającej Kua ${activeKua.kua} (${dirQuality}), co może sprzyjać rozpraszaniu uwagi.`;
+      correction = `Zalecany obrót biurka twarzą na ${activeKua.shengChi} (sukces finansowy) lub ${activeKua.fuWei} (koncentracja analityczna).`;
+    }
+  } else {
+    verdict = `Mebel w sektorze ${currentSector.name} oddziałuje na domownika energią ${currentSector.element}.`;
+    correction = `Zadbaj o równowagę 5 Żywiołów w tej strefie.`;
+  }
+
+  if (hourPillar) {
+    verdict += ` [Filar Godziny: ${hourPillar.animal} · ${hourPillar.significance}]`;
+  }
+
+  return {
+    name: resident.label,
+    role: resident.role || "Domownik",
+    kua: activeKua.kua,
+    group: activeKua.group,
+    element: activeKua.element,
+    assignedFurnitureLabel: marker?.label || "Brak przypisanego mebla",
+    currentFacingDirection: currentDir.label,
+    currentFacingDegrees: trueCompassDeg,
+    currentSector: currentSector.name,
+    isDirectionFavorable: isFavorable,
+    directionQualityName: dirQuality,
+    annualStar2026: `${currentSector.annual2026Star}: ${currentSector.annualAdvice}`,
+    evaluationVerdict: verdict,
+    correctionRecommendation: correction
+  };
+}
+
