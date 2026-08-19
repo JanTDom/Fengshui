@@ -191,7 +191,7 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
     ];
     const unfavDirs = kuaData.inauspicious;
 
-    const detailedAdvice = `【Ocena faktycznego ustawienia mebla】: ${evaluation.evaluationVerdict}\n\n【Wpływ roczny 2026】: ${evaluation.annualStar2026}\n\n【Zalecana korekta】: ${evaluation.correctionRecommendation}`;
+    const detailedAdvice = `• Ocena faktycznego ustawienia mebla: ${evaluation.evaluationVerdict}\n\n• Wpływ roczny 2026: ${evaluation.annualStar2026}\n\n• Zalecana korekta: ${evaluation.correctionRecommendation}`;
 
     return {
       name: res.label || "Główny domownik",
@@ -208,15 +208,37 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
     };
   });
 
-  // 3. STRICT ROOM FILTERING — ONLY ANALYZE ROOMS ACTUALLY MARKED ON THE PLAN
+  // 3. STRICT ROOM FILTERING — ONLY ANALYZE ROOMS ACTUALLY MARKED ON THE PLAN OR INFERRED FROM FURNITURE
   const markedRooms = (payload.planAnnotations?.markers || [])
     .filter((m) => m.category === "room")
     .map((m) => m.label);
 
   const distinctRooms = Array.from(new Set(markedRooms));
-  const roomsToAnalyze = distinctRooms.length > 0
-    ? distinctRooms
-    : ["Salon z aneksem kuchennym", "Sypialnia główna", "Łazienka z WC"];
+
+  let roomsToAnalyze: string[] = [];
+  if (distinctRooms.length > 0) {
+    roomsToAnalyze = distinctRooms;
+  } else {
+    // If no room was explicitly tagged, infer ONLY from furniture placed by the user
+    const placedFurniture = (payload.planAnnotations?.markers || [])
+      .filter((m) => m.category === "furniture")
+      .map((m) => m.label);
+
+    const inferred = new Set<string>();
+    placedFurniture.forEach((f) => {
+      if (f.includes("Łóżko")) inferred.add("Sypialnia główna");
+      else if (f.includes("Biurko") || f.includes("pracy")) inferred.add("Gabinet / Miejsce pracy");
+      else if (f.includes("Sofa") || f.includes("Stół")) inferred.add("Salon");
+      else if (f.includes("Płyta") || f.includes("Kuchenka")) inferred.add("Kuchnia osobna");
+    });
+
+    if (inferred.size > 0) {
+      roomsToAnalyze = Array.from(inferred);
+    } else {
+      // General zones only, NO toilets or unplaced rooms
+      roomsToAnalyze = ["Strefa dzienna (Yang)", "Strefa nocna (Yin)"];
+    }
+  }
 
   const roomKnowledgeMap: Record<string, { func: string; diag: string; strengths: string[]; risks: string[]; recs: string[]; method: string }> = {
     "Salon": {
@@ -629,7 +651,18 @@ function pdfConfidenceLabel(value: AuditReport["confidence"]) {
 }
 
 function pdfText(value: string | null | undefined, fallback = "do uzupełnienia") {
-  const clean = String(value ?? "").trim();
+  let clean = String(value ?? "").trim();
+  if (!clean) return fallback;
+
+  // Clean up any CJK quotation brackets, emojis or special characters that are missing in standard Latin fonts
+  clean = clean
+    .replace(/[【〔［]/g, "• ")
+    .replace(/[】〕］]/g, "")
+    .replace(/[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g, "") // Strip any Chinese/CJK ideographs
+    .replace(/[✨⚡👤💡📍➔]/g, "") // Strip emojis that fail in standard PDF fonts
+    .replace(/\s+/g, " ")
+    .trim();
+
   return clean.length > 0 ? clean : fallback;
 }
 
@@ -1298,43 +1331,28 @@ function pdfCard(title: string, body: string, bullets: string[] = [], eyebrow = 
 
 function pdfNumberedActionCard(action: AuditReport["priority_actions"][number], index: number) {
   return {
-    unbreakable: true,
     table: {
-      dontBreakRows: true,
-      widths: ["*"],
+      widths: [20, "*"],
       body: [
         [
           {
-            columns: [
+            text: `${index}.`,
+            fontSize: 13,
+            bold: true,
+            color: "#C49544",
+            margin: [8, 8, 0, 8]
+          },
+          {
+            stack: [
+              { text: pdfText(action.method).toUpperCase(), style: "cardEyebrow" },
+              { text: pdfText(action.title), style: "cardTitle" },
+              { text: pdfText(action.why), style: "bodyText", margin: [0, 2, 0, 4] },
               {
-                width: 22,
-                table: {
-                  dontBreakRows: true,
-                  widths: ["*"],
-                  body: [[{ text: String(index), style: "priorityBadge", margin: [0, 3, 0, 3] }]]
-                },
-                layout: {
-                  fillColor: () => "#10221F",
-                  hLineColor: () => "#10221F",
-                  vLineColor: () => "#10221F"
-                }
-              },
-              {
-                width: "*",
-                stack: [
-                  { text: pdfText(action.method).toUpperCase(), style: "cardEyebrow" },
-                  { text: pdfText(action.title), style: "cardTitle" },
-                  { text: pdfText(action.why), style: "bodyText", margin: [0, 2, 0, 4] },
-                  {
-                    text: `Wpływ: ${pdfText(action.impact, "wysoki")} · Wysiłek: ${pdfText(action.effort, "niski")} · Pewność: ${pdfConfidenceLabel(action.confidence)}`,
-                    style: "mutedText"
-                  }
-                ],
-                margin: [8, 0, 0, 0]
+                text: `Wpływ: ${pdfText(action.impact, "wysoki")} · Wysiłek: ${pdfText(action.effort, "niski")} · Pewność: ${pdfConfidenceLabel(action.confidence)}`,
+                style: "mutedText"
               }
             ],
-            columnGap: 2,
-            margin: [10, 8, 10, 8]
+            margin: [2, 8, 8, 8]
           }
         ]
       ]
@@ -1732,6 +1750,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
 
       // 2. SCHEMATYCZNY RZUT CAD & MAPA 9 STREF BAGUA
       {
+        unbreakable: true,
         stack: [
           { text: "Schematyczny rzut architektoniczny (CAD) i siatka 9 sektorów Bagua", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: `Wektory ścian, orientacja N (${northAngle}°) oraz naniesione elementy wyposażenia wnętrza.`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
@@ -1752,6 +1771,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       ...(natalChart
         ? [
             {
+              unbreakable: true,
               stack: [
                 { text: "Wykres urodzeniowy budynku (Xuan Kong Fei Xing – Latające Gwiazdy)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
                 { text: `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`, style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
@@ -1776,6 +1796,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       ...(residentCards.length > 0
         ? [
             {
+              unbreakable: true,
               stack: [
                 { text: "Profil energetyczny mieszkańców (liczby Kua i żywioły)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
                 { text: "Kalkulacja Ba Zhai (Osiem Pałaców): optymalne kierunki snu, pracy i dopasowanie mebli do domowników.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
@@ -1788,6 +1809,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
 
       // 5. PRIORITY ACTIONS
       {
+        unbreakable: true,
         stack: [
           { text: "Najważniejsze priorytety działań", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Kolejność wdrożenia: od korekt o najwyższym wpływie na regenerację do poprawek niskonakładowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
@@ -1798,6 +1820,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
 
       // 6. ROOM-BY-ROOM AUDIT
       {
+        unbreakable: true,
         stack: [
           { text: "Audyt pomieszczeń pokój po pokoju", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Konkretne wnioski dla każdej strefy: atuty, ryzyka i zalecenia aranżacyjne.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
@@ -1810,6 +1833,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       ...(furnitureCards.length > 0
         ? [
             {
+              unbreakable: true,
               stack: [
                 { text: "Meble i pozycja dominująca (pozycja dowodzenia)", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
                 { text: "Oparcie wezgłowia (Czarny Żółw), biurka i wyposażenia względem wejścia i okien.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
@@ -1822,6 +1846,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
 
       // 8. FORM SCHOOL & ERGONOMICS
       {
+        unbreakable: true,
         stack: [
           { text: "Szkoła Formy i ergonomia współczesna", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Połączenie klasycznych zasad 4 Niebiańskich Zwierząt ze standardami doświetlenia i akustyki.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },
@@ -1832,6 +1857,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
 
       // 9. PRACTICAL CHANGES & METHOD LEDGER
       {
+        unbreakable: true,
         stack: [
           { text: "Lista rekomendowanych zmian bez remontu", style: "sectionTitle", keepWithNext: true, margin: [0, 4, 0, 2] },
           { text: "Natychmiastowe działania o wysokim zwrocie z inwestycji bez prac wyburzeniowych.", style: "mutedText", keepWithNext: true, margin: [0, 0, 0, 6] },

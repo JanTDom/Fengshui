@@ -21,7 +21,7 @@ export type KuaResult = {
 const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   1: {
     element: "Woda",
-    trigram: "Kan (坎)",
+    trigram: "Kan (Woda)",
     group: "Grupa Wschodnia",
     shengChi: "Południowy Wschód (SE)",
     tianYi: "Wschód (E)",
@@ -34,7 +34,7 @@ const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   },
   2: {
     element: "Ziemia",
-    trigram: "Kun (坤)",
+    trigram: "Kun (Ziemia)",
     group: "Grupa Zachodnia",
     shengChi: "Północny Wschód (NE)",
     tianYi: "Zachód (W)",
@@ -47,7 +47,7 @@ const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   },
   3: {
     element: "Drewno",
-    trigram: "Zhen (震)",
+    trigram: "Zhen (Grzmot)",
     group: "Grupa Wschodnia",
     shengChi: "Południe (S)",
     tianYi: "Północ (N)",
@@ -60,7 +60,7 @@ const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   },
   4: {
     element: "Drewno",
-    trigram: "Xun (巽)",
+    trigram: "Xun (Wiatr)",
     group: "Grupa Wschodnia",
     shengChi: "Północ (N)",
     tianYi: "Południe (S)",
@@ -73,7 +73,7 @@ const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   },
   6: {
     element: "Metal",
-    trigram: "Qian (乾)",
+    trigram: "Qian (Niebo)",
     group: "Grupa Zachodnia",
     shengChi: "Zachód (W)",
     tianYi: "Północny Wschód (NE)",
@@ -86,7 +86,7 @@ const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   },
   7: {
     element: "Metal",
-    trigram: "Dui (兌)",
+    trigram: "Dui (Jezioro)",
     group: "Grupa Zachodnia",
     shengChi: "Północny Zachód (NW)",
     tianYi: "Południowy Zachód (SW)",
@@ -99,7 +99,7 @@ const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   },
   8: {
     element: "Ziemia",
-    trigram: "Gen (艮)",
+    trigram: "Gen (Góra)",
     group: "Grupa Zachodnia",
     shengChi: "Południowy Zachód (SW)",
     tianYi: "Północny Zachód (NW)",
@@ -112,7 +112,7 @@ const KUA_DATA: Record<number, Omit<KuaResult, "kua">> = {
   },
   9: {
     element: "Ogień",
-    trigram: "Li (離)",
+    trigram: "Li (Ogień)",
     group: "Grupa Wschodnia",
     shengChi: "Wschód (E)",
     tianYi: "Południowy Wschód (SE)",
@@ -158,18 +158,17 @@ export function calculateKua(birthDateStr: string, gender: "male" | "female" | s
     // Mężczyzna
     kua = isPost2000 ? (9 - sum) : (10 - sum);
     while (kua <= 0) kua += 9;
-    while (kua > 9) kua -= 9;
-    if (kua === 5) kua = 2; // Dla mężczyzny Kua 5 przechodzi w Kun (2)
+    if (kua === 5) kua = 2; // Dla mężczyzn Kua 5 przechodzi w Kua 2
   } else {
     // Kobieta
-    kua = isPost2000 ? (sum + 6) : (sum + 5);
-    while (kua > 9) {
-      kua = Math.floor(kua / 10) + (kua % 10);
-    }
-    if (kua === 5) kua = 8; // Dla kobiety Kua 5 przechodzi w Gen (8)
+    kua = isPost2000 ? (6 + sum) : (5 + sum);
+    while (kua > 9) kua -= 9;
+    if (kua === 5) kua = 8; // Dla kobiet Kua 5 przechodzi w Kua 8
   }
 
-  const data = KUA_DATA[kua] || KUA_DATA[1];
+  const data = KUA_DATA[kua];
+  if (!data) return null;
+
   return {
     kua,
     ...data
@@ -197,7 +196,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   // 23:00 (1380m) - 01:00 (60m): Szczur (Zi)
   if (totalMinutes >= 23 * 60 || totalMinutes < 1 * 60) {
     return {
-      animal: "Szczur (Zi · 子)",
+      animal: "Szczur (Zi)",
       element: "Woda Yang",
       stemBranch: "Zi (Woda)",
       significance: "Strefa głębokiej intuicji, regeneracji nocnej i wnikliwości."
@@ -205,7 +204,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 3 * 60) {
     return {
-      animal: "Wół (Chou · 丑)",
+      animal: "Wół (Chou)",
       element: "Ziemia Yin",
       stemBranch: "Chou (Ziemia)",
       significance: "Cierpliwość, stabilność wewnętrzna, odporność na stres."
@@ -213,7 +212,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 5 * 60) {
     return {
-      animal: "Tygrys (Yin · 寅)",
+      animal: "Tygrys (Yin)",
       element: "Drewno Yang",
       stemBranch: "Yin (Drewno)",
       significance: "Inicjatywa, odwaga w planowaniu, wczesna witalność twórcza."
@@ -221,7 +220,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 7 * 60) {
     return {
-      animal: "Królik (Mao · 卯)",
+      animal: "Królik (Mao)",
       element: "Drewno Yin",
       stemBranch: "Mao (Drewno)",
       significance: "Wrażliwość estetyczna, dbałość o detale i harmonię relacji."
@@ -229,7 +228,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 9 * 60) {
     return {
-      animal: "Smok (Chen · 辰)",
+      animal: "Smok (Chen)",
       element: "Ziemia Yang",
       stemBranch: "Chen (Ziemia)",
       significance: "Wielkie ambicje, wizjonerstwo i wysoka energia życiowa."
@@ -237,7 +236,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 11 * 60) {
     return {
-      animal: "Wąż (Si · 巳)",
+      animal: "Wąż (Si)",
       element: "Ogień Yin",
       stemBranch: "Si (Ogień)",
       significance: "Strategiczne myślenie, przenikliwość i skupienie analityczne."
@@ -245,7 +244,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 13 * 60) {
     return {
-      animal: "Koń (Wu · 午)",
+      animal: "Koń (Wu)",
       element: "Ogień Yang",
       stemBranch: "Wu (Ogień)",
       significance: "Szczytowa aktywność dzienna Yang, ekspresja i charyzma."
@@ -253,7 +252,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 15 * 60) {
     return {
-      animal: "Koza (Wei · 未)",
+      animal: "Koza (Wei)",
       element: "Ziemia Yin",
       stemBranch: "Wei (Ziemia)",
       significance: "Kreatywność, spokój, zamiłowanie do komfortu i sztuki."
@@ -261,7 +260,7 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 17 * 60) {
     return {
-      animal: "Małpa (Shen · 申)",
+      animal: "Małpa (Shen)",
       element: "Metal Yang",
       stemBranch: "Shen (Metal)",
       significance: "Elastyczność, bystrość umysłu i szybka adaptacja do zmian."
@@ -269,18 +268,18 @@ export function calculateBaZiHourPillar(birthTime?: string): {
   }
   if (totalMinutes < 19 * 60) {
     return {
-      animal: "Kogut (You · 酉)",
+      animal: "Kogut (You)",
       element: "Metal Yin",
       stemBranch: "You (Metal)",
-      significance: "Precyzja, ład przestrzenny i zamiłowanie do porządku."
+      significance: "Precyzja, porządek, analityczna skrupulatność i zmysł praktyczny."
     };
   }
   if (totalMinutes < 21 * 60) {
     return {
-      animal: "Pies (Xu · 戌)",
+      animal: "Pies (Xu)",
       element: "Ziemia Yang",
       stemBranch: "Xu (Ziemia)",
-      significance: "Lojalność, potrzeba bezpieczeństwa i ochrony miru domowego."
+      significance: "Lojalność, ochrona granic domowych i poczucie odpowiedzialności."
     };
   }
   // 21:00 - 23:00: Dzik (Hai)

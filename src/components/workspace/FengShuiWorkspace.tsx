@@ -345,43 +345,6 @@ export function FengShuiWorkspace({
   }
 
   function handleMarkerPointerDown(marker: PlanMarker, event: PointerEvent<HTMLDivElement>) {
-    // If the user has just selected a tool to place (and hasn't selected an active marker to edit),
-    // allow clicking anywhere (even over an existing marker) to place the new tool directly!
-    if (scanTool === "marker" && !selectedPlanMarkerId) {
-      const img = planImageRef.current;
-      const rect = img && img.clientWidth > 0 ? img.getBoundingClientRect() : (event.currentTarget.closest(".scan-preview")?.getBoundingClientRect());
-      if (rect && rect.width > 0 && rect.height > 0) {
-        const xPercent = Math.max(1, Math.min(99, ((event.clientX - rect.left) / rect.width) * 100));
-        const yPercent = Math.max(1, Math.min(99, ((event.clientY - rect.top) / rect.height) * 100));
-
-        const newMarkerId = `m_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
-        const isFurniture = annotationMode === "furniture";
-        const isFixed = annotationMode === "fixed";
-        const assignedResident = isFurniture && (selectedMarkerLabel === "Łóżko" || selectedMarkerLabel === "Biurko")
-          ? (residents[0]?.label || null)
-          : null;
-
-        const newMarker: PlanMarker = {
-          id: newMarkerId,
-          label: selectedMarkerLabel,
-          category: annotationMode,
-          xPercent: Number(xPercent.toFixed(2)),
-          yPercent: Number(yPercent.toFixed(2)),
-          facingDeg: isFurniture || isFixed ? furnitureDirection : null,
-          scale: isFurniture || isFixed ? furnitureScale : undefined,
-          orientationRole: isFurniture ? furnitureOrientationRole : null,
-          assignedResidentLabel: assignedResident
-        };
-
-        setPlanMarkers((curr) => [...curr, newMarker]);
-        setSelectedPlanMarkerId(newMarkerId);
-        lastMarkerPointerTimeRef.current = Date.now();
-        event.stopPropagation();
-        event.preventDefault();
-        return;
-      }
-    }
-
     lastMarkerPointerTimeRef.current = Date.now();
     event.stopPropagation();
     event.preventDefault();
