@@ -129,6 +129,7 @@ export function FengShuiWorkspace({
   const [northAngle, setNorthAngle] = useState(0);
   const [northConfirmed, setNorthConfirmed] = useState(false);
   const [showBaguaOverlay, setShowBaguaOverlay] = useState(false);
+  const [cadFilterMode, setCadFilterMode] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1);
 
   useEffect(() => {
@@ -785,6 +786,10 @@ export function FengShuiWorkspace({
                       src={previewUrl}
                       alt="Rzut lokalu do aranżacji"
                       className="scan-image-elem"
+                      style={{
+                        filter: cadFilterMode ? "grayscale(100%) contrast(165%) brightness(106%)" : "none",
+                        transition: "filter 0.25s ease"
+                      }}
                       draggable={false}
                       onLoad={(event) => {
                         const image = event.currentTarget;
@@ -975,6 +980,16 @@ export function FengShuiWorkspace({
                 </div>
 
                 <div className="overlay-toggle-group">
+                  <button
+                    type="button"
+                    className={`overlay-btn ${cadFilterMode ? "active" : ""}`}
+                    onClick={() => setCadFilterMode((c) => !c)}
+                    title="Przełącz schematyczny filtr architektoniczny CAD"
+                  >
+                    <Sparkles size={15} />
+                    <span>{cadFilterMode ? "Styl CAD (Włączony)" : "Oczyść do CAD"}</span>
+                  </button>
+
                   <button
                     type="button"
                     className={`overlay-btn ${showBaguaOverlay ? "active" : ""}`}
