@@ -29,26 +29,26 @@ const pillars = [
 
 export function MethodologySection() {
   return (
-    <section className="methodology-section" id="metodologia">
-      <div className="marketing-container">
-        <div className="section-heading">
-          <span className="section-kicker">Rzetelna Metodologia</span>
+    <section className="mkt-methodology-section" id="metodologia">
+      <div className="mkt-container">
+        <div className="mkt-section-head">
+          <span className="mkt-kicker">Rzetelna Metodologia</span>
           <h2>Jedna platforma, cztery zintegrowane filary oceny</h2>
           <p>
             Łączymy rygor klasycznych szkół Feng Shui z inżynierską precyzją nowoczesnej architektury wnętrz.
           </p>
         </div>
 
-        <div className="methodology-grid">
+        <div className="mkt-method-grid">
           {pillars.map((pillar) => {
             const Icon = pillar.icon;
             return (
-              <article key={pillar.title} className="methodology-card">
-                <div className="methodology-icon-wrap">
-                  <Icon size={24} />
+              <article key={pillar.title} className="mkt-method-card">
+                <div className="mkt-method-icon">
+                  <Icon size={22} />
                 </div>
                 <h3>{pillar.title}</h3>
-                <span className="methodology-tag">{pillar.tag}</span>
+                <span className="mkt-method-tag">{pillar.tag}</span>
                 <p>{pillar.description}</p>
               </article>
             );

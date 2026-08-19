@@ -33,10 +33,10 @@ const steps = [
 
 export function ProcessSection({ onStart }: ProcessSectionProps) {
   return (
-    <section className="process-section" id="jak-dziala" aria-label="Jak działa proces">
-      <div className="marketing-container">
-        <div className="section-heading">
-          <span className="section-kicker">Prosty i przejrzysty proces</span>
+    <section className="mkt-process-section" id="jak-dziala" aria-label="Jak działa proces">
+      <div className="mkt-container">
+        <div className="mkt-section-head">
+          <span className="mkt-kicker">Prosty i przejrzysty proces</span>
           <h2>Od rzutu do gotowej ekspertyzy w 4 krokach</h2>
           <p>
             Kupujesz dostęp, przechodzisz do profesjonalnego studia planistycznego i wykonujesz
@@ -44,16 +44,16 @@ export function ProcessSection({ onStart }: ProcessSectionProps) {
           </p>
         </div>
 
-        <div className="process-steps-grid">
+        <div className="mkt-process-grid">
           {steps.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.step} className="process-step-card">
-                <div className="step-number-badge">
+              <div key={item.step} className="mkt-step-card">
+                <div className="mkt-step-num">
                   <span>{item.step}</span>
                 </div>
-                <div className="step-icon-box">
-                  <Icon size={24} />
+                <div className="mkt-step-icon">
+                  <Icon size={22} />
                 </div>
                 <h3>{item.title}</h3>
                 <p>{item.outcome}</p>
@@ -62,9 +62,9 @@ export function ProcessSection({ onStart }: ProcessSectionProps) {
           })}
         </div>
 
-        <div className="process-cta-bar">
+        <div className="mkt-process-bar">
           <span>Gotowy, aby sprawdzić swoje wnętrze?</span>
-          <button type="button" className="primary-button" onClick={onStart}>
+          <button type="button" className="mkt-btn-primary" onClick={onStart}>
             Rozpocznij teraz
             <ArrowRight size={16} />
           </button>

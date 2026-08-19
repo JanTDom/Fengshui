@@ -27,19 +27,19 @@ const faqs = [
 
 export function FaqSection() {
   return (
-    <section className="faq-section" id="faq">
-      <div className="marketing-container">
-        <div className="section-heading">
-          <span className="section-kicker">Często Zadawane Pytania</span>
+    <section className="mkt-faq-section" id="faq">
+      <div className="mkt-container">
+        <div className="mkt-section-head">
+          <span className="mkt-kicker">Często Zadawane Pytania</span>
           <h2>Wszystko, co warto wiedzieć przed analizą</h2>
           <p>
             Przejrzyste zasady działania, wymagania techniczne i metodologia e-fengshui.pl.
           </p>
         </div>
 
-        <div className="faq-grid">
+        <div className="mkt-faq-grid">
           {faqs.map((item) => (
-            <article key={item.q} className="faq-card">
+            <article key={item.q} className="mkt-faq-card">
               <h3>{item.q}</h3>
               <p>{item.a}</p>
             </article>

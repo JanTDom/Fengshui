@@ -25,10 +25,10 @@ const reportFeatures = [
 
 export function ReportShowcaseSection() {
   return (
-    <section className="report-showcase-section" id="raport">
-      <div className="marketing-container">
-        <div className="section-heading">
-          <span className="section-kicker">Zawartość raportu</span>
+    <section className="mkt-report-section" id="raport">
+      <div className="mkt-container">
+        <div className="mkt-section-head">
+          <span className="mkt-kicker">Zawartość raportu</span>
           <h2>Dokument decyzyjny o jakości wydawniczej</h2>
           <p>
             Otrzymujesz elegancki, uporządkowany raport PDF gotowy do druku lub omówienia z architektem,
@@ -36,13 +36,13 @@ export function ReportShowcaseSection() {
           </p>
         </div>
 
-        <div className="deliverables-grid">
+        <div className="mkt-deliverables-grid">
           {reportFeatures.map((feature) => {
             const Icon = feature.icon;
             return (
-              <article key={feature.title} className="deliverable-card">
-                <div className="deliverable-icon">
-                  <Icon size={24} />
+              <article key={feature.title} className="mkt-deliverable-card">
+                <div className="mkt-deliverable-icon">
+                  <Icon size={22} />
                 </div>
                 <h3>{feature.title}</h3>
                 <p>{feature.description}</p>
@@ -51,8 +51,8 @@ export function ReportShowcaseSection() {
           })}
         </div>
 
-        <div className="report-security-badge">
-          <ShieldCheck size={24} />
+        <div className="mkt-security-badge">
+          <ShieldCheck size={22} />
           <div>
             <strong>Prywatność i ochrona danych:</strong>
             <span> Twoje rzuty i dane domowników są przetwarzane w szyfrowanej infrastrukturze i nie są publicznie udostępniane.</span>

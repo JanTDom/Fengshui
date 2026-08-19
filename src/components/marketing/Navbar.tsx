@@ -19,21 +19,21 @@ export function Navbar({
   }
 
   return (
-    <header className="marketing-navbar">
-      <div className="marketing-container">
-        <div className="navbar-inner">
-          <div className="brand-logo-wrap" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-            <div className="brand-crest">
+    <header className="mkt-navbar">
+      <div className="mkt-container">
+        <div className="mkt-navbar-inner">
+          <div className="mkt-brand" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <div className="mkt-crest">
               <Compass size={20} />
             </div>
-            <div className="brand-text-block">
+            <div className="mkt-brand-text">
               <strong>E-FENGSHUI.PL</strong>
               <small>AI FENG SHUI & PLAN STUDIO</small>
             </div>
           </div>
 
           <nav aria-label="Nawigacja główna">
-            <ul className="navbar-links">
+            <ul className="mkt-nav-links">
               <li>
                 <a href="#jak-dziala" onClick={(e) => { e.preventDefault(); scrollTo("jak-dziala"); }}>
                   Jak działa
@@ -67,11 +67,11 @@ export function Navbar({
             </ul>
           </nav>
 
-          <div className="navbar-actions">
+          <div className="mkt-nav-actions">
             {hasActiveProject && onEnterWorkspaceDirectly ? (
               <button
                 type="button"
-                className="nav-project-btn"
+                className="mkt-btn-secondary mkt-btn-compact"
                 onClick={onEnterWorkspaceDirectly}
               >
                 <Layout size={16} />
@@ -81,7 +81,7 @@ export function Navbar({
 
             <button
               type="button"
-              className="nav-cta-btn"
+              className="mkt-btn-primary mkt-btn-compact"
               onClick={() => onOpenCheckout("full")}
             >
               <Sparkles size={16} />

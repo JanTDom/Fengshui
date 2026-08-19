@@ -39,27 +39,27 @@ const audiences = [
 
 export function AudienceSection({ onSelectAudience }: AudienceSectionProps) {
   return (
-    <section className="audience-section" id="dla-kogo">
-      <div className="marketing-container">
-        <div className="section-heading">
-          <span className="section-kicker">Dedykowane Rozwiązania</span>
+    <section className="mkt-audience-section" id="dla-kogo">
+      <div className="mkt-container">
+        <div className="mkt-section-head">
+          <span className="mkt-kicker">Dedykowane Rozwiązania</span>
           <h2>Dla kogo powstało e-fengshui.pl?</h2>
           <p>
             Stworzone dla każdego, kto podejmuje ważne decyzje dotyczące przestrzeni do życia i pracy.
           </p>
         </div>
 
-        <div className="audience-grid">
+        <div className="mkt-audience-grid">
           {audiences.map((item) => {
             const Icon = item.icon;
             return (
-              <article key={item.title} className="audience-card">
-                <div className="audience-icon-wrap">
-                  <Icon size={26} />
+              <article key={item.title} className="mkt-audience-card">
+                <div className="mkt-audience-icon">
+                  <Icon size={24} />
                 </div>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
-                <ul className="audience-checklist">
+                <ul className="mkt-checklist">
                   {item.checklist.map((point) => (
                     <li key={point}>
                       <Check size={16} />
@@ -69,7 +69,7 @@ export function AudienceSection({ onSelectAudience }: AudienceSectionProps) {
                 </ul>
                 <button
                   type="button"
-                  className="secondary-button"
+                  className="mkt-btn-secondary"
                   onClick={onSelectAudience}
                 >
                   Sprawdź swój lokal

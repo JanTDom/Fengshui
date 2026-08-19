@@ -29,7 +29,7 @@ export function LandingPage({
   }
 
   return (
-    <div className="landing-page-root">
+    <div className="mkt-page-root">
       <Navbar
         onOpenCheckout={onOpenCheckout}
         onEnterWorkspaceDirectly={onEnterWorkspaceDirectly}
@@ -54,16 +54,16 @@ export function LandingPage({
 
         <FaqSection />
 
-        <section className="final-cta-clean">
-          <div className="marketing-container">
-            <div className="final-cta-inner">
+        <section className="mkt-final-section">
+          <div className="mkt-container">
+            <div className="mkt-final-inner">
               <span className="cta-icon-pill">
                 <Sparkles size={24} />
               </span>
               <h2>Masz plan nieruchomości? Sprawdź go zanim zainwestujesz czas i pieniądze.</h2>
               <p>Wybierz pakiet i odblokuj natychmiastowy dostęp do Studia Planowania e-fengshui.pl.</p>
               <button
-                className="primary-button large"
+                className="mkt-btn-primary mkt-btn-gold"
                 type="button"
                 onClick={() => onOpenCheckout("full")}
               >

@@ -7,28 +7,28 @@ interface PricingSectionProps {
 
 export function PricingSection({ onSelectPlan }: PricingSectionProps) {
   return (
-    <section className="pricing-section" id="cennik">
-      <div className="marketing-container">
-        <div className="section-heading">
-          <span className="section-kicker">Przejrzysty Cennik</span>
+    <section className="mkt-pricing-section" id="cennik">
+      <div className="mkt-container">
+        <div className="mkt-section-head">
+          <span className="mkt-kicker">Przejrzysty Cennik</span>
           <h2>Wybierz pakiet i odblokuj studio analizy</h2>
           <p>Płacisz raz za konkretną analizę lokalu. Natychmiastowy dostęp do generatora i eksportu PDF.</p>
         </div>
 
-        <div className="pricing-grid-clean">
+        <div className="mkt-pricing-grid">
           {pricePlans.map((plan) => (
             <article
               key={plan.id}
-              className={`price-card-clean ${plan.featured ? "featured" : ""}`}
+              className={`mkt-price-card ${plan.featured ? "featured" : ""}`}
             >
-              {plan.featured ? <span className="clean-plan-flag">Najczęściej wybierany</span> : null}
+              {plan.featured ? <span className="mkt-plan-flag">Najczęściej wybierany</span> : null}
               <h3>{plan.title}</h3>
-              <div className="clean-plan-price">
+              <div className="mkt-price-val">
                 <strong>{plan.price}</strong>
                 {plan.period ? <small>{plan.period}</small> : null}
               </div>
-              <p className="clean-plan-note">{plan.note}</p>
-              <ul className="clean-plan-features">
+              <p className="mkt-price-note">{plan.note}</p>
+              <ul className="mkt-price-features">
                 {plan.features.map((feature) => (
                   <li key={feature}>
                     <Check size={16} />
@@ -38,7 +38,7 @@ export function PricingSection({ onSelectPlan }: PricingSectionProps) {
               </ul>
               <button
                 type="button"
-                className={plan.featured ? "primary-button full-width" : "secondary-button full-width"}
+                className={plan.featured ? "mkt-btn-primary mkt-w-full" : "mkt-btn-secondary mkt-w-full"}
                 onClick={() => onSelectPlan(plan.id)}
               >
                 Wybierz pakiet i zacznij
@@ -47,7 +47,7 @@ export function PricingSection({ onSelectPlan }: PricingSectionProps) {
           ))}
         </div>
 
-        <div className="payment-trust-bar">
+        <div className="mkt-trust-bar">
           <span>🔒 Bezpieczne szyfrowanie SSL</span>
           <span>⚡ Odblokowanie studia natychmiast po zamówieniu</span>
           <span>🧾 Faktura VAT dla firm i biur projektowych</span>
