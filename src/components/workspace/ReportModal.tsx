@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { AlertCircle, CheckCircle2, Download, RotateCcw, Sparkles, X, ShieldCheck } from "lucide-react";
 import type { AuditConfidence, AuditReport, PlanMarker } from "../../auditTypes";
 import { downloadReportJson, downloadReportPdf } from "../../lib/auditClient";
@@ -30,8 +31,13 @@ export function ReportModal({
 }: ReportModalProps) {
   if (!isOpen || !report) return null;
 
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
   async function handleDownloadPdf() {
-    if (!report) return;
+    if (!report || isDownloading) return;
+    setIsDownloading(true);
+    setDownloadError(null);
     try {
       await downloadReportPdf(report, {
         planFile: planFile ?? null,
@@ -41,6 +47,9 @@ export function ReportModal({
       triggerBrandConfetti();
     } catch (err) {
       console.error("Błąd generowania PDF:", err);
+      setDownloadError("Wystąpił błąd generatora PDF. Użyj przycisku eksportu JSON lub ponów próbę.");
+    } finally {
+      setIsDownloading(false);
     }
   }
 
@@ -88,11 +97,12 @@ export function ReportModal({
           <div className="report-actions-bar">
             <button
               type="button"
-              className="primary-button pdf-download-btn"
+              className={`primary-button pdf-download-btn ${isDownloading ? "loading" : ""}`}
               onClick={handleDownloadPdf}
+              disabled={isDownloading}
             >
               <Download size={18} />
-              <span>Pobierz Pełny Raport PDF (Wydanie Gotowe do Druku)</span>
+              <span>{isDownloading ? "Generowanie raportu PDF..." : "Pobierz Pełny Raport PDF (Wydanie do Druku)"}</span>
             </button>
 
             <button
@@ -110,9 +120,40 @@ export function ReportModal({
               onClick={onNewAudit}
             >
               <RotateCcw size={15} />
-              <span>Nowy audyt</span>
+              <span>Nowa analiza</span>
             </button>
           </div>
+
+          {downloadError ? (
+            <div className="report-error-banner" style={{ background: "#FDF2F2", border: "1px solid #F87171", padding: "10px 14px", borderRadius: "8px", color: "#B91C1C", fontSize: "0.85rem", marginTop: "10px" }}>
+              {downloadError}
+            </div>
+          ) : null}
+
+          {/* RESIDENT INTEL IN REPORT MODAL */}
+          {report.resident_analysis && report.resident_analysis.length > 0 ? (
+            <div className="report-residents-section" style={{ marginTop: "24px", marginBottom: "20px" }}>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Profile Energetyczne Domowników (Kua & BaZi)</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
+                {report.resident_analysis.map((res, idx) => (
+                  <article key={idx} style={{ background: "#FFFFFF", border: "1px solid var(--line)", borderRadius: "10px", padding: "14px 16px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                      <strong style={{ fontSize: "0.95rem", color: "var(--ink)" }}>{res.name} ({res.role})</strong>
+                      <span style={{ background: "rgba(197, 150, 66, 0.15)", color: "#C59642", fontWeight: 800, fontSize: "0.72rem", padding: "3px 8px", borderRadius: "99px" }}>
+                        {res.kua_number ? `Kua ${res.kua_number} (${res.element})` : res.group}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: "0.84rem", color: "var(--ink-soft)", lineHeight: 1.5, margin: "0 0 8px 0" }}>{res.placement_advice}</p>
+                    {res.favorable_directions?.length ? (
+                      <div style={{ fontSize: "0.76rem", color: "#2E7D5A", fontWeight: 600, background: "rgba(46, 125, 90, 0.08)", padding: "6px 8px", borderRadius: "6px" }}>
+                        ✨ Kierunki sprzyjające: {res.favorable_directions.join(" · ")}
+                      </div>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {/* Key Room Diagnostics */}
           {report.room_recommendations && report.room_recommendations.length > 0 ? (

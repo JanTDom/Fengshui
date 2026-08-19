@@ -4289,18 +4289,18 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-width: 22px;
-  height: 24px;
-  padding: 0 8px;
-  max-width: 120px;
-  border: 1.5px solid #FFFFFF;
-  border-radius: 999px;
+  gap: 3px;
+  min-width: 14px;
+  height: 18px;
+  padding: 0 6px;
+  max-width: 140px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
   background: var(--ink);
   color: #FFFFFF;
-  box-shadow: 0 3px 10px rgba(16, 34, 31, 0.28);
-  font-size: 0.70rem;
-  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(16, 34, 31, 0.2);
+  font-size: 0.62rem;
+  font-weight: 700;
   letter-spacing: 0.01em;
   cursor: grab;
   user-select: none;
@@ -4313,48 +4313,53 @@ body {
 }
 
 .plan-marker:hover {
-  transform: scale(1.08);
-  box-shadow: 0 6px 16px rgba(16, 34, 31, 0.38);
+  transform: scale(1.06);
+  box-shadow: 0 4px 12px rgba(16, 34, 31, 0.3);
 }
 
 .plan-marker.selected {
-  outline: 2.5px solid #C49544;
-  outline-offset: 2px;
-  transform: scale(1.12);
-  box-shadow: 0 6px 20px rgba(196, 148, 63, 0.5);
+  outline: 2px solid #C49544;
+  outline-offset: 1.5px;
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(196, 148, 63, 0.45);
 }
 
 .plan-marker.room {
-  background: rgba(255, 255, 255, 0.94);
+  background: rgba(255, 255, 255, 0.95);
   color: #10221F;
-  border-color: #2D5A46;
-  border-radius: 6px;
-  height: 22px;
-  padding: 0 7px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  border: 1px solid #2D5A46;
+  border-radius: 3px;
+  height: 17px;
+  padding: 0 5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  font-size: 0.62rem;
+  font-weight: 700;
 }
 
 .plan-marker.room .pin-dot {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background: #2D5A46;
 }
 
 .plan-marker.fixed {
-  background: #2B536D;
+  background: rgba(43, 83, 109, 0.92);
   color: #FFFFFF;
-  border-color: #FFFFFF;
-  border-radius: 6px;
-  height: 22px;
-  padding: 0 7px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 3px;
+  height: 16px;
+  padding: 0 5px;
+  font-size: 0.60rem;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .plan-marker.fixed .pin-dot {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: #73A8C7;
+  background: #A0CBE5;
 }
 
 .north-wizard.plan-expanded .scan-preview {
@@ -4546,6 +4551,54 @@ body {
 .resident-tag-highlight {
   color: #F7D486;
   font-weight: 900;
+}
+
+.res-birth-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.res-input-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.res-field-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #5A6D67;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.res-birth-row input[type="date"],
+.res-birth-row input[type="time"] {
+  width: 100%;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.kua-hour-text {
+  display: block;
+  font-size: 0.72rem;
+  color: #C59642;
+  font-weight: 700;
+  margin-top: 3px;
+}
+
+.kua-hour-hint {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 2px;
 }
 
 .pin-content {

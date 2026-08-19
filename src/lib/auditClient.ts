@@ -1,5 +1,6 @@
 import type { AuditApiResponse, AuditFilePayload, AuditReport, AuditRequestPayload, BuildingNatalChart, PlanMarker } from "../auditTypes";
 import { calculateBuildingNatalChart } from "./natalChartEngine";
+import { calculateKua, calculateBaZiHourPillar } from "./kuaEngine";
 import { hasSupabaseConfig, supabase } from "./supabase";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -97,6 +98,38 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
   const residentsCount = payload.residentProfiles?.length ?? 1;
   const activeResident = payload.residentProfiles?.[0];
 
+  const residentAnalysis = (payload.residentProfiles || []).map((res) => {
+    const kuaData = res.birthDate ? calculateKua(res.birthDate, res.gender) : null;
+    const hourPillar = res.birthTime ? calculateBaZiHourPillar(res.birthTime) : null;
+
+    const favDirs = kuaData
+      ? [`Sheng Qi (Witalność/Sukces): ${kuaData.shengChi}`, `Tian Yi (Zdrowie/Sen): ${kuaData.tianYi}`, `Yan Nian (Harmonia): ${kuaData.yanNian}`, `Fu Wei (Spokój): ${kuaData.fuWei}`]
+      : ["Wschód (E)", "Południe (S)", "Północ (N)"];
+    const unfavDirs = kuaData?.inauspicious ?? ["Północny Zachód (NW)", "Zachód (W)"];
+
+    let placementAdvice = kuaData
+      ? `Wezgłowie łóżka: ${kuaData.bedAdvice} · Biurko: ${kuaData.deskAdvice}`
+      : "Zapewnij stabilne oparcie wezgłowia na pełnej ścianie nośnej z widokiem na wejście.";
+
+    if (hourPillar) {
+      placementAdvice += `\n[Filar Godziny: ${hourPillar.animal} (${hourPillar.element}) — ${hourPillar.significance}]`;
+    }
+
+    return {
+      name: res.label || "Główny domownik",
+      role: res.role || "Domownik",
+      gender: res.gender === "female" ? "Kobieta" : "Mężczyzna",
+      kua_number: kuaData?.kua ?? 1,
+      group: kuaData?.group ?? "Grupa Wschodnia",
+      element: kuaData?.element ?? "Woda",
+      favorable_directions: favDirs,
+      unfavorable_directions: unfavDirs,
+      assigned_furniture: [res.role?.toLowerCase().includes("praca") ? "Biurko dowodzenia" : "Łóżko główne"],
+      placement_advice: placementAdvice,
+      yearly_warning: kuaData?.yearlyAdvice
+    };
+  });
+
   return {
     score: 84,
     confidence: northConfirmed ? "high" : "medium",
@@ -145,6 +178,7 @@ function createFallbackAuditReport(payload: AuditRequestPayload): AuditReport {
     zones: [],
     directional_insights: [],
     sector_map: [],
+    resident_analysis: residentAnalysis,
     room_recommendations: [
       {
         room: "Sypialnia",
@@ -1295,12 +1329,22 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
   const pdfMake = (pdfMakeModule.default ?? pdfMakeModule) as any;
   const fontPayload = (pdfFontsModule.default ?? pdfFontsModule) as any;
 
-  const virtualFileSystem = fontPayload.vfs ?? fontPayload;
-  if (typeof pdfMake.addVirtualFileSystem === "function") {
-    pdfMake.addVirtualFileSystem(virtualFileSystem);
-  } else {
+  const virtualFileSystem =
+    fontPayload?.pdfMake?.vfs ||
+    fontPayload?.vfs ||
+    (pdfFontsModule as any)?.pdfMake?.vfs ||
+    (pdfFontsModule as any)?.vfs ||
+    (window as any)?.pdfMake?.vfs ||
+    (window as any)?.vfs ||
+    fontPayload;
+
+  if (virtualFileSystem) {
+    if (typeof pdfMake.addVirtualFileSystem === "function") {
+      pdfMake.addVirtualFileSystem(virtualFileSystem);
+    }
     pdfMake.vfs = virtualFileSystem;
   }
+
   pdfMake.fonts = pdfMake.fonts ?? {
     Roboto: {
       normal: "Roboto-Regular.ttf",
@@ -1311,15 +1355,20 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
   };
 
   const northAngle = Number(options.northAngleDeg ?? 0);
-  const planOverlayImage = await createPlanSectorOverlayImage(
-    options.planFile,
-    report,
-    northAngle,
-    options.planMarkers || []
-  ).catch((err) => {
-    console.error("Błąd tworzenia nakładki rzutu:", err);
-    return null;
-  });
+  let planOverlayImage: string | null = null;
+  try {
+    if (options.planFile && canUsePlanImageInPdf(options.planFile)) {
+      planOverlayImage = await createPlanSectorOverlayImage(
+        options.planFile,
+        report,
+        northAngle,
+        options.planMarkers || []
+      );
+    }
+  } catch (err) {
+    console.warn("Błąd tworzenia nakładki rzutu do PDF, generuję raport bez podkładu:", err);
+    planOverlayImage = null;
+  }
 
   const roomCards = report.room_recommendations.slice(0, 8).map((room) =>
     pdfCard(
@@ -1645,10 +1694,21 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
   };
 
   const pdfDocument = pdfMake.createPdf(docDefinition);
+  const fileName = `plan-harmonii-raport-${Date.now()}.pdf`;
+
+  try {
+    if (typeof pdfDocument.download === "function") {
+      pdfDocument.download(fileName);
+      return;
+    }
+  } catch (directErr) {
+    console.warn("pdfMake.download failed, falling back to Blob:", directErr);
+  }
+
   const blob = await new Promise<Blob>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
       reject(new Error("Generator PDF przekroczył limit czasu."));
-    }, 25000);
+    }, 15000);
 
     try {
       pdfDocument.getBlob((generatedBlob: Blob) => {
@@ -1669,9 +1729,9 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `plan-harmonii-raport-${Date.now()}.pdf`;
+  link.download = fileName;
   document.body.appendChild(link);
   link.click();
   link.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.setTimeout(() => URL.revokeObjectURL(url), 2000);
 }

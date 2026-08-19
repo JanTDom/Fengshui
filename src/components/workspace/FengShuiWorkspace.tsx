@@ -40,7 +40,7 @@ import {
   persistAuditIntake,
   validateAuditFiles
 } from "../../lib/auditClient";
-import { calculateKua } from "../../lib/kuaEngine";
+import { calculateKua, calculateBaZiHourPillar } from "../../lib/kuaEngine";
 import { getBuildingPeriod } from "../../lib/natalChartEngine";
 import { triggerBrandConfetti } from "../../lib/confetti";
 
@@ -1025,6 +1025,8 @@ export function FengShuiWorkspace({
               <div className="residents-intel-list">
                 {residents.map((r, idx) => {
                   const kua = r.birthDate ? calculateKua(r.birthDate, r.gender) : null;
+                  const hourPillar = r.birthTime ? calculateBaZiHourPillar(r.birthTime) : null;
+
                   return (
                     <div key={idx} className="resident-intel-item">
                       <div className="res-row-head">
@@ -1040,14 +1042,15 @@ export function FengShuiWorkspace({
                           value={r.gender || "male"}
                           onChange={(e) => handleUpdateResident(idx, { gender: e.target.value as "male" | "female" })}
                         >
-                          <option value="male">M</option>
-                          <option value="female">K</option>
+                          <option value="male">Mężczyzna</option>
+                          <option value="female">Kobieta</option>
                         </select>
                         {residents.length > 1 ? (
                           <button
                             type="button"
                             className="res-del-btn"
                             onClick={() => handleRemoveResident(idx)}
+                            title="Usuń domownika"
                           >
                             ✕
                           </button>
@@ -1055,17 +1058,34 @@ export function FengShuiWorkspace({
                       </div>
 
                       <div className="res-birth-row">
-                        <input
-                          type="date"
-                          value={r.birthDate}
-                          onChange={(e) => handleUpdateResident(idx, { birthDate: e.target.value })}
-                        />
+                        <div className="res-input-col">
+                          <label className="res-field-label">Data urodzenia:</label>
+                          <input
+                            type="date"
+                            value={r.birthDate}
+                            onChange={(e) => handleUpdateResident(idx, { birthDate: e.target.value })}
+                          />
+                        </div>
+                        <div className="res-input-col">
+                          <label className="res-field-label">Godzina (opcjonalnie):</label>
+                          <input
+                            type="time"
+                            value={r.birthTime || ""}
+                            onChange={(e) => handleUpdateResident(idx, { birthTime: e.target.value })}
+                            title="Godzina urodzenia (opcjonalnie) — pozwala obliczyć Filar Godziny BaZi"
+                          />
+                        </div>
                       </div>
 
                       {kua ? (
                         <div className="res-kua-summary">
                           <span className="kua-badge">Kua {kua.kua} · {kua.element} ({kua.group})</span>
                           <small className="kua-dirs-text">✨ Sprzyjające: {kua.shengChi}, {kua.tianYi}</small>
+                          {hourPillar ? (
+                            <small className="kua-hour-text">⏳ Filar Godziny BaZi: {hourPillar.animal} ({hourPillar.element})</small>
+                          ) : (
+                            <small className="kua-hour-hint">💡 Godzina pozwala obliczyć Filar Godziny BaZi</small>
+                          )}
                         </div>
                       ) : null}
                     </div>
@@ -1166,74 +1186,85 @@ function renderCadSymbolSvg(furn: string) {
   if (furn === "Łóżko") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg bed-svg" aria-hidden="true">
-        <rect x="14" y="8" width="44" height="6" rx="1.5" fill="#C49544" stroke="#1A2B27" strokeWidth="1.8" />
-        <rect x="16" y="14" width="40" height="50" rx="2" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        <rect x="19" y="17" width="15" height="11" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
-        <rect x="38" y="17" width="15" height="11" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
-        <line x1="16" y1="36" x2="56" y2="36" stroke="#C49544" strokeWidth="1.5" strokeDasharray="3 2" />
+        {/* Headboard */}
+        <rect x="14" y="8" width="44" height="5" fill="#C49544" stroke="#1A2B27" strokeWidth="1.6" />
+        {/* Mattress outline */}
+        <rect x="16" y="13" width="40" height="51" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
+        {/* Pillows */}
+        <rect x="19" y="16" width="15" height="11" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
+        <rect x="38" y="16" width="15" height="11" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
+        {/* Blanket fold line */}
+        <line x1="16" y1="36" x2="56" y2="36" stroke="#C49544" strokeWidth="1.4" strokeDasharray="3 2" />
       </svg>
     );
   }
   if (furn === "Biurko") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg desk-svg" aria-hidden="true">
-        <rect x="12" y="12" width="48" height="26" rx="2" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        <rect x="23" y="15" width="26" height="5" rx="1" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1" />
-        <rect x="27" y="24" width="18" height="8" rx="1.5" fill="#FAF7F2" stroke="#C49544" strokeWidth="1.2" />
-        <circle cx="36" cy="51" r="9" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        <path d="M 31 51 Q 36 45 41 51" stroke="#C49544" strokeWidth="2" fill="none" strokeLinecap="round" />
-        <line x1="36" y1="38" x2="36" y2="42" stroke="#1A2B27" strokeWidth="2" />
+        {/* Desk top */}
+        <rect x="12" y="12" width="48" height="26" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
+        {/* Monitor / Laptop */}
+        <rect x="23" y="15" width="26" height="4" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1" />
+        {/* Keyboard / Pad */}
+        <rect x="27" y="23" width="18" height="8" fill="#FAF7F2" stroke="#C49544" strokeWidth="1.1" />
+        {/* Chair */}
+        <circle cx="36" cy="51" r="8.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
+        <path d="M 31 51 Q 36 45 41 51" stroke="#C49544" strokeWidth="1.8" fill="none" strokeLinecap="square" />
+        <line x1="36" y1="38" x2="36" y2="42.5" stroke="#1A2B27" strokeWidth="1.6" />
       </svg>
     );
   }
   if (furn === "Sofa") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        <path d="M 12 16 L 60 16 L 60 26 L 12 26 Z" fill="#D4A757" stroke="#1A2B27" strokeWidth="2" />
-        <line x1="36" y1="16" x2="36" y2="26" stroke="#1A2B27" strokeWidth="1.5" strokeDasharray="2 2" />
-        <rect x="12" y="26" width="10" height="30" rx="3" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
-        <rect x="50" y="26" width="10" height="30" rx="3" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
-        <rect x="22" y="26" width="14" height="30" rx="2" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.8" />
-        <rect x="36" y="26" width="14" height="30" rx="2" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Backrest */}
+        <rect x="12" y="16" width="48" height="10" fill="#D4A757" stroke="#1A2B27" strokeWidth="1.8" />
+        <line x1="36" y1="16" x2="36" y2="26" stroke="#1A2B27" strokeWidth="1.4" strokeDasharray="2 2" />
+        {/* Armrests */}
+        <rect x="12" y="26" width="9" height="30" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+        <rect x="51" y="26" width="9" height="30" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+        {/* Cushions */}
+        <rect x="21" y="26" width="15" height="30" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.6" />
+        <rect x="36" y="26" width="15" height="30" fill="#EAE4D6" stroke="#1A2B27" strokeWidth="1.6" />
       </svg>
     );
   }
   if (furn === "Lustro") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg mirror-svg" aria-hidden="true">
-        <rect x="16" y="8" width="40" height="6" rx="1.5" fill="#1A2B27" stroke="#C49544" strokeWidth="1.5" />
-        <path d="M 16 14 L 4 58 L 68 58 L 56 14 Z" fill="rgba(59, 122, 107, 0.12)" stroke="rgba(59, 122, 107, 0.45)" strokeWidth="1.2" strokeDasharray="3 2" />
-        <circle cx="36" cy="40" r="3" fill="#C49544" />
+        <rect x="16" y="8" width="40" height="5" fill="#1A2B27" stroke="#C49544" strokeWidth="1.4" />
+        <path d="M 16 13 L 6 56 L 66 56 L 56 13 Z" fill="rgba(59, 122, 107, 0.12)" stroke="rgba(59, 122, 107, 0.45)" strokeWidth="1.2" strokeDasharray="3 2" />
+        <circle cx="36" cy="38" r="3" fill="#C49544" />
       </svg>
     );
   }
   if (furn === "Szafa") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg storage-svg" aria-hidden="true">
-        <rect x="10" y="16" width="52" height="40" rx="2" fill="#F4EFE6" stroke="#1A2B27" strokeWidth="2" />
-        <line x1="36" y1="16" x2="36" y2="56" stroke="#1A2B27" strokeWidth="1.5" />
-        <rect x="33" y="32" width="2" height="8" rx="0.5" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
-        <rect x="37" y="32" width="2" height="8" rx="0.5" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
-        <line x1="10" y1="16" x2="62" y2="16" stroke="#C49544" strokeWidth="2.5" />
+        <rect x="10" y="16" width="52" height="40" fill="#F4EFE6" stroke="#1A2B27" strokeWidth="1.8" />
+        <line x1="36" y1="16" x2="36" y2="56" stroke="#1A2B27" strokeWidth="1.4" />
+        <rect x="33" y="32" width="2" height="8" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
+        <rect x="37" y="32" width="2" height="8" fill="#C49544" stroke="#1A2B27" strokeWidth="0.8" />
+        <line x1="10" y1="16" x2="62" y2="16" stroke="#C49544" strokeWidth="2.2" />
       </svg>
     );
   }
   if (furn === "Stół jadalny") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg table-svg" aria-hidden="true">
-        <rect x="20" y="20" width="32" height="32" rx="4" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
-        <circle cx="36" cy="36" r="4" fill="#EAE4D6" stroke="#C49544" strokeWidth="1" />
-        <rect x="24" y="8" width="24" height="8" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
-        <rect x="24" y="56" width="24" height="8" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
-        <rect x="8" y="24" width="8" height="24" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
-        <rect x="56" y="24" width="8" height="24" rx="2.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.5" />
+        <rect x="20" y="20" width="32" height="32" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+        <circle cx="36" cy="36" r="3.5" fill="#EAE4D6" stroke="#C49544" strokeWidth="1" />
+        <rect x="24" y="9" width="24" height="7" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
+        <rect x="24" y="56" width="24" height="7" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
+        <rect x="9" y="24" width="7" height="24" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
+        <rect x="56" y="24" width="7" height="24" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
       </svg>
     );
   }
   return (
     <svg viewBox="0 0 72 72" className="arch-furniture-svg generic-svg" aria-hidden="true">
-      <rect x="14" y="14" width="44" height="44" rx="4" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="2" />
-      <path d="M 36 46 L 36 22 M 28 30 L 36 20 L 44 30" stroke="#C49544" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="14" y="14" width="44" height="44" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
+      <path d="M 36 46 L 36 22 M 28 30 L 36 20 L 44 30" stroke="#C49544" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter" />
     </svg>
   );
 }
