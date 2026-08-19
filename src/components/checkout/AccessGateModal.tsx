@@ -189,9 +189,11 @@ export function AccessGateModal({
               onChange={(e) => setConsentDigitalDelivery(e.target.checked)}
             />
             <span>
-              Wyrażam zgodę na natychmiastowe rozpoczęcie świadczenia usługi i odblokowanie
-              studia planistycznego przed upływem terminu do odstąpienia od umowy oraz przyjmuję
-              do wiadomości, że tracę prawo do odstąpienia od umowy z chwilą wygenerowania raportu.
+              Akceptuję <a href="/regulamin.html" target="_blank" rel="noopener noreferrer">Regulamin</a> oraz{" "}
+              <a href="/polityka-prywatnosci.html" target="_blank" rel="noopener noreferrer">Politykę prywatności</a>.{" "}
+              Wyrażam zgodę na natychmiastowe dostarczenie treści cyfrowej przed upływem 14 dni na odstąpienie od umowy
+              i przyjmuję do wiadomości, że tracę prawo do odstąpienia od umowy z chwilą wygenerowania raportu
+              (art. 38 ust. 1 pkt 13 ustawy o prawach konsumenta).
             </span>
           </label>
 
@@ -212,13 +214,13 @@ export function AccessGateModal({
               <span>
                 {isProcessing
                   ? "Weryfikacja płatności..."
-                  : `Opłać ${currentPlan.price} i przejdź do Studia`}
+                  : `Opłać ${currentPlan.price} przez Przelewy24`}
               </span>
             </button>
 
             <div className="checkout-guarantee">
               <ShieldCheck size={16} />
-              <span>Bezpieczne szyfrowanie SSL · Natychmiastowe odblokowanie rzutu</span>
+              <span>Płatność Przelewy24 / BLIK · Sprzedawca: Multinewsroom Jan Domaniewski (NIP: 5252189241)</span>
             </div>
           </div>
         </form>

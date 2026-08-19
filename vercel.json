@@ -1,5 +1,12 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/regulamin", "destination": "/regulamin.html" },
+    { "source": "/polityka-prywatnosci", "destination": "/polityka-prywatnosci.html" },
+    { "source": "/rodo", "destination": "/polityka-prywatnosci.html" },
+    { "source": "/kontakt", "destination": "/kontakt.html" }
+  ],
   "headers": [
     {
       "source": "/",

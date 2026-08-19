@@ -49,13 +49,13 @@ export function Footer() {
             </div>
 
             <div className="mkt-footer-col">
-              <h4>Zaufanie & Prawo</h4>
+              <h4>Zaufanie i Prawo</h4>
               <ul>
-                <li><a href="#faq">Polityka prywatności</a></li>
-                <li><a href="#faq">Regulamin świadczenia usług</a></li>
-                <li><a href="#faq">Zgoda konsumencka</a></li>
-                <li><a href="#faq">Płatności BLIK / P24</a></li>
-                <li><a href="mailto:kontakt@e-fengshui.pl">Kontakt i wsparcie</a></li>
+                <li><a href="/regulamin.html">Regulamin serwisu</a></li>
+                <li><a href="/polityka-prywatnosci.html">Polityka prywatności (RODO)</a></li>
+                <li><a href="/kontakt.html">Dane sprzedawcy i kontakt</a></li>
+                <li><a href="mailto:kontakt@multinewsroom.pl">kontakt@multinewsroom.pl</a></li>
+                <li><a href="tel:+48515413098">+48 515 413 098</a></li>
               </ul>
             </div>
           </div>
@@ -63,14 +63,14 @@ export function Footer() {
 
         <div className="mkt-footer-bottom">
           <div className="mkt-footer-legal">
-            <p>© {new Date().getFullYear()} e-fengshui.pl. Wszelkie prawa zastrzeżone.</p>
+            <p>© {new Date().getFullYear()} E-FENGSHUI.PL &nbsp;·&nbsp; Właścicielem serwisu i Administratorem danych osobowych jest <b>Multinewsroom Jan Domaniewski</b>, ul. Barcicka 44, 01-839 Warszawa, NIP: 5252189241, REGON: 147154574.</p>
             <p className="mkt-footer-sublegal">
-              Plan Harmonii i e-fengshui.pl stanowią zaawansowane narzędzie informacyjno-doradcze oparte na tradycyjnych zasadach wiedzy przestrzennej Feng Shui oraz współczesnej ergonomii.
+              Płatności elektroniczne (BLIK, szybki przelew Pay-by-link, karty płatnicze) realizuje <b>PayPro S.A. (Przelewy24)</b> – Krajowa Instytucja Płatnicza z siedzibą w Poznaniu. Serwis e-fengshui.pl dostarcza treści i narzędzia cyfrowe do analizy przestrzennej i ergonomii wnętrz.
             </p>
           </div>
           <div className="mkt-footer-safe-tag">
             <ShieldCheck size={16} />
-            <span>100% Bezpieczna Płatność</span>
+            <span>Płatności Przelewy24 & BLIK</span>
           </div>
         </div>
       </div>
