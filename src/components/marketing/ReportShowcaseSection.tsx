@@ -26,35 +26,37 @@ const reportFeatures = [
 export function ReportShowcaseSection() {
   return (
     <section className="report-showcase-section" id="raport">
-      <div className="section-heading">
-        <span className="section-kicker">Zawartość raportu</span>
-        <h2>Dokument decyzyjny o jakości wydawniczej</h2>
-        <p>
-          Otrzymujesz elegancki, uporządkowany raport PDF gotowy do druku lub omówienia z architektem,
-          inwestorem czy partnerem.
-        </p>
-      </div>
+      <div className="marketing-container">
+        <div className="section-heading">
+          <span className="section-kicker">Zawartość raportu</span>
+          <h2>Dokument decyzyjny o jakości wydawniczej</h2>
+          <p>
+            Otrzymujesz elegancki, uporządkowany raport PDF gotowy do druku lub omówienia z architektem,
+            inwestorem czy partnerem.
+          </p>
+        </div>
 
-      <div className="deliverables-grid">
-        {reportFeatures.map((feature) => {
-          const Icon = feature.icon;
-          return (
-            <article key={feature.title} className="deliverable-card">
-              <div className="deliverable-icon">
-                <Icon size={26} />
-              </div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
-            </article>
-          );
-        })}
-      </div>
+        <div className="deliverables-grid">
+          {reportFeatures.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <article key={feature.title} className="deliverable-card">
+                <div className="deliverable-icon">
+                  <Icon size={24} />
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+              </article>
+            );
+          })}
+        </div>
 
-      <div className="report-security-badge">
-        <ShieldCheck size={20} />
-        <div>
-          <strong>Prywatność i ochrona danych:</strong>
-          <span> Twoje rzuty i dane domowników są przetwarzane w szyfrowanej infrastrukturze i nie są publicznie udostępniane.</span>
+        <div className="report-security-badge">
+          <ShieldCheck size={24} />
+          <div>
+            <strong>Prywatność i ochrona danych:</strong>
+            <span> Twoje rzuty i dane domowników są przetwarzane w szyfrowanej infrastrukturze i nie są publicznie udostępniane.</span>
+          </div>
         </div>
       </div>
     </section>

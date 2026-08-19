@@ -1,87 +1,83 @@
-import { Building2, Check, ChevronRight, Home, Sparkles } from "lucide-react";
+import { Check, Home, PenTool, Wrench } from "lucide-react";
 
 interface AudienceSectionProps {
   onSelectAudience: () => void;
 }
 
-const audienceCards = [
+const audiences = [
   {
-    id: "buyers",
-    title: "Kupujesz mieszkanie lub dom",
-    tag: "Przed podpisaniem umowy",
-    description: "Sprawdź, czy rzut deweloperski lub z rynku wtórnego nie ma ukrytych wad funkcjonalnych, których nie da się tanio naprawić.",
-    points: [
-      "Wykrycie brakujących stref w bryle lokalu",
-      "Ocena doświetlenia i osi drzwi-okna",
-      "Oszacowanie kosztu ewentualnych korekt"
+    title: "Kupujący mieszkanie lub dom",
+    description: "Zanim podpiszesz umowę deweloperską lub przedwstępną, sprawdź układ ścian, strefy wejścia i potencjał energetyczny.",
+    checklist: [
+      "Ocena układu deweloperskiego",
+      "Wykrycie brakujących stref Bagua",
+      "Rekomendacja decyzyjna: kupić / negocjować"
     ],
     icon: Home
   },
   {
-    id: "renovators",
-    title: "Planujesz remont lub aranżację",
-    tag: "Przed wejściem ekipy",
-    description: "Ustaw meble w pozycjach dominujących (wezgłowie, biurko) i zaplanuj strefy snu, pracy oraz wypoczynku bez chaosu.",
-    points: [
-      "Pozycja dominująca dla łóżka i miejsca pracy",
-      "Korekty bez wyburzania ścian nośnych",
-      "Dobór 3 warstw oświetlenia i palet barw"
+    title: "Osoby przed remontem i aranżacją",
+    description: "Zoptymalizuj układ mebli, pozycję łóżka i biurka bez kosztownych wyburzeń i nietrafionych zakupów.",
+    checklist: [
+      "Pozycje bezpieczne dla domowników",
+      "Dobór oświetlenia (2700K vs 4000K)",
+      "Bezkosztowe korekty ustawień mebli"
     ],
-    icon: Sparkles
+    icon: Wrench
   },
   {
-    id: "professionals",
-    title: "Projektanci, architekci i agenci",
-    tag: "Narzędzie B2B & Argumentacja",
-    description: "Zyskaj elegancki, obiektywny raport audytowy jako merytoryczne uzasadnienie koncepcji dla inwestora lub klienta.",
-    points: [
-      "Gotowy PDF z rejestrem źródeł metod",
-      "Weryfikacja ścian działowych vs nośnych",
-      "Przejrzysty ranking przy porównaniu 3 lokali"
+    title: "Architekci i projektanci wnętrz",
+    description: "Wzbogać swoje koncepcje o audyt tradycyjnych zasad Formy i precyzyjne uzasadnienie kierunków funkcjonalnych.",
+    checklist: [
+      "Raport PDF do włączenia do projektu",
+      "Analiza kompasowa i żywiołów Wu Xing",
+      "Dodatkowa wartość merytoryczna dla klienta"
     ],
-    icon: Building2
+    icon: PenTool
   }
 ];
 
 export function AudienceSection({ onSelectAudience }: AudienceSectionProps) {
   return (
     <section className="audience-section" id="dla-kogo">
-      <div className="section-heading">
-        <span className="section-kicker">Zastosowanie</span>
-        <h2>Dla kogo został stworzony e-fengshui.pl?</h2>
-        <p>Precyzyjna analiza przestrzenna dopasowana do Twojego momentu decyzyjnego.</p>
-      </div>
+      <div className="marketing-container">
+        <div className="section-heading">
+          <span className="section-kicker">Dedykowane Rozwiązania</span>
+          <h2>Dla kogo powstało e-fengshui.pl?</h2>
+          <p>
+            Stworzone dla każdego, kto podejmuje ważne decyzje dotyczące przestrzeni do życia i pracy.
+          </p>
+        </div>
 
-      <div className="audience-grid">
-        {audienceCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <article key={card.id} className="audience-card">
-              <div className="audience-card-top">
-                <Icon size={28} />
-                <span className="audience-tag">{card.tag}</span>
-              </div>
-              <h3>{card.title}</h3>
-              <p>{card.description}</p>
-              <ul className="audience-points">
-                {card.points.map((pt) => (
-                  <li key={pt}>
-                    <Check size={16} />
-                    <span>{pt}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                type="button"
-                className="ghost-button"
-                onClick={onSelectAudience}
-              >
-                Sprawdź swój plan
-                <ChevronRight size={16} />
-              </button>
-            </article>
-          );
-        })}
+        <div className="audience-grid">
+          {audiences.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article key={item.title} className="audience-card">
+                <div className="audience-icon-wrap">
+                  <Icon size={26} />
+                </div>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+                <ul className="audience-checklist">
+                  {item.checklist.map((point) => (
+                    <li key={point}>
+                      <Check size={16} />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={onSelectAudience}
+                >
+                  Sprawdź swój lokal
+                </button>
+              </article>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

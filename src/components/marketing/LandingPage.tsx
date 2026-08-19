@@ -8,6 +8,7 @@ import { PricingSection } from "./PricingSection";
 import { FaqSection } from "./FaqSection";
 import { Footer } from "./Footer";
 import { Sparkles, ArrowRight } from "lucide-react";
+import "../../marketing.css";
 
 interface LandingPageProps {
   onOpenCheckout: (planId?: string) => void;
@@ -54,20 +55,22 @@ export function LandingPage({
         <FaqSection />
 
         <section className="final-cta-clean">
-          <div className="final-cta-inner">
-            <span className="cta-icon-pill">
-              <Sparkles size={20} />
-            </span>
-            <h2>Masz plan nieruchomości? Sprawdź go zanim zainwestujesz czas i pieniądze.</h2>
-            <p>Wybierz pakiet i odblokuj natychmiastowy dostęp do Studia Planowania e-fengshui.pl.</p>
-            <button
-              className="primary-button large"
-              type="button"
-              onClick={() => onOpenCheckout("full")}
-            >
-              Rozpocznij audyt rzutu
-              <ArrowRight size={18} />
-            </button>
+          <div className="marketing-container">
+            <div className="final-cta-inner">
+              <span className="cta-icon-pill">
+                <Sparkles size={24} />
+              </span>
+              <h2>Masz plan nieruchomości? Sprawdź go zanim zainwestujesz czas i pieniądze.</h2>
+              <p>Wybierz pakiet i odblokuj natychmiastowy dostęp do Studia Planowania e-fengshui.pl.</p>
+              <button
+                className="primary-button large"
+                type="button"
+                onClick={() => onOpenCheckout("full")}
+              >
+                Rozpocznij audyt rzutu
+                <ArrowRight size={18} />
+              </button>
+            </div>
           </div>
         </section>
       </main>

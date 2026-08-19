@@ -34,39 +34,41 @@ const steps = [
 export function ProcessSection({ onStart }: ProcessSectionProps) {
   return (
     <section className="process-section" id="jak-dziala" aria-label="Jak działa proces">
-      <div className="section-heading">
-        <span className="section-kicker">Prosty i przejrzysty proces</span>
-        <h2>Od rzutu do gotowej ekspertyzy w 4 krokach</h2>
-        <p>
-          Kupujesz dostęp, przechodzisz do profesjonalnego studia planistycznego i wykonujesz
-          analizę w skupieniu bez reklam i rozpraszaczy.
-        </p>
-      </div>
+      <div className="marketing-container">
+        <div className="section-heading">
+          <span className="section-kicker">Prosty i przejrzysty proces</span>
+          <h2>Od rzutu do gotowej ekspertyzy w 4 krokach</h2>
+          <p>
+            Kupujesz dostęp, przechodzisz do profesjonalnego studia planistycznego i wykonujesz
+            analizę w skupieniu bez reklam i rozpraszaczy.
+          </p>
+        </div>
 
-      <div className="process-steps-grid">
-        {steps.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.step} className="process-step-card">
-              <div className="step-number-badge">
-                <span>{item.step}</span>
+        <div className="process-steps-grid">
+          {steps.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.step} className="process-step-card">
+                <div className="step-number-badge">
+                  <span>{item.step}</span>
+                </div>
+                <div className="step-icon-box">
+                  <Icon size={24} />
+                </div>
+                <h3>{item.title}</h3>
+                <p>{item.outcome}</p>
               </div>
-              <div className="step-icon-box">
-                <Icon size={24} />
-              </div>
-              <h3>{item.title}</h3>
-              <p>{item.outcome}</p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <div className="process-cta-bar">
-        <span>Gotowy, aby sprawdzić swoje wnętrze?</span>
-        <button type="button" className="primary-button" onClick={onStart}>
-          Rozpocznij teraz
-          <ArrowRight size={16} />
-        </button>
+        <div className="process-cta-bar">
+          <span>Gotowy, aby sprawdzić swoje wnętrze?</span>
+          <button type="button" className="primary-button" onClick={onStart}>
+            Rozpocznij teraz
+            <ArrowRight size={16} />
+          </button>
+        </div>
       </div>
     </section>
   );
