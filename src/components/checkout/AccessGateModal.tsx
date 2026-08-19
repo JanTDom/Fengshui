@@ -220,7 +220,7 @@ export function AccessGateModal({
 
             <div className="checkout-guarantee">
               <ShieldCheck size={16} />
-              <span>Płatność Przelewy24 / BLIK · Sprzedawca: Multinewsroom Jan Domaniewski (NIP: 5252189241)</span>
+              <span>Płatność Przelewy24 / BLIK · Sprzedawca: Multinewsroom (NIP: 5252189241)</span>
             </div>
           </div>
         </form>

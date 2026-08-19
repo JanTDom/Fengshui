@@ -55,7 +55,6 @@ export function Footer() {
                 <li><a href="/polityka-prywatnosci.html">Polityka prywatności (RODO)</a></li>
                 <li><a href="/kontakt.html">Dane sprzedawcy i kontakt</a></li>
                 <li><a href="mailto:kontakt@multinewsroom.pl">kontakt@multinewsroom.pl</a></li>
-                <li><a href="tel:+48515413098">+48 515 413 098</a></li>
               </ul>
             </div>
           </div>
@@ -63,7 +62,7 @@ export function Footer() {
 
         <div className="mkt-footer-bottom">
           <div className="mkt-footer-legal">
-            <p>© {new Date().getFullYear()} E-FENGSHUI.PL &nbsp;·&nbsp; Właścicielem serwisu i Administratorem danych osobowych jest <b>Multinewsroom Jan Domaniewski</b>, ul. Barcicka 44, 01-839 Warszawa, NIP: 5252189241, REGON: 147154574.</p>
+            <p>© {new Date().getFullYear()} E-FENGSHUI.PL &nbsp;·&nbsp; Właścicielem serwisu i Administratorem danych osobowych jest <b>Multinewsroom</b>, ul. Barcicka 44, 01-839 Warszawa, NIP: 5252189241, REGON: 147154574.</p>
             <p className="mkt-footer-sublegal">
               Płatności elektroniczne (BLIK, szybki przelew Pay-by-link, karty płatnicze) realizuje <b>PayPro S.A. (Przelewy24)</b> – Krajowa Instytucja Płatnicza z siedzibą w Poznaniu. Serwis e-fengshui.pl dostarcza treści i narzędzia cyfrowe do analizy przestrzennej i ergonomii wnętrz.
             </p>
