@@ -449,7 +449,7 @@ export function FengShuiWorkspace({
       setGenerationStep("Analiza pozycji mebli, strefy wejścia i profili Kua domowników...");
 
       const payload: AuditRequestPayload = {
-        email: userEmail || "kontakt@e-fengshui.pl",
+        email: userEmail || "kontakt@multinewsroom.pl",
         planId: selectedPlanId,
         propertyType: propertyKey,
         levelsCount: 1,

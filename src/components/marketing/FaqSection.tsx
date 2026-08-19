@@ -80,7 +80,7 @@ export function FaqSection() {
           <Mail size={20} />
           <div>
             <strong>Masz nietypowy układ lokalu lub dodatkowe pytania?</strong>
-            <span> Napisz do nas na <a href="mailto:kontakt@e-fengshui.pl">kontakt@e-fengshui.pl</a> — odpowiadamy w ciągu 24h.</span>
+            <span> Napisz do nas na <a href="mailto:kontakt@multinewsroom.pl">kontakt@multinewsroom.pl</a> — odpowiadamy w ciągu 24h.</span>
           </div>
         </div>
       </div>
