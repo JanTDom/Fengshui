@@ -30,6 +30,9 @@ export function EmptyWorkspaceState({
             <input
               type="file"
               accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.heif,application/pdf,image/png,image/jpeg,image/webp,image/heic,image/heif"
+              onClick={(event) => {
+                event.currentTarget.value = "";
+              }}
               onChange={onFileSelect}
               style={{ display: "none" }}
             />

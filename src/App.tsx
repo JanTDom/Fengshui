@@ -6,7 +6,7 @@ import type { PropertyKey } from "./data";
 
 export default function App() {
   const [workspaceActive, setWorkspaceActive] = useState<boolean>(() => {
-    // Check if user previously had an active project session in URL or localStorage
+    // Check if user previously had an active project session in URL
     const params = new URLSearchParams(window.location.search);
     return params.get("workspace") === "true";
   });
@@ -16,6 +16,7 @@ export default function App() {
   const [propertyKey, setPropertyKey] = useState<PropertyKey>("flat");
   const [userEmail, setUserEmail] = useState("");
   const [hasUnlockedAccess, setHasUnlockedAccess] = useState(false);
+  const [uploadedPlanFile, setUploadedPlanFile] = useState<File | null>(null);
 
   // Sync workspace state to URL query parameter cleanly
   useEffect(() => {
@@ -32,6 +33,16 @@ export default function App() {
     if (planId) {
       setSelectedPlanId(planId);
     }
+    setCheckoutModalOpen(true);
+  }
+
+  function handleUploadPlanFile(file: File) {
+    setUploadedPlanFile(file);
+    setCheckoutModalOpen(true);
+  }
+
+  function handleTrySamplePlan() {
+    setUploadedPlanFile(null);
     setCheckoutModalOpen(true);
   }
 
@@ -54,12 +65,15 @@ export default function App() {
           userEmail={userEmail}
           selectedPlanId={selectedPlanId}
           propertyKey={propertyKey}
+          initialPlanFile={uploadedPlanFile}
           onExitToHome={() => setWorkspaceActive(false)}
         />
       ) : (
         <LandingPage
           onOpenCheckout={handleOpenCheckout}
           onEnterWorkspaceDirectly={hasUnlockedAccess ? () => setWorkspaceActive(true) : undefined}
+          onUploadPlanFile={handleUploadPlanFile}
+          onTrySamplePlan={handleTrySamplePlan}
           hasActiveProject={hasUnlockedAccess}
         />
       )}

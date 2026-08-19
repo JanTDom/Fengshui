@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type ChangeEvent, type PointerEvent, type MouseEvent } from "react";
+import { useState, useRef, useEffect, type CSSProperties, type ChangeEvent, type PointerEvent, type MouseEvent } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -48,6 +48,7 @@ interface FengShuiWorkspaceProps {
   userEmail: string;
   selectedPlanId: string;
   propertyKey: PropertyKey;
+  initialPlanFile?: File | null;
   onExitToHome: () => void;
 }
 
@@ -89,6 +90,8 @@ const furnitureOptions = [
   "Płyta kuchenna"
 ];
 
+const previewablePlanTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+
 function defaultFurnitureOrientationRole(label: string) {
   if (label === "Łóżko") return "Wezgłowie (kierunek głowy podczas snu)";
   if (label === "Biurko") return "Kierunek wzroku podczas pracy";
@@ -108,11 +111,14 @@ export function FengShuiWorkspace({
   userEmail,
   selectedPlanId,
   propertyKey,
+  initialPlanFile,
   onExitToHome
 }: FengShuiWorkspaceProps) {
   const [projectTitle, setProjectTitle] = useState("Mój Dom - Aranżacja & Feng Shui");
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewMimeType, setPreviewMimeType] = useState<string | null>(null);
+  const [previewAspectRatio, setPreviewAspectRatio] = useState<string | null>(null);
   const [scanTool, setScanTool] = useState<"north" | "marker">("north");
   const [annotationMode, setAnnotationMode] = useState<AnnotationMode>("furniture");
   const [selectedMarkerLabel, setSelectedMarkerLabel] = useState<string>("Łóżko");
@@ -122,6 +128,12 @@ export function FengShuiWorkspace({
   const [northConfirmed, setNorthConfirmed] = useState(false);
   const [showBaguaOverlay, setShowBaguaOverlay] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
+
+  useEffect(() => {
+    if (initialPlanFile && files.length === 0) {
+      setFiles([initialPlanFile]);
+    }
+  }, [initialPlanFile]);
 
   // Furniture adjustment state
   const [furnitureDirection, setFurnitureDirection] = useState(0);
@@ -162,6 +174,26 @@ export function FengShuiWorkspace({
   const [isDraggingNorth, setIsDraggingNorth] = useState(false);
   const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const firstFile = files[0];
+
+    if (!firstFile) {
+      setPreviewUrl(null);
+      setPreviewMimeType(null);
+      setPreviewAspectRatio(null);
+      return;
+    }
+
+    const nextPreviewUrl = URL.createObjectURL(firstFile);
+    setPreviewUrl(nextPreviewUrl);
+    setPreviewMimeType(inferMimeType(firstFile.name, firstFile.type));
+    setPreviewAspectRatio(null);
+
+    return () => {
+      URL.revokeObjectURL(nextPreviewUrl);
+    };
+  }, [files]);
+
   // Load sample plan
   async function handleLoadSamplePlan() {
     try {
@@ -169,8 +201,6 @@ export function FengShuiWorkspace({
       const blob = await response.blob();
       const file = new File([blob], "rzut_mieszkania_64m2.webp", { type: "image/webp" });
       setFiles([file]);
-      const url = URL.createObjectURL(blob);
-      setPreviewUrl(url);
       setNorthAngle(335);
       setNorthConfirmed(true);
       setScanTool("marker");
@@ -216,7 +246,9 @@ export function FengShuiWorkspace({
   }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const selectedFiles = Array.from(event.target.files ?? []);
+    const selectedFiles = Array.from(event.currentTarget.files ?? []);
+    event.currentTarget.value = "";
+
     if (selectedFiles.length === 0) return;
 
     const validation = validateAuditFiles(selectedFiles);
@@ -227,8 +259,6 @@ export function FengShuiWorkspace({
 
     setErrorMessage(null);
     setFiles(selectedFiles);
-    const url = URL.createObjectURL(selectedFiles[0]);
-    setPreviewUrl(url);
     setNorthConfirmed(false);
     setScanTool("north");
   }
@@ -486,6 +516,17 @@ export function FengShuiWorkspace({
     : null;
 
   const buildingPeriodData = getBuildingPeriod(renovationYear || constructionYear || "2020");
+  const isImagePreview = previewablePlanTypes.has(previewMimeType ?? "");
+  const isPdfPreview = previewMimeType === "application/pdf";
+  const canAnnotatePreview = Boolean(previewUrl && (isImagePreview || isPdfPreview));
+  const previewFileName = files[0]?.name ?? "wybrany plik";
+  const scanStageClassName = [
+    "scan-canvas-stage",
+    isPdfPreview ? "pdf-preview" : isImagePreview ? "image-preview" : "file-preview"
+  ].join(" ");
+  const scanStageStyle = isImagePreview && previewAspectRatio
+    ? ({ "--scan-aspect-ratio": previewAspectRatio } as CSSProperties)
+    : undefined;
 
   return (
     <div className="workspace-root">
@@ -684,17 +725,45 @@ export function FengShuiWorkspace({
                 onPointerMove={handleCanvasPointerMove}
                 onPointerUp={handleCanvasPointerUp}
               >
-                <div className="scan-canvas-stage">
-                  <img
-                    ref={planImageRef}
-                    src={previewUrl}
-                    alt="Rzut lokalu do aranżacji"
-                    className="scan-image-elem"
-                    draggable={false}
-                  />
+                <div className={scanStageClassName} style={scanStageStyle}>
+                  {isPdfPreview ? (
+                    <object
+                      data={previewUrl}
+                      type="application/pdf"
+                      className="scan-image-elem scan-pdf-elem"
+                      aria-label={`Podgląd PDF: ${previewFileName}`}
+                    >
+                      <div className="scan-preview-placeholder scan-preview-file-loaded">
+                        <FileUp size={32} />
+                        <strong>{previewFileName}</strong>
+                        <span>PDF został wczytany. Jeśli podgląd nie pokaże się w przeglądarce, nadal możesz uruchomić analizę.</span>
+                      </div>
+                    </object>
+                  ) : isImagePreview ? (
+                    <img
+                      ref={planImageRef}
+                      src={previewUrl}
+                      alt="Rzut lokalu do aranżacji"
+                      className="scan-image-elem"
+                      draggable={false}
+                      onLoad={(event) => {
+                        const image = event.currentTarget;
+                        if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+                          setPreviewAspectRatio(`${image.naturalWidth} / ${image.naturalHeight}`);
+                        }
+                      }}
+                      onError={() => setErrorMessage("Plik został dodany, ale Chrome nie potrafi wyświetlić jego podglądu. Spróbuj PNG, JPG, WEBP lub PDF.")}
+                    />
+                  ) : (
+                    <div className="scan-preview-placeholder scan-preview-file-loaded">
+                      <FileUp size={32} />
+                      <strong>{previewFileName}</strong>
+                      <span>Plik został wczytany, ale ten format nie ma podglądu w przeglądarce. Do oznaczania na rzucie użyj PNG, JPG, WEBP albo PDF.</span>
+                    </div>
+                  )}
 
-                  {/* ANNOTATION LAYER */}
-                  <div className="scan-annotation-layer">
+                  {canAnnotatePreview ? (
+                    <div className="scan-annotation-layer">
                     {/* BAGUA 9-SECTOR OVERLAY */}
                     {showBaguaOverlay ? (
                       <div
@@ -747,7 +816,7 @@ export function FengShuiWorkspace({
                             style={{
                               "--marker-facing": `${marker.facingDeg ?? 0}deg`,
                               "--marker-scale": marker.scale ?? 1.0
-                            } as React.CSSProperties}
+                            } as CSSProperties}
                             onPointerDown={(e) => handleMarkerPointerDown(marker, e)}
                           >
                             {isFurniture ? (
@@ -822,7 +891,8 @@ export function FengShuiWorkspace({
                         </div>
                       );
                     })}
-                  </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

@@ -13,12 +13,16 @@ import "../../marketing.css";
 interface LandingPageProps {
   onOpenCheckout: (planId?: string) => void;
   onEnterWorkspaceDirectly?: () => void;
+  onUploadPlanFile?: (file: File) => void;
+  onTrySamplePlan?: () => void;
   hasActiveProject?: boolean;
 }
 
 export function LandingPage({
   onOpenCheckout,
   onEnterWorkspaceDirectly,
+  onUploadPlanFile,
+  onTrySamplePlan,
   hasActiveProject
 }: LandingPageProps) {
   function scrollToId(id: string) {
@@ -40,6 +44,8 @@ export function LandingPage({
         <HeroSection
           onStartAnalysis={() => onOpenCheckout("full")}
           onViewReportDetails={() => scrollToId("raport")}
+          onUploadPlanFile={onUploadPlanFile}
+          onTrySamplePlan={onTrySamplePlan}
         />
 
         <ProcessSection onStart={() => onOpenCheckout("full")} />

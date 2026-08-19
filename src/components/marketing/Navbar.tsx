@@ -1,4 +1,4 @@
-import { Compass, Sparkles, Layout } from "lucide-react";
+import { Compass, Layout } from "lucide-react";
 
 interface NavbarProps {
   onOpenCheckout: (planId?: string) => void;
@@ -64,6 +64,15 @@ export function Navbar({
                   Q&A
                 </a>
               </li>
+              <li>
+                <button
+                  type="button"
+                  className="mkt-nav-link-button"
+                  onClick={() => onOpenCheckout("full")}
+                >
+                  Rozpocznij
+                </button>
+              </li>
             </ul>
           </nav>
 
@@ -78,15 +87,6 @@ export function Navbar({
                 <span>Otwórz mój projekt</span>
               </button>
             ) : null}
-
-            <button
-              type="button"
-              className="mkt-btn-primary mkt-btn-compact"
-              onClick={() => onOpenCheckout("full")}
-            >
-              <Sparkles size={16} />
-              <span>Rozpocznij analizę</span>
-            </button>
           </div>
         </div>
       </div>

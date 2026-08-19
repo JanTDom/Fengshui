@@ -3922,6 +3922,14 @@ body {
   margin: 0 auto;
 }
 
+.scan-canvas-stage .scan-pdf-elem {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  background: #FFFFFF;
+}
+
 .north-wizard.plan-expanded .scan-preview {
   width: 100%;
   height: 100%;
@@ -3971,6 +3979,25 @@ body {
 
 .scan-preview-placeholder svg {
   color: var(--sage);
+}
+
+.scan-preview-file-loaded {
+  min-width: min(680px, calc(100vw - 64px));
+  min-height: 360px;
+  border: 1.5px dashed rgba(16, 34, 31, 0.18);
+  border-radius: 12px;
+  background: #FFFDFB;
+  box-shadow: 0 14px 38px rgba(16, 34, 31, 0.08);
+}
+
+.scan-preview-file-loaded strong {
+  color: var(--ink);
+  font-size: 1rem;
+}
+
+.scan-preview-file-loaded span {
+  max-width: 420px;
+  color: var(--muted);
 }
 
 .scan-annotation-layer {
@@ -6047,7 +6074,54 @@ body {
 .workspace-canvas-wrapper {
   display: inline-flex;
   position: relative;
+  width: min(100%, 920px);
+  justify-content: center;
+  transform-origin: center center;
   user-select: none;
+}
+
+.workspace-canvas-wrapper .scan-canvas-stage.image-preview {
+  width: auto;
+  height: min(68vh, 580px);
+  max-width: min(920px, calc(100vw - 640px));
+  aspect-ratio: var(--scan-aspect-ratio, 4 / 3);
+}
+
+.workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
+  width: min(900px, calc(100vw - 640px));
+  min-width: min(720px, 100%);
+  height: min(68vh, 580px);
+  min-height: 420px;
+}
+
+.workspace-canvas-wrapper .scan-canvas-stage.file-preview {
+  width: min(680px, 100%);
+  min-height: 360px;
+}
+
+.workspace-canvas-wrapper .scan-canvas-stage.image-preview .scan-image-elem:not(.scan-pdf-elem),
+.workspace-canvas-wrapper .scan-canvas-stage.pdf-preview .scan-pdf-elem {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 1180px) {
+  .workspace-canvas-wrapper {
+    width: min(100%, 760px);
+  }
+
+  .workspace-canvas-wrapper .scan-canvas-stage.image-preview,
+  .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
+    max-width: min(760px, calc(100vw - 64px));
+  }
+
+  .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
+    width: min(760px, calc(100vw - 64px));
+    min-width: 0;
+  }
 }
 
 /* BAGUA 9-SECTOR OVERLAY */
@@ -7182,4 +7256,3 @@ body {
   font-size: 0.68rem;
   font-weight: 800;
 }
-

@@ -1,15 +1,55 @@
-import { ArrowRight, BadgeCheck, Check, Compass, FileCheck2, FileText, Layers, ShieldCheck, Sparkles } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowRight, FileCheck2, FileText, FileUp, ShieldCheck, Sparkles, UploadCloud, Zap } from "lucide-react";
 
 interface HeroSectionProps {
   onStartAnalysis: () => void;
   onViewReportDetails: () => void;
+  onUploadPlanFile?: (file: File) => void;
+  onTrySamplePlan?: () => void;
 }
 
-export function HeroSection({ onStartAnalysis, onViewReportDetails }: HeroSectionProps) {
+export function HeroSection({
+  onStartAnalysis,
+  onViewReportDetails,
+  onUploadPlanFile,
+  onTrySamplePlan
+}: HeroSectionProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (onUploadPlanFile) {
+        onUploadPlanFile(file);
+      } else {
+        onStartAnalysis();
+      }
+    }
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (onUploadPlanFile) {
+        onUploadPlanFile(file);
+      } else {
+        onStartAnalysis();
+      }
+    }
+  }
+
+  function triggerFileInput() {
+    fileInputRef.current?.click();
+  }
+
   return (
     <section className="mkt-hero" id="top">
       <div className="mkt-container">
         <div className="mkt-hero-grid">
+          {/* Left Column: Value proposition & CTAs */}
           <div className="mkt-hero-copy">
             <div className="mkt-eyebrow">
               <Sparkles size={16} />
@@ -54,94 +94,70 @@ export function HeroSection({ onStartAnalysis, onViewReportDetails }: HeroSectio
             </div>
           </div>
 
-          <div className="mkt-showcase-card">
-            <div className="mkt-showcase-head">
-              <div className="mkt-showcase-badge">
-                <BadgeCheck size={16} />
+          {/* Right Column: Interactive Dropzone with Frosted Floor Plan Blueprint */}
+          <div
+            className={`mkt-hero-dropzone-card ${isDragOver ? "drag-over" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={handleDrop}
+            onClick={triggerFileInput}
+            role="button"
+            tabIndex={0}
+            aria-label="Wgraj plan swojego lokalu"
+          >
+            {/* Background architectural illustration with soft mist overlay */}
+            <div className="mkt-dropzone-bg-illustration" />
+            <div className="mkt-dropzone-mist-overlay" />
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelected}
+              accept=".pdf,.png,.jpg,.jpeg,.webp,.heic,.heif"
+              style={{ display: "none" }}
+            />
+
+            <div className="mkt-dropzone-content">
+              <div className="mkt-dropzone-head-badge">
+                <Sparkles size={15} />
                 <span>Studio Planowania Przestrzennego</span>
               </div>
-              <div className="mkt-score-pill">
-                <strong>84</strong>
-                <span>/100 · Silna harmonia</span>
+
+              <div className="mkt-upload-icon-circle">
+                <UploadCloud size={38} />
               </div>
-            </div>
 
-            <div className="mkt-plan-stage">
-              <div className="mkt-cad-plan-diagram">
-                {/* 9 Bagua Zones Background Grid */}
-                <div className="mkt-bagua-grid-overlay">
-                  <div className="mkt-bagua-cell"><span>SE · Bogactwo</span></div>
-                  <div className="mkt-bagua-cell"><span>S · Sława</span></div>
-                  <div className="mkt-bagua-cell"><span>SW · Relacje</span></div>
-                  <div className="mkt-bagua-cell"><span>E · Zdrowie</span></div>
-                  <div className="mkt-bagua-cell"><span>Tai Ji · Centrum</span></div>
-                  <div className="mkt-bagua-cell"><span>W · Dzieci</span></div>
-                  <div className="mkt-bagua-cell"><span>NE · Wiedza</span></div>
-                  <div className="mkt-bagua-cell"><span>N · Kariera</span></div>
-                  <div className="mkt-bagua-cell"><span>NW · Pomocni</span></div>
-                </div>
+              <h2 className="mkt-dropzone-title">Wgraj rzut swojego mieszkania lub domu</h2>
+              <p className="mkt-dropzone-subtitle">
+                Przeciągnij plik PDF, JPG, PNG tutaj lub kliknij, aby wybrać z dysku
+              </p>
 
-                {/* Rooms Layout */}
-                <div className="mkt-cad-rooms">
-                  <div className="mkt-cad-room mkt-room-living">
-                    <span className="mkt-room-tag">Salon z aneksem (S / SE)</span>
-                    <div className="mkt-cad-item">
-                      <span className="mkt-item-dot" />
-                      <span>Sofa wypoczynkowa</span>
-                    </div>
-                  </div>
-                  <div className="mkt-cad-room">
-                    <span className="mkt-room-tag">Sypialnia (SW)</span>
-                    <div className="mkt-cad-item">
-                      <span className="mkt-item-dot" />
-                      <span>Łóżko (ściana nośna)</span>
-                    </div>
-                  </div>
-                  <div className="mkt-cad-room">
-                    <span className="mkt-room-tag">Gabinet (NW)</span>
-                    <div className="mkt-cad-item">
-                      <span className="mkt-item-dot" />
-                      <span>Biurko dowodzenia</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Overlays */}
-                <div className="mkt-compass-floating">
-                  <Compass size={14} />
-                  <span>N 0°</span>
-                </div>
-                <div className="mkt-bagua-badge-floating">
-                  <Layers size={13} />
-                  <span>Siatka 9 Stref Bagua</span>
-                </div>
+              <div className="mkt-format-pills">
+                <span className="mkt-pill">PDF</span>
+                <span className="mkt-pill">PNG</span>
+                <span className="mkt-pill">JPG / Zdjęcie</span>
+                <span className="mkt-pill">WEBP</span>
               </div>
-            </div>
 
-            <div className="mkt-showcase-insights">
-              <div className="mkt-insight-row">
-                <div className="mkt-insight-icon">
-                  <Check size={13} />
-                </div>
-                <div>
-                  <strong>Pozycja dominująca wezgłowia (SW)</strong>
-                  <small>Solidne oparcie ściany nośnej, bezpieczna oś wzroku na wejście do sypialni.</small>
-                </div>
+              <div className="mkt-dropzone-action-btn">
+                <FileUp size={18} />
+                <span>Wybierz plik rzutu z dysku</span>
               </div>
-              <div className="mkt-insight-row">
-                <div className="mkt-insight-icon">
-                  <Sparkles size={13} />
-                </div>
-                <div>
-                  <strong>Osobisty profil Kua dopasowany do strefy pracy</strong>
-                  <small>Kierunek biurka wspiera skupienie i witalność (Sheng Qi).</small>
-                </div>
-              </div>
-            </div>
 
-            <div className="mkt-showcase-footer">
-              <span>Podgląd interfejsu aplikacji roboczej</span>
-              <span className="mkt-footer-pill">Dostęp natychmiastowy po zakupie</span>
+              <div
+                className="mkt-dropzone-sample-trigger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onTrySamplePlan) {
+                    onTrySamplePlan();
+                  } else {
+                    onStartAnalysis();
+                  }
+                }}
+              >
+                <Zap size={14} />
+                <span>Nie masz pliku? Wypróbuj na przykładowym planie (64 m²)</span>
+              </div>
             </div>
           </div>
         </div>
