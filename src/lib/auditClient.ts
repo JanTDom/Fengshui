@@ -1561,7 +1561,7 @@ function drawArchitecturalMarkerOnCanvas(
       label.includes("Okno") ||
       label.includes("Drzwi") ||
       label.includes("Ściana");
-    const scaleX = scale;
+    const scaleX = marker.flipX ? -scale : scale;
     const scaleY = isLinear ? 1.0 : scale;
 
     ctx.save();
@@ -1627,6 +1627,7 @@ function drawArchitecturalMarkerOnCanvas(
       ctx.stroke();
     } else if (label.includes("Drzwi")) {
       // DRZWI CAD (Skrzydło 90° z łukiem otwierania)
+      const isMain = label.includes("wejściowe");
       ctx.fillStyle = "#1A2B27";
       ctx.fillRect(-30, 20, 6, 8);
       ctx.fillRect(24, 20, 6, 8);
@@ -1639,8 +1640,8 @@ function drawArchitecturalMarkerOnCanvas(
       ctx.lineTo(24, 24);
       ctx.stroke();
 
-      ctx.strokeStyle = "#2B536D";
-      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = isMain ? "#2B536D" : "#52645D";
+      ctx.lineWidth = isMain ? 1.8 : 1.4;
       ctx.beginPath();
       ctx.arc(-24, 24, 48, -Math.PI / 2, 0);
       ctx.stroke();
@@ -1648,41 +1649,59 @@ function drawArchitecturalMarkerOnCanvas(
 
       // Skrzydło drzwiowe
       ctx.strokeStyle = "#1A2B27";
-      ctx.lineWidth = 2.6;
+      ctx.lineWidth = isMain ? 2.6 : 2.0;
       ctx.beginPath();
       ctx.moveTo(-24, 24);
       ctx.lineTo(-24, -24);
       ctx.stroke();
 
       // Klamka
-      ctx.fillStyle = "#C49544";
+      ctx.fillStyle = isMain ? "#C49544" : "#1A2B27";
       ctx.beginPath();
       ctx.arc(-20, -18, 2, 0, Math.PI * 2);
       ctx.fill();
-    } else if (label === "Schody") {
+    } else if (label.includes("Schody")) {
       // SCHODY CAD
+      const isDown = label.includes("w dół");
       ctx.fillStyle = "#FAF7F2";
       ctx.strokeStyle = "#1A2B27";
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = 1.6;
       ctx.fillRect(-26, -26, 52, 52);
       ctx.strokeRect(-26, -26, 52, 52);
 
-      for (let s = -16; s <= 16; s += 8) {
+      for (let s = -18; s <= 18; s += 7.2) {
         ctx.beginPath();
         ctx.moveTo(-26, s);
         ctx.lineTo(26, s);
         ctx.stroke();
       }
 
-      ctx.strokeStyle = "#C49544";
+      ctx.strokeStyle = isDown ? "#8C3A27" : "#2D5A46";
+      ctx.fillStyle = isDown ? "#8C3A27" : "#2D5A46";
       ctx.lineWidth = 2.2;
-      ctx.beginPath();
-      ctx.moveTo(0, 20);
-      ctx.lineTo(0, -20);
-      ctx.moveTo(-5, -12);
-      ctx.lineTo(0, -20);
-      ctx.lineTo(5, -12);
-      ctx.stroke();
+      if (isDown) {
+        ctx.beginPath();
+        ctx.moveTo(0, -20);
+        ctx.lineTo(0, 20);
+        ctx.moveTo(-5, 12);
+        ctx.lineTo(0, 20);
+        ctx.lineTo(5, 12);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, -20, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(0, 20);
+        ctx.lineTo(0, -20);
+        ctx.moveTo(-5, -12);
+        ctx.lineTo(0, -20);
+        ctx.lineTo(5, -12);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 20, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
     } else if (label.includes("Pion") || label.includes("Komin") || label.includes("Wentylacja")) {
       // PION WOD-KAN / KOMIN CAD
       ctx.fillStyle = "#E8EEF2";
@@ -1736,27 +1755,25 @@ function drawArchitecturalMarkerOnCanvas(
 
     ctx.restore();
   } else if (marker.category === "room") {
-    // POMIESZCZENIA (ROOMS): Kompaktowy, 2x mniejszy czytelny badge bez zawijania
+    // POMIESZCZENIA (ROOMS): Kompaktowy, czytelny badge architektoniczny
     ctx.save();
-    ctx.font = "bold 8.5px Arial, sans-serif";
+    ctx.font = "bold 8px system-ui, -apple-system, sans-serif";
     const textW = ctx.measureText(label).width;
-    const boxW = Math.max(28, textW + 8);
-    const boxH = 14;
+    const boxW = Math.max(24, textW + 8);
+    const boxH = 13;
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
-    ctx.strokeStyle = "#2D5A46";
-    ctx.lineWidth = 1.2;
-    ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
-    ctx.shadowBlur = 4;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.strokeStyle = "rgba(26, 43, 39, 0.25)";
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(px - boxW / 2, py - boxH / 2, boxW, boxH, 3);
+    ctx.roundRect(px - boxW / 2, py - boxH / 2, boxW, boxH, 2);
     ctx.fill();
     ctx.stroke();
 
     ctx.fillStyle = "#10221F";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(label, px, py);
+    ctx.fillText(label, px, py + 0.5);
     ctx.restore();
   }
 }

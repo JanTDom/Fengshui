@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Compass,
   FileUp,
+  FlipHorizontal,
   Layers3,
   Lightbulb,
   Maximize2,
@@ -71,9 +72,11 @@ const roomFunctionOptions = [
 
 const fixedElementOptions = [
   "Drzwi wejściowe",
-  "Okno",
+  "Drzwi wewnętrzne",
   "Drzwi balkonowe",
-  "Schody",
+  "Okno",
+  "Schody (w górę ↑)",
+  "Schody (w dół ↓)",
   "Pion wod-kan",
   "Komin / Wentylacja",
   "Ściana nośna",
@@ -147,9 +150,15 @@ export function FengShuiWorkspace({
   const [consultationPurpose, setConsultationPurpose] = useState(
     "Wszystko (Kompleksowy audyt: sen, praca, relacje, finanse, zdrowie)"
   );
+  const [floorLevel, setFloorLevel] = useState("Parter / Mieszkanie jednopoziomowe");
   const [usableAreaM2, setUsableAreaM2] = useState(64);
   const [levelsCount, setLevelsCount] = useState(1);
   const [addressNote, setAddressNote] = useState("Lokalizacja prywatna");
+
+  // Surroundings (Szkoła Formy)
+  const [roadType, setRoadType] = useState("Spokojna ulica osiedlowa");
+  const [landscapeForm, setLandscapeForm] = useState("Wyższy budynek / wzniesienie z tyłu (Czarny Żółw - oparcie)");
+  const [shaQiHazards, setShaQiHazards] = useState<string[]>(["Brak widocznych zagrożeń"]);
 
   // Residents
   const [residents, setResidents] = useState<ResidentProfile[]>([
@@ -422,6 +431,14 @@ export function FengShuiWorkspace({
     handleUpdateSelectedMarker({ scale: nextScale });
   }
 
+  function handleToggleFlipSelectedMarker() {
+    suppressCanvasClickTemporarily();
+    if (!selectedPlanMarkerId) return;
+    const current = planMarkers.find((m) => m.id === selectedPlanMarkerId);
+    const nextFlip = !current?.flipX;
+    handleUpdateSelectedMarker({ flipX: nextFlip });
+  }
+
   function handleDeleteSelectedMarker() {
     suppressCanvasClickTemporarily();
     if (!selectedPlanMarkerId) return;
@@ -452,14 +469,21 @@ export function FengShuiWorkspace({
         email: userEmail || "kontakt@multinewsroom.pl",
         planId: selectedPlanId,
         propertyType: propertyKey,
+        floorLevel,
         levelsCount,
         usableAreaM2,
         purpose: consultationPurpose,
         addressNote,
         orientationNote: northConfirmed ? "Północ zatwierdzona przez użytkownika." : "",
-        entryNote: "Drzwi wejściowe oznaczone na planie",
+        entryNote: floorLevel.includes("Piętro") ? "Wejście na kondygnację ze schodów" : "Drzwi wejściowe na kondygnacji",
         constraintsNote: "Bez wyburzania ścian nośnych",
         profileNote: "Komfort domowników i praca w skupieniu",
+        surroundings: {
+          roadType,
+          landscapeForm,
+          shaQiHazards,
+          notes: addressNote
+        },
         orientationData: {
           northAngleDeg: northAngle,
           confirmed: northConfirmed,
@@ -482,7 +506,14 @@ export function FengShuiWorkspace({
           firstOccupiedYear: constructionYear,
           moveInDate: "",
           majorRenovationYear: renovationYear,
-          renovationNote: ""
+          renovationNote: "",
+          floorLevel,
+          surroundings: {
+            roadType,
+            landscapeForm,
+            shaQiHazards,
+            notes: addressNote
+          }
         },
         residentProfiles: residents,
         selectedMethods: ["Szkoła Formy", "Siatka Bagua", "Kua Domowników", "Xuan Kong Fei Xing"],
@@ -924,7 +955,7 @@ export function FengShuiWorkspace({
                               </div>
                             ) : isFixed ? (
                               <div className="arch-fixed-piece">
-                                {renderFixedCadSymbolSvg(marker.label) || (
+                                {renderFixedCadSymbolSvg(marker.label, marker.flipX) || (
                                   <div className="pin-marker-pill fixed-pill">
                                     <span>{marker.label}</span>
                                   </div>
@@ -974,6 +1005,36 @@ export function FengShuiWorkspace({
                                 <span>{Math.round((marker.scale ?? 1.0) * 100)}%</span>
                                 <button type="button" onClick={(e) => { e.stopPropagation(); handleScaleSelectedMarker(0.1); }}>+</button>
                               </div>
+
+                              {marker.label?.includes("Drzwi") ? (
+                                <button
+                                  type="button"
+                                  className="action-btn flip"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleFlipSelectedMarker();
+                                  }}
+                                  title="Odwróć skrzydło drzwi (Lewe / Prawe)"
+                                >
+                                  <FlipHorizontal size={13} />
+                                  <span>{marker.flipX ? "Prawe (P)" : "Lewe (L)"}</span>
+                                </button>
+                              ) : null}
+
+                              {marker.label?.includes("Schody") ? (
+                                <button
+                                  type="button"
+                                  className="action-btn stairs-toggle"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const nextL = marker.label.includes("w dół") ? "Schody (w górę ↑)" : "Schody (w dół ↓)";
+                                    handleUpdateSelectedMarker({ label: nextL });
+                                  }}
+                                  title="Zmień kierunek schodów (W górę / W dół)"
+                                >
+                                  <span>{marker.label.includes("w dół") ? "↓ W dół" : "↑ W górę"}</span>
+                                </button>
+                              ) : null}
 
                               {isFurniture ? (
                                 <button
@@ -1190,6 +1251,22 @@ export function FengShuiWorkspace({
                   </select>
                 </div>
 
+                <div style={{ marginTop: "2px" }}>
+                  <label className="res-field-label" style={{ display: "block", marginBottom: "4px", fontSize: "0.75rem", fontWeight: 700, color: "var(--ink)" }}>
+                    Kondygnacja analizowanego rzutu:
+                  </label>
+                  <select
+                    className="res-name-input"
+                    value={floorLevel}
+                    onChange={(e) => setFloorLevel(e.target.value)}
+                    style={{ width: "100%", fontSize: "0.8rem", padding: "6px 8px" }}
+                  >
+                    <option value="Parter / Mieszkanie jednopoziomowe">Parter / Mieszkanie jednopoziomowe (Główne wejście)</option>
+                    <option value="Piętro / Poddasze (dom wielopoziomowy)">Piętro / Poddasze (Wejście przez schody)</option>
+                    <option value="Przyziemie / Piwnica">Przyziemie / Piwnica</option>
+                  </select>
+                </div>
+
                 <div className="form-row-compact" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                   <label>
                     <span style={{ fontSize: "0.72rem", color: "var(--muted)" }}>Metraż (m²):</span>
@@ -1211,6 +1288,66 @@ export function FengShuiWorkspace({
                       style={{ width: "100%", padding: "4px 6px", fontSize: "0.8rem" }}
                     />
                   </label>
+                </div>
+              </div>
+            </div>
+
+            {/* SURROUNDINGS / OTOCZENIE ZEWNĘTRZNE CARD */}
+            <div className="intel-card">
+              <div className="intel-card-head">
+                <Compass size={16} />
+                <strong>Otoczenie zewnętrzne i ulica (Szkoła Formy)</strong>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <label className="res-field-label" style={{ display: "block", marginBottom: "4px", fontSize: "0.74rem", fontWeight: 700, color: "var(--ink)" }}>
+                    Droga dojazdowa / ruch:
+                  </label>
+                  <select
+                    className="res-name-input"
+                    value={roadType}
+                    onChange={(e) => setRoadType(e.target.value)}
+                    style={{ width: "100%", fontSize: "0.78rem", padding: "5px 8px" }}
+                  >
+                    <option value="Spokojna ulica osiedlowa">Spokojna ulica osiedlowa (płynny ruch)</option>
+                    <option value="Ruchliwa arteria miejska">Ruchliwa ulica / arteria miejska (szybka energia)</option>
+                    <option value="Ślepa uliczka (sięgacz)">Ślepa uliczka / sięgacz (akumulacja Qi)</option>
+                    <option value="Strefa piesza / park">Strefa piesza / otoczenie zieleni</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="res-field-label" style={{ display: "block", marginBottom: "4px", fontSize: "0.74rem", fontWeight: 700, color: "var(--ink)" }}>
+                    Ukształtowanie i sąsiedztwo (4 Zwierzęta):
+                  </label>
+                  <select
+                    className="res-name-input"
+                    value={landscapeForm}
+                    onChange={(e) => setLandscapeForm(e.target.value)}
+                    style={{ width: "100%", fontSize: "0.78rem", padding: "5px 8px" }}
+                  >
+                    <option value="Wyższy budynek / wzniesienie z tyłu (Czarny Żółw - oparcie)">Wyższy budynek z tyłu (Stabilne oparcie Żółwia)</option>
+                    <option value="Otwarta, jasna przestrzeń przed oknami (Czerwony Feniks)">Otwarta przestrzeń przed oknami (Feniks)</option>
+                    <option value="Zieleń i budynki po bokach (Smok i Tygrys)">Zieleń i budynki po bokach (Smok i Tygrys)</option>
+                    <option value="Płaski, gęsty teren miejski">Płaski, jednolity teren miejski</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="res-field-label" style={{ display: "block", marginBottom: "4px", fontSize: "0.74rem", fontWeight: 700, color: "var(--ink)" }}>
+                    Cechy otoczenia (Sha Qi):
+                  </label>
+                  <select
+                    className="res-name-input"
+                    value={shaQiHazards[0] || "Brak widocznych zagrożeń"}
+                    onChange={(e) => setShaQiHazards([e.target.value])}
+                    style={{ width: "100%", fontSize: "0.78rem", padding: "5px 8px" }}
+                  >
+                    <option value="Brak widocznych zagrożeń">Brak widocznych zagrożeń (Czyste otoczenie)</option>
+                    <option value="Ostry narożnik sąsiedniego budynku w oknach">Ostry narożnik budynku w oknach (Zatruta Strzała)</option>
+                    <option value="Słup energetyczny / transformator za oknem">Słup energetyczny / transformator w pobliżu</option>
+                    <option value="Droga uderzająca prostopadle w budynek">Droga uderzająca prostopadle (T-skrzyżowanie)</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1454,22 +1591,33 @@ function renderNorthCompassRose(angle: number) {
   );
 }
 
-function renderFixedCadSymbolSvg(label: string) {
-  if (label === "Drzwi wejściowe") {
+function renderFixedCadSymbolSvg(label: string, flipX?: boolean) {
+  if (label.includes("Drzwi wejściowe") || label.includes("Drzwi wewnętrzne") || (label.includes("Drzwi") && !label.includes("balkonowe"))) {
+    const isMain = label.includes("wejściowe");
     return (
-      <svg viewBox="0 0 72 72" className="arch-fixed-svg door-svg" aria-hidden="true">
+      <svg
+        viewBox="0 0 72 72"
+        className={`arch-fixed-svg door-svg ${isMain ? "main-door" : "interior-door"}`}
+        aria-hidden="true"
+        style={{ transform: flipX ? "scaleX(-1)" : "none" }}
+      >
         <rect x="6" y="56" width="6" height="8" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1" />
         <rect x="60" y="56" width="6" height="8" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1" />
         <line x1="12" y1="60" x2="60" y2="60" stroke="#7A6E5D" strokeWidth="1.2" strokeDasharray="2 2" />
-        <path d="M 12 12 A 48 48 0 0 1 60 60" fill="none" stroke="#2B536D" strokeWidth="1.6" strokeDasharray="3 2" />
-        <line x1="12" y1="60" x2="12" y2="12" stroke="#1A2B27" strokeWidth="2.4" />
-        <circle cx="16" cy="18" r="1.8" fill="#C49544" />
+        <path d="M 12 12 A 48 48 0 0 1 60 60" fill="none" stroke={isMain ? "#2B536D" : "#52645D"} strokeWidth={isMain ? 1.6 : 1.3} strokeDasharray="3 2" />
+        <line x1="12" y1="60" x2="12" y2="12" stroke="#1A2B27" strokeWidth={isMain ? 2.6 : 2.0} />
+        <circle cx="16" cy="18" r="1.8" fill={isMain ? "#C49544" : "#1A2B27"} />
       </svg>
     );
   }
-  if (label === "Drzwi balkonowe") {
+  if (label.includes("Drzwi balkonowe")) {
     return (
-      <svg viewBox="0 0 72 72" className="arch-fixed-svg balcony-door-svg" aria-hidden="true">
+      <svg
+        viewBox="0 0 72 72"
+        className="arch-fixed-svg balcony-door-svg"
+        aria-hidden="true"
+        style={{ transform: flipX ? "scaleX(-1)" : "none" }}
+      >
         <rect x="4" y="56" width="6" height="8" fill="#1A2B27" />
         <rect x="62" y="56" width="6" height="8" fill="#1A2B27" />
         <path d="M 10 28 A 28 28 0 0 1 36 60" fill="none" stroke="#2B536D" strokeWidth="1.3" strokeDasharray="2 2" />
@@ -1512,15 +1660,29 @@ function renderFixedCadSymbolSvg(label: string) {
       </svg>
     );
   }
-  if (label === "Schody") {
+  if (label.includes("Schody")) {
+    const isDown = label.includes("w dół");
     return (
       <svg viewBox="0 0 72 72" className="arch-fixed-svg stairs-svg" aria-hidden="true">
         <rect x="10" y="10" width="52" height="52" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.6" />
-        <line x1="10" y1="20" x2="62" y2="20" stroke="#1A2B27" strokeWidth="1.2" />
-        <line x1="10" y1="30" x2="62" y2="30" stroke="#1A2B27" strokeWidth="1.2" />
-        <line x1="10" y1="40" x2="62" y2="40" stroke="#1A2B27" strokeWidth="1.2" />
-        <line x1="10" y1="50" x2="62" y2="50" stroke="#1A2B27" strokeWidth="1.2" />
-        <path d="M 36 56 L 36 16 M 31 22 L 36 14 L 41 22" stroke="#C49544" strokeWidth="2" fill="none" />
+        <line x1="10" y1="18" x2="62" y2="18" stroke="#1A2B27" strokeWidth="1.1" />
+        <line x1="10" y1="26" x2="62" y2="26" stroke="#1A2B27" strokeWidth="1.1" />
+        <line x1="10" y1="34" x2="62" y2="34" stroke="#1A2B27" strokeWidth="1.1" />
+        <line x1="10" y1="42" x2="62" y2="42" stroke="#1A2B27" strokeWidth="1.1" />
+        <line x1="10" y1="50" x2="62" y2="50" stroke="#1A2B27" strokeWidth="1.1" />
+        <line x1="10" y1="58" x2="62" y2="58" stroke="#1A2B27" strokeWidth="1.1" />
+
+        {isDown ? (
+          <g>
+            <path d="M 36 16 L 36 56 M 31 48 L 36 56 L 41 48" stroke="#8C3A27" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+            <circle cx="36" cy="16" r="2.5" fill="#8C3A27" />
+          </g>
+        ) : (
+          <g>
+            <path d="M 36 56 L 36 16 M 31 24 L 36 16 L 41 24" stroke="#2D5A46" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+            <circle cx="36" cy="56" r="2.5" fill="#2D5A46" />
+          </g>
+        )}
       </svg>
     );
   }
@@ -1554,13 +1716,9 @@ function renderCadSymbolSvg(furn: string) {
   if (furn === "Sofa") {
     return (
       <svg viewBox="0 0 84 38" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        {/* Dark solid backrest along top edge */}
         <rect x="4" y="3" width="76" height="9" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.6" />
-        {/* Left armrest */}
         <rect x="4" y="12" width="10" height="23" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.6" />
-        {/* Right armrest */}
         <rect x="70" y="12" width="10" height="23" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.6" />
-        {/* 3 distinct elongated lighter seat cushions */}
         <rect x="14" y="12" width="18.5" height="21" rx="1.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.4" />
         <rect x="32.5" y="12" width="19" height="21" rx="1.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.4" />
         <rect x="51.5" y="12" width="18.5" height="21" rx="1.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.4" />
@@ -1579,14 +1737,10 @@ function renderCadSymbolSvg(furn: string) {
   if (furn === "Szafa" || furn === "Garderoba") {
     return (
       <svg viewBox="0 0 72 72" className="arch-furniture-svg storage-svg" aria-hidden="true">
-        {/* Main carcass */}
         <rect x="8" y="10" width="56" height="36" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.8" />
-        {/* Internal hanger rail */}
         <line x1="12" y1="24" x2="60" y2="24" stroke="#8C6D38" strokeWidth="1.4" strokeDasharray="3 2" />
-        {/* Left ajar door */}
         <line x1="8" y1="46" x2="22" y2="64" stroke="#1A2B27" strokeWidth="2.2" strokeLinecap="round" />
         <path d="M 8 46 A 24 24 0 0 0 22 64" fill="none" stroke="#C49544" strokeWidth="1.2" strokeDasharray="2 2" />
-        {/* Right ajar door */}
         <line x1="64" y1="46" x2="50" y2="64" stroke="#1A2B27" strokeWidth="2.2" strokeLinecap="round" />
         <path d="M 64 46 A 24 24 0 0 1 50 64" fill="none" stroke="#C49544" strokeWidth="1.2" strokeDasharray="2 2" />
       </svg>
@@ -1601,6 +1755,21 @@ function renderCadSymbolSvg(furn: string) {
         <rect x="24" y="56" width="24" height="7" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
         <rect x="9" y="24" width="7" height="24" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
         <rect x="56" y="24" width="7" height="24" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.4" />
+      </svg>
+    );
+  }
+  if (furn === "Płyta kuchenna") {
+    return (
+      <svg viewBox="0 0 72 72" className="arch-furniture-svg stove-svg" aria-hidden="true">
+        <rect x="12" y="12" width="48" height="48" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1.8" rx="2" />
+        <circle cx="25" cy="25" r="7" fill="none" stroke="#C49544" strokeWidth="1.8" />
+        <circle cx="25" cy="25" r="3" fill="#C49544" />
+        <circle cx="47" cy="25" r="5" fill="none" stroke="#C49544" strokeWidth="1.6" />
+        <circle cx="47" cy="25" r="2" fill="#C49544" />
+        <circle cx="25" cy="47" r="5" fill="none" stroke="#C49544" strokeWidth="1.6" />
+        <circle cx="25" cy="47" r="2" fill="#C49544" />
+        <circle cx="47" cy="47" r="8" fill="none" stroke="#C49544" strokeWidth="1.8" />
+        <circle cx="47" cy="47" r="3.5" fill="#C49544" />
       </svg>
     );
   }

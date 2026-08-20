@@ -26,6 +26,7 @@ export type PlanMarker = {
   yPercent: number;
   facingDeg: number | null;
   scale?: number;
+  flipX?: boolean;
   orientationRole?: string | null;
   orientationNote?: string | null;
   assignedResidentLabel?: string | null;
@@ -44,12 +45,21 @@ export type FurnitureAnnotations = {
   furnitureNote: string;
 };
 
+export type BuildingSurroundings = {
+  roadType: string;
+  landscapeForm: string;
+  shaQiHazards: string[];
+  notes?: string;
+};
+
 export type BuildingProfile = {
   constructionYear: string;
   firstOccupiedYear: string;
   moveInDate: string;
   majorRenovationYear: string;
   renovationNote: string;
+  floorLevel?: string;
+  surroundings?: BuildingSurroundings;
 };
 
 export type ResidentProfile = {
@@ -83,6 +93,7 @@ export type AuditRequestPayload = {
   email: string;
   planId: string;
   propertyType: PropertyKey;
+  floorLevel?: string;
   levelsCount: number;
   usableAreaM2: number | null;
   purpose: string;
@@ -91,6 +102,7 @@ export type AuditRequestPayload = {
   entryNote: string;
   constraintsNote: string;
   profileNote: string;
+  surroundings?: BuildingSurroundings;
   orientationData: OrientationData;
   planAnnotations: PlanAnnotations;
   furnitureAnnotations: FurnitureAnnotations;

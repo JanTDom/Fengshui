@@ -4959,6 +4959,24 @@ body {
   border-color: #C49544;
 }
 
+.marker-floating-actions .action-btn.flip {
+  background: rgba(43, 83, 109, 0.45);
+  border: 1px solid rgba(115, 168, 199, 0.6);
+}
+
+.marker-floating-actions .action-btn.flip:hover {
+  background: rgba(43, 83, 109, 0.85);
+}
+
+.marker-floating-actions .action-btn.stairs-toggle {
+  background: rgba(45, 90, 70, 0.45);
+  border: 1px solid rgba(86, 239, 172, 0.6);
+}
+
+.marker-floating-actions .action-btn.stairs-toggle:hover {
+  background: rgba(45, 90, 70, 0.85);
+}
+
 .marker-floating-actions .action-btn.resident-toggle {
   background: rgba(196, 149, 68, 0.35);
   border: 1px solid rgba(196, 149, 68, 0.7);
@@ -6371,17 +6389,22 @@ body {
 .workspace-canvas-wrapper {
   display: inline-flex;
   position: relative;
-  width: min(100%, 920px);
+  width: auto;
+  max-width: 100%;
   justify-content: center;
+  align-items: center;
   transform-origin: center center;
   user-select: none;
 }
 
 .workspace-canvas-wrapper .scan-canvas-stage.image-preview {
-  width: auto;
-  height: min(68vh, 580px);
+  position: relative;
+  display: inline-block;
+  width: max-content;
+  height: max-content;
   max-width: min(920px, calc(100vw - 640px));
-  aspect-ratio: var(--scan-aspect-ratio, 4 / 3);
+  max-height: min(72vh, 600px);
+  margin: auto;
 }
 
 .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
@@ -6396,7 +6419,14 @@ body {
   min-height: 360px;
 }
 
-.workspace-canvas-wrapper .scan-canvas-stage.image-preview .scan-image-elem:not(.scan-pdf-elem),
+.workspace-canvas-wrapper .scan-canvas-stage.image-preview .scan-image-elem:not(.scan-pdf-elem) {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(920px, calc(100vw - 640px));
+  max-height: min(72vh, 600px);
+}
+
 .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview .scan-pdf-elem {
   width: 100%;
   height: 100%;
