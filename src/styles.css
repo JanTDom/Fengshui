@@ -3895,22 +3895,23 @@ body {
 
 .scan-canvas-stage {
   position: relative;
-  display: inline-flex;
-  width: fit-content;
+  display: inline-block;
+  width: auto;
+  height: auto;
   max-width: 100%;
-  height: fit-content;
   max-height: 100%;
-  margin: auto;
+  margin: 0 auto;
   line-height: 0;
-  container-type: inline-size;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .scan-image-elem,
 .scan-canvas-stage img,
 .scan-canvas-stage object {
   display: block;
-  max-width: 100%;
-  max-height: min(68vh, 580px);
+  max-width: min(880px, calc(100vw - 640px));
+  max-height: min(72vh, 600px);
   width: auto;
   height: auto;
   object-fit: contain;

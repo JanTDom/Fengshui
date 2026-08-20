@@ -250,8 +250,12 @@ export function FengShuiWorkspace({
 
     setErrorMessage(null);
     setFiles(selectedFiles);
-    setNorthConfirmed(false);
-    setScanTool("north");
+    setNorthConfirmed(true);
+    setScanTool("marker");
+    setAnnotationMode("furniture");
+    setSelectedMarkerLabel("Łóżko");
+    setSelectedPlanMarkerId(null);
+    setPlanMarkers([]);
   }
 
   function handleAddResident() {
@@ -259,24 +263,22 @@ export function FengShuiWorkspace({
       ...curr,
       {
         label: `Domownik ${curr.length + 1}`,
-        role: "Mieszkaniec",
-        birthDate: "1992-08-15",
-        birthTime: "10:00",
-        birthPlace: "",
-        gender: "female",
-        formulaCategory: "Kua",
-        note: ""
+        birthDate: "1990-01-01",
+        gender: "M",
+        profession: "",
+        roomName: "Sypialnia główna"
       }
     ]);
   }
 
-  function handleUpdateResident(idx: number, updates: Partial<ResidentProfile>) {
+  function handleUpdateResident(idx: number, patch: Partial<ResidentProfile>) {
     setResidents((curr) =>
-      curr.map((r, i) => (i === idx ? { ...r, ...updates } : r))
+      curr.map((res, i) => (i === idx ? { ...res, ...patch } : res))
     );
   }
 
   function handleRemoveResident(idx: number) {
+    if (residents.length <= 1) return;
     setResidents((curr) => curr.filter((_, i) => i !== idx));
   }
 
@@ -299,6 +301,11 @@ export function FengShuiWorkspace({
     const target = event.target as HTMLElement;
     if (target.closest(".marker-floating-actions, .north-center-calibrator, .floating-north-indicator, .plan-marker, button, input")) {
       return;
+    }
+
+    if (scanTool === "north") {
+      setNorthConfirmed(true);
+      setScanTool("marker");
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -804,10 +811,7 @@ export function FengShuiWorkspace({
                     <div className="scan-annotation-layer">
                     {/* BAGUA 9-SECTOR OVERLAY */}
                     {showBaguaOverlay ? (
-                      <div
-                        className="workspace-bagua-grid-overlay"
-                        style={{ transform: `rotate(${northAngle}deg)` }}
-                      >
+                      <div className="workspace-bagua-grid-overlay">
                         <div className="bagua-cell cell-se"><span>SE · Bogactwo (Drewno)</span></div>
                         <div className="bagua-cell cell-s"><span>S · Sława (Ogień)</span></div>
                         <div className="bagua-cell cell-sw"><span>SW · Relacje (Ziemia)</span></div>
