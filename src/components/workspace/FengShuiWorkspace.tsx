@@ -178,12 +178,15 @@ export function FengShuiWorkspace({
 
   // Interaction refs
   const planImageRef = useRef<HTMLImageElement | null>(null);
-  const compassRef = useRef<HTMLDivElement | null>(null);
-  const lastMarkerPointerTimeRef = useRef(0);
-  const isInteractingWithMarkerRef = useRef(false);
-  const suppressScanClickRef = useRef(false);
-  const [isDraggingNorth, setIsDraggingNorth] = useState(false);
+  const suppressCanvasClickRef = useRef(false);
   const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
+
+  function suppressCanvasClickTemporarily(ms = 350) {
+    suppressCanvasClickRef.current = true;
+    setTimeout(() => {
+      suppressCanvasClickRef.current = false;
+    }, ms);
+  }
 
   useEffect(() => {
     const firstFile = files[0];
@@ -312,8 +315,8 @@ export function FengShuiWorkspace({
   }
 
   function handleCanvasClick(event: MouseEvent<HTMLDivElement>) {
-    if (suppressScanClickRef.current) {
-      suppressScanClickRef.current = false;
+    if (suppressCanvasClickRef.current) {
+      suppressCanvasClickRef.current = false;
       return;
     }
     const target = event.target as HTMLElement;
@@ -353,6 +356,7 @@ export function FengShuiWorkspace({
 
   function handleMarkerPointerDown(marker: PlanMarker, event: PointerEvent<HTMLDivElement>) {
     event.stopPropagation();
+    suppressCanvasClickTemporarily();
     setSelectedPlanMarkerId(marker.id);
     setDraggingMarkerId(marker.id);
     if (marker.category === "furniture" || marker.category === "fixed") {
@@ -388,13 +392,9 @@ export function FengShuiWorkspace({
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
     if (draggingMarkerId) {
-      suppressScanClickRef.current = true;
-      setTimeout(() => {
-        suppressScanClickRef.current = false;
-      }, 150);
+      suppressCanvasClickTemporarily(200);
     }
     setDraggingMarkerId(null);
-    setIsDraggingNorth(false);
   }
 
   function handleUpdateSelectedMarker(updates: Partial<PlanMarker>) {
@@ -405,6 +405,7 @@ export function FengShuiWorkspace({
   }
 
   function handleRotateSelectedMarker(step = 45) {
+    suppressCanvasClickTemporarily();
     if (!selectedPlanMarkerId) return;
     const current = planMarkers.find((m) => m.id === selectedPlanMarkerId);
     const nextDeg = normalizeAngle((current?.facingDeg ?? 0) + step);
@@ -413,6 +414,7 @@ export function FengShuiWorkspace({
   }
 
   function handleScaleSelectedMarker(delta: number) {
+    suppressCanvasClickTemporarily();
     if (!selectedPlanMarkerId) return;
     const current = planMarkers.find((m) => m.id === selectedPlanMarkerId);
     const nextScale = Math.max(0.6, Math.min(2.5, Number(((current?.scale ?? 1.0) + delta).toFixed(2))));
@@ -421,13 +423,10 @@ export function FengShuiWorkspace({
   }
 
   function handleDeleteSelectedMarker() {
+    suppressCanvasClickTemporarily();
     if (!selectedPlanMarkerId) return;
-    suppressScanClickRef.current = true;
     setPlanMarkers((curr) => curr.filter((m) => m.id !== selectedPlanMarkerId));
     setSelectedPlanMarkerId(null);
-    setTimeout(() => {
-      suppressScanClickRef.current = false;
-    }, 300);
   }
 
   // Run Feng Shui Analysis Action
@@ -590,20 +589,16 @@ export function FengShuiWorkspace({
               <div className="north-tool-card">
                 <div className="north-tool-info">
                   <strong>Ustawienie igły Północy</strong>
-                  <p>Ustaw kąt suwakiem lub wybierz kierunek kardynalny, aby zorientować rzut.</p>
+                  <p>Ustaw kąt Północy N na rzucie lokalu.</p>
                 </div>
 
                 <div className="north-stepper-row" style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "8px 0" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span>Kąt N: <strong style={{ color: "var(--ink)", fontSize: "0.95rem" }}>{northAngle}°</strong></span>
-                    <span style={{ fontSize: "0.75rem", color: "#C49544", fontWeight: 700 }}>
-                      {northAngle >= 337.5 || northAngle < 22.5 ? "Północ (N)" :
-                       northAngle >= 22.5 && northAngle < 67.5 ? "Północny-Wschód (NE)" :
-                       northAngle >= 67.5 && northAngle < 112.5 ? "Wschód (E)" :
-                       northAngle >= 112.5 && northAngle < 157.5 ? "Południowy-Wschód (SE)" :
-                       northAngle >= 157.5 && northAngle < 202.5 ? "Południe (S)" :
-                       northAngle >= 202.5 && northAngle < 247.5 ? "Południowy-Zachód (SW)" :
-                       northAngle >= 247.5 && northAngle < 292.5 ? "Zachód (W)" : "Północny-Zachód (NW)"}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "24px", minHeight: "24px", maxHeight: "24px", overflow: "hidden" }}>
+                    <span style={{ fontSize: "0.82rem", whiteSpace: "nowrap" }}>
+                      Kąt N: <strong style={{ color: "var(--ink)", fontSize: "0.92rem", display: "inline-block", width: "42px" }}>{northAngle}°</strong>
+                    </span>
+                    <span style={{ fontSize: "0.74rem", color: "#C49544", fontWeight: 700, whiteSpace: "nowrap", textAlign: "right" }}>
+                      {getShortDirectionLabel(northAngle)}
                     </span>
                   </div>
 
@@ -618,17 +613,17 @@ export function FengShuiWorkspace({
                   />
 
                   <div className="stepper-btns" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
-                    <button type="button" onClick={() => setNorthAngle(0)} style={{ fontWeight: northAngle === 0 ? 800 : 500 }}>N (0°)</button>
-                    <button type="button" onClick={() => setNorthAngle(90)} style={{ fontWeight: northAngle === 90 ? 800 : 500 }}>E (90°)</button>
-                    <button type="button" onClick={() => setNorthAngle(180)} style={{ fontWeight: northAngle === 180 ? 800 : 500 }}>S (180°)</button>
-                    <button type="button" onClick={() => setNorthAngle(270)} style={{ fontWeight: northAngle === 270 ? 800 : 500 }}>W (270°)</button>
+                    <button type="button" onClick={() => setNorthAngle(0)} style={{ height: "30px", fontWeight: northAngle === 0 ? 800 : 500 }}>N (0°)</button>
+                    <button type="button" onClick={() => setNorthAngle(90)} style={{ height: "30px", fontWeight: northAngle === 90 ? 800 : 500 }}>E (90°)</button>
+                    <button type="button" onClick={() => setNorthAngle(180)} style={{ height: "30px", fontWeight: northAngle === 180 ? 800 : 500 }}>S (180°)</button>
+                    <button type="button" onClick={() => setNorthAngle(270)} style={{ height: "30px", fontWeight: northAngle === 270 ? 800 : 500 }}>W (270°)</button>
                   </div>
 
                   <div className="stepper-btns" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
-                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 15))}>-15°</button>
-                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 5))}>-5°</button>
-                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 5))}>+5°</button>
-                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 15))}>+15°</button>
+                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 15))} style={{ height: "30px" }}>-15°</button>
+                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 5))} style={{ height: "30px" }}>-5°</button>
+                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 5))} style={{ height: "30px" }}>+5°</button>
+                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 15))} style={{ height: "30px" }}>+15°</button>
                   </div>
                 </div>
 
@@ -639,7 +634,7 @@ export function FengShuiWorkspace({
                     setNorthConfirmed(true);
                     setScanTool("marker");
                   }}
-                  style={{ marginTop: "4px" }}
+                  style={{ marginTop: "4px", height: "38px" }}
                 >
                   <CheckCircle2 size={16} />
                   <span>{northConfirmed ? "Północ zatwierdzona" : "Zatwierdź orientację N"}</span>
@@ -824,22 +819,55 @@ export function FengShuiWorkspace({
                       </div>
                     ) : null}
 
-                    {/* CLEAN ARCHITECTURAL NORTH ARROW (CAD Standard) */}
-                    <div
-                      className="floating-north-compass"
-                      style={{
-                        top: "14px",
-                        right: "14px",
-                        cursor: "pointer"
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setNorthAngle((a) => normalizeAngle(a + 45));
-                      }}
-                      title={`Północ: ${northAngle}° (Kliknij, aby obrócić o 45°)`}
-                    >
-                      {renderNorthCompassRose(northAngle)}
-                    </div>
+                    {/* 1. LARGE CENTER NORTH CALIBRATOR (Visible ONLY during North calibration mode) */}
+                    {scanTool === "north" ? (
+                      <div className="north-center-calibrator" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="north-calibrator-disc"
+                          onClick={() => setNorthAngle((a) => normalizeAngle(a + 45))}
+                          title="Kliknij tarczę, aby obrócić o 45°"
+                        >
+                          {renderLargeCenterNorthCompass(northAngle)}
+                        </div>
+                        <div className="north-calibrator-card">
+                          <span className="calibrator-readout">
+                            Kierunek N: <strong>{northAngle}°</strong> ({getShortDirectionLabel(northAngle)})
+                          </span>
+                          <div className="calibrator-steppers">
+                            <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 15))}>-15°</button>
+                            <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 15))}>+15°</button>
+                            <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 45))}>+45°</button>
+                            <button type="button" onClick={() => setNorthAngle(0)}>Reset N (0°)</button>
+                          </div>
+                          <button
+                            type="button"
+                            className="calibrator-submit-btn"
+                            onClick={() => {
+                              setNorthConfirmed(true);
+                              setScanTool("marker");
+                            }}
+                          >
+                            <CheckCircle2 size={16} />
+                            <span>Zatwierdź Północ (Przejdź do mebli)</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* 2. DISCREET CORNER BADGE (Visible in marker mode, allows instant correction anytime) */
+                      <button
+                        type="button"
+                        className="floating-north-indicator"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setScanTool("north");
+                        }}
+                        title="Kliknij, aby skorygować kierunek Północy N"
+                      >
+                        <Compass size={14} />
+                        <span>N: {northAngle}°</span>
+                        <span className="recalibrate-tag">Koryguj Północ</span>
+                      </button>
+                    )}
 
                     {/* PLACED PLAN MARKERS */}
                     {planMarkers.map((marker) => {
@@ -867,14 +895,12 @@ export function FengShuiWorkspace({
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            isInteractingWithMarkerRef.current = true;
-                            lastMarkerPointerTimeRef.current = Date.now();
+                            suppressCanvasClickTemporarily();
                             setSelectedPlanMarkerId(marker.id);
                           }}
                           onPointerDown={(e) => {
                             e.stopPropagation();
-                            isInteractingWithMarkerRef.current = true;
-                            lastMarkerPointerTimeRef.current = Date.now();
+                            suppressCanvasClickTemporarily();
                           }}
                         >
                           <div
@@ -887,8 +913,7 @@ export function FengShuiWorkspace({
                             } as CSSProperties}
                             onClick={(e) => {
                               e.stopPropagation();
-                              isInteractingWithMarkerRef.current = true;
-                              lastMarkerPointerTimeRef.current = Date.now();
+                              suppressCanvasClickTemporarily();
                               setSelectedPlanMarkerId(marker.id);
                             }}
                             onPointerDown={(e) => handleMarkerPointerDown(marker, e)}
@@ -924,13 +949,11 @@ export function FengShuiWorkspace({
                               className="marker-floating-actions"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                isInteractingWithMarkerRef.current = true;
-                                lastMarkerPointerTimeRef.current = Date.now();
+                                suppressCanvasClickTemporarily();
                               }}
                               onPointerDown={(e) => {
                                 e.stopPropagation();
-                                isInteractingWithMarkerRef.current = true;
-                                lastMarkerPointerTimeRef.current = Date.now();
+                                suppressCanvasClickTemporarily();
                               }}
                             >
                               <button
@@ -974,6 +997,7 @@ export function FengShuiWorkspace({
                                 className="action-btn done"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  suppressCanvasClickTemporarily();
                                   setSelectedPlanMarkerId(null);
                                 }}
                                 title="Zatwierdź"
@@ -1356,6 +1380,52 @@ function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function getShortDirectionLabel(deg: number): string {
+  const norm = normalizeAngle(deg);
+  if (norm >= 337.5 || norm < 22.5) return "Północ (N)";
+  if (norm >= 22.5 && norm < 67.5) return "Pn-Wsch (NE)";
+  if (norm >= 67.5 && norm < 112.5) return "Wschód (E)";
+  if (norm >= 112.5 && norm < 157.5) return "Pd-Wsch (SE)";
+  if (norm >= 157.5 && norm < 202.5) return "Południe (S)";
+  if (norm >= 202.5 && norm < 247.5) return "Pd-Zach (SW)";
+  if (norm >= 247.5 && norm < 292.5) return "Zachód (W)";
+  return "Pn-Zach (NW)";
+}
+
+function renderLargeCenterNorthCompass(angle: number) {
+  return (
+    <svg viewBox="0 0 160 160" width="160" height="160" aria-label="Duża tarcza kalibracji Północy">
+      {/* Outer Crisp Disc */}
+      <circle cx="80" cy="80" r="76" fill="#FFFFFF" fillOpacity="0.96" stroke="#1A2B27" strokeWidth="2.5" />
+      <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(26, 43, 39, 0.22)" strokeWidth="1" strokeDasharray="3 3" />
+
+      {/* Fixed Cardinal Marks */}
+      <text x="80" y="22" fill="#1A2B27" fontSize="13" fontWeight="900" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif">N</text>
+      <text x="144" y="85" fill="#1A2B27" fontSize="11" fontWeight="800" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif">E</text>
+      <text x="80" y="148" fill="#1A2B27" fontSize="11" fontWeight="800" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif">S</text>
+      <text x="16" y="85" fill="#1A2B27" fontSize="11" fontWeight="800" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif">W</text>
+
+      {/* Rotating Main Arrow */}
+      <g transform={`rotate(${angle} 80 80)`}>
+        {/* North Arrowhead: Solid Dark Left, Cream Right with Bold Border */}
+        <polygon points="80,18 92,80 80,72" fill="#1A2B27" stroke="#1A2B27" strokeWidth="1.5" />
+        <polygon points="80,18 68,80 80,72" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.5" />
+
+        {/* South Needle */}
+        <polygon points="80,142 88,80 80,88" fill="#52645D" stroke="#1A2B27" strokeWidth="1.2" />
+        <polygon points="80,142 72,80 80,88" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="1.2" />
+
+        {/* Center Brass Pivot */}
+        <circle cx="80" cy="80" r="7" fill="#C49544" stroke="#1A2B27" strokeWidth="2" />
+        <circle cx="80" cy="80" r="2.5" fill="#FFFFFF" />
+
+        {/* Bold N at needle tip */}
+        <text x="80" y="15" fill="#C49544" fontSize="12" fontWeight="900" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif">N</text>
+      </g>
+    </svg>
+  );
 }
 
 function renderNorthCompassRose(angle: number) {
