@@ -4496,8 +4496,14 @@ body {
 }
 
 /* Floor Plan Furniture Marker (Realistic 2D Architectural Shape) */
-/* Floor Plan Furniture Marker (Realistic 2D Architectural Shape) */
-.plan-marker.furniture {
+.plan-marker.furniture,
+.plan-marker.furniture:hover,
+.plan-marker.furniture:active,
+.plan-marker.furniture.selected,
+.plan-marker.fixed,
+.plan-marker.fixed:hover,
+.plan-marker.fixed:active,
+.plan-marker.fixed.selected {
   position: relative;
   display: flex !important;
   flex-direction: column !important;
@@ -4505,6 +4511,7 @@ body {
   justify-content: center !important;
   background: transparent !important;
   border: none !important;
+  outline: none !important;
   padding: 0 !important;
   box-shadow: none !important;
   cursor: grab;
@@ -4513,51 +4520,58 @@ body {
 
 .plan-marker.furniture .arch-furniture-piece {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: clamp(24px, 7.5cqi, 58px);
-  height: clamp(24px, 7.5cqi, 58px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  max-width: clamp(38px, 12cqi, 96px);
+  max-height: clamp(38px, 12cqi, 96px);
   border-radius: 0 !important;
   background: transparent !important;
   border: none !important;
+  outline: none !important;
   box-shadow: none !important;
   transform: rotate(var(--marker-facing, 0deg)) scaleX(var(--marker-scale-x, var(--marker-scale, 1))) scaleY(var(--marker-scale-y, var(--marker-scale, 1)));
   transform-origin: 50% 50%;
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
-  filter: drop-shadow(0 1px 4px rgba(16, 34, 31, 0.35));
+  filter: drop-shadow(0 1px 3px rgba(16, 34, 31, 0.35));
 }
 
 .plan-marker.furniture.selected .arch-furniture-piece {
   border: none !important;
+  outline: none !important;
   box-shadow: none !important;
-  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 3px 8px rgba(16, 34, 31, 0.5));
+  filter: drop-shadow(0 0 3px #C49544) drop-shadow(0 2px 6px rgba(16, 34, 31, 0.45));
   transform: rotate(var(--marker-facing, 0deg)) scaleX(calc(var(--marker-scale-x, var(--marker-scale, 1)) * 1.03)) scaleY(calc(var(--marker-scale-y, var(--marker-scale, 1)) * 1.03));
 }
 
-/* Floor Plan Fixed Points (Doors, Windows, Structural Elements) */
-.plan-marker.fixed {
-  position: relative;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-  cursor: grab;
-  transform: translate(calc(-50% + var(--marker-offset-x, 0px)), calc(-50% + var(--marker-offset-y, 0px))) !important;
+.arch-furniture-svg {
+  display: block;
+  width: clamp(28px, 9cqi, 68px);
+  height: auto;
+  pointer-events: auto;
 }
 
+.arch-furniture-svg.sofa-svg {
+  width: clamp(42px, 13.5cqi, 98px);
+  height: auto;
+}
+
+/* Floor Plan Fixed Points (Doors, Windows, Structural Elements) */
 .plan-marker.fixed .arch-fixed-piece {
   position: relative;
-  display: grid;
-  place-items: center;
-  width: clamp(20px, 6cqi, 50px);
-  height: clamp(20px, 6cqi, 50px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  max-width: clamp(30px, 8.5cqi, 68px);
+  max-height: clamp(30px, 8.5cqi, 68px);
   border-radius: 0 !important;
   background: transparent !important;
   border: none !important;
+  outline: none !important;
   box-shadow: none !important;
   transform: rotate(var(--marker-facing, 0deg)) scaleX(var(--marker-scale-x, var(--marker-scale, 1))) scaleY(var(--marker-scale-y, var(--marker-scale, 1)));
   transform-origin: 50% 50%;
@@ -4566,8 +4580,18 @@ body {
 }
 
 .plan-marker.fixed.selected .arch-fixed-piece {
-  filter: drop-shadow(0 0 2px #FFFFFF) drop-shadow(0 3px 6px rgba(43, 83, 109, 0.6));
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 0 3px #2B536D) drop-shadow(0 2px 6px rgba(43, 83, 109, 0.5));
   transform: rotate(var(--marker-facing, 0deg)) scaleX(calc(var(--marker-scale-x, var(--marker-scale, 1)) * 1.03)) scaleY(calc(var(--marker-scale-y, var(--marker-scale, 1)) * 1.03));
+}
+
+.arch-fixed-svg {
+  display: block;
+  width: clamp(24px, 7.5cqi, 56px);
+  height: auto;
+  pointer-events: auto;
 }
 
 .pin-marker-pill.fixed-pill {
@@ -4583,16 +4607,30 @@ body {
 }
 
 .architectural-compass-svg {
-  filter: drop-shadow(0 4px 14px rgba(16, 34, 31, 0.45));
-  transition: transform 0.15s ease;
+  filter: drop-shadow(0 2px 8px rgba(16, 34, 31, 0.35));
+  transition: transform 0.1s ease;
 }
 
 .floating-north-compass {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   z-index: 20;
+  user-select: none;
+  touch-action: none;
+}
+
+.compass-deg-badge {
+  font-size: 0.50rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  background: rgba(16, 34, 31, 0.92);
+  color: #FAF7F2;
+  border: 1px solid #C49544;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 .plan-marker.furniture .furniture-floating-tag {

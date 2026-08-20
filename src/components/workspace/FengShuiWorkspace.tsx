@@ -178,7 +178,9 @@ export function FengShuiWorkspace({
 
   // Interaction refs
   const planImageRef = useRef<HTMLImageElement | null>(null);
+  const compassRef = useRef<HTMLDivElement | null>(null);
   const lastMarkerPointerTimeRef = useRef(0);
+  const isInteractingWithMarkerRef = useRef(false);
   const suppressScanClickRef = useRef(false);
   const [isDraggingNorth, setIsDraggingNorth] = useState(false);
   const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
@@ -310,15 +312,24 @@ export function FengShuiWorkspace({
   }
 
   function handleCanvasClick(event: MouseEvent<HTMLDivElement>) {
-    if (Date.now() - lastMarkerPointerTimeRef.current < 350) return;
+    if (isInteractingWithMarkerRef.current) return;
+    if (Date.now() - lastMarkerPointerTimeRef.current < 500) return;
     if (suppressScanClickRef.current) {
       suppressScanClickRef.current = false;
       return;
     }
     const target = event.target as HTMLElement;
-    if (target.closest(".marker-floating-actions, .floating-north-compass, .plan-marker, .plan-marker-wrapper, button")) return;
+    if (target.closest(".marker-floating-actions, .floating-north-compass, .plan-marker, .plan-marker-wrapper, button, input")) return;
 
     if (scanTool === "north") return;
+
+    // If a marker is currently selected, clicking blank canvas should ONLY deselect it, NOT create a new marker!
+    if (selectedPlanMarkerId !== null) {
+      setSelectedPlanMarkerId(null);
+      return;
+    }
+
+    if (scanTool !== "marker") return;
 
     const img = planImageRef.current;
     const rect = img && img.clientWidth > 0 ? img.getBoundingClientRect() : event.currentTarget.getBoundingClientRect();
@@ -351,9 +362,9 @@ export function FengShuiWorkspace({
   }
 
   function handleMarkerPointerDown(marker: PlanMarker, event: PointerEvent<HTMLDivElement>) {
+    isInteractingWithMarkerRef.current = true;
     lastMarkerPointerTimeRef.current = Date.now();
     event.stopPropagation();
-    event.preventDefault();
     setSelectedPlanMarkerId(marker.id);
     setDraggingMarkerId(marker.id);
     if (marker.category === "furniture" || marker.category === "fixed") {
@@ -383,14 +394,15 @@ export function FengShuiWorkspace({
       return;
     }
 
-    if (scanTool === "north" && isDraggingNorth) {
-      const rect = event.currentTarget.getBoundingClientRect();
+    if (scanTool === "north" && isDraggingNorth && compassRef.current) {
+      const rect = compassRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       const rad = Math.atan2(event.clientY - centerY, event.clientX - centerX);
       let deg = Math.round(rad * (180 / Math.PI) + 90);
       deg = normalizeAngle(deg);
       setNorthAngle(deg);
+      return;
     }
   }
 
@@ -400,6 +412,10 @@ export function FengShuiWorkspace({
     }
     setIsDraggingNorth(false);
     setDraggingMarkerId(null);
+    lastMarkerPointerTimeRef.current = Date.now();
+    setTimeout(() => {
+      isInteractingWithMarkerRef.current = false;
+    }, 400);
   }
 
   function handleUpdateSelectedMarker(updates: Partial<PlanMarker>) {
@@ -595,16 +611,48 @@ export function FengShuiWorkspace({
               <div className="north-tool-card">
                 <div className="north-tool-info">
                   <strong>Ustawienie igły Północy</strong>
-                  <p>Kliknij lub przeciągnij kompas na rzucie, aby dopasować orientację ścian.</p>
+                  <p>Ustaw kąt suwakiem lub wybierz kierunek kardynalny, aby zorientować rzut.</p>
                 </div>
-                <div className="north-stepper-row">
-                  <span>Kąt N: <strong>{northAngle}°</strong></span>
-                  <div className="stepper-btns">
+
+                <div className="north-stepper-row" style={{ display: "flex", flexDirection: "column", gap: "8px", margin: "8px 0" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>Kąt N: <strong style={{ color: "var(--ink)", fontSize: "0.95rem" }}>{northAngle}°</strong></span>
+                    <span style={{ fontSize: "0.75rem", color: "#C49544", fontWeight: 700 }}>
+                      {northAngle >= 337.5 || northAngle < 22.5 ? "Północ (N)" :
+                       northAngle >= 22.5 && northAngle < 67.5 ? "Północny-Wschód (NE)" :
+                       northAngle >= 67.5 && northAngle < 112.5 ? "Wschód (E)" :
+                       northAngle >= 112.5 && northAngle < 157.5 ? "Południowy-Wschód (SE)" :
+                       northAngle >= 157.5 && northAngle < 202.5 ? "Południe (S)" :
+                       northAngle >= 202.5 && northAngle < 247.5 ? "Południowy-Zachód (SW)" :
+                       northAngle >= 247.5 && northAngle < 292.5 ? "Zachód (W)" : "Północny-Zachód (NW)"}
+                    </span>
+                  </div>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="355"
+                    step="5"
+                    value={northAngle}
+                    onChange={(e) => setNorthAngle(Number(e.target.value))}
+                    style={{ width: "100%", accentColor: "#C49544", cursor: "pointer", height: "6px" }}
+                  />
+
+                  <div className="stepper-btns" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
+                    <button type="button" onClick={() => setNorthAngle(0)} style={{ fontWeight: northAngle === 0 ? 800 : 500 }}>N (0°)</button>
+                    <button type="button" onClick={() => setNorthAngle(90)} style={{ fontWeight: northAngle === 90 ? 800 : 500 }}>E (90°)</button>
+                    <button type="button" onClick={() => setNorthAngle(180)} style={{ fontWeight: northAngle === 180 ? 800 : 500 }}>S (180°)</button>
+                    <button type="button" onClick={() => setNorthAngle(270)} style={{ fontWeight: northAngle === 270 ? 800 : 500 }}>W (270°)</button>
+                  </div>
+
+                  <div className="stepper-btns" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
                     <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 15))}>-15°</button>
+                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 5))}>-5°</button>
+                    <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 5))}>+5°</button>
                     <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 15))}>+15°</button>
-                    <button type="button" onClick={() => setNorthAngle(0)}>Reset (0°)</button>
                   </div>
                 </div>
+
                 <button
                   type="button"
                   className={`primary-button full-width ${northConfirmed ? "success-state" : ""}`}
@@ -612,6 +660,7 @@ export function FengShuiWorkspace({
                     setNorthConfirmed(true);
                     setScanTool("marker");
                   }}
+                  style={{ marginTop: "4px" }}
                 >
                   <CheckCircle2 size={16} />
                   <span>{northConfirmed ? "Północ zatwierdzona" : "Zatwierdź orientację N"}</span>
@@ -798,13 +847,24 @@ export function FengShuiWorkspace({
 
                     {/* UNAMBIGUOUS ARCHITECTURAL COMPASS ROSE */}
                     <div
+                      ref={compassRef}
                       className={`floating-north-compass ${scanTool === "north" ? "interactive" : ""}`}
                       style={{
                         top: "16px",
                         right: "16px",
                         cursor: scanTool === "north" ? "grab" : "pointer"
                       }}
-                      onPointerDown={() => scanTool === "north" && setIsDraggingNorth(true)}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        isInteractingWithMarkerRef.current = true;
+                        lastMarkerPointerTimeRef.current = Date.now();
+                        if (scanTool === "north") setIsDraggingNorth(true);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        isInteractingWithMarkerRef.current = true;
+                        lastMarkerPointerTimeRef.current = Date.now();
+                      }}
                     >
                       {renderNorthCompassRose(northAngle)}
                       <span className="compass-deg-badge">Północ N: {northAngle}°</span>
@@ -834,6 +894,17 @@ export function FengShuiWorkspace({
                             top: `${marker.yPercent}%`,
                             zIndex: isSelected ? 15 : isFurniture ? 8 : isFixed ? 5 : 3
                           }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            isInteractingWithMarkerRef.current = true;
+                            lastMarkerPointerTimeRef.current = Date.now();
+                            setSelectedPlanMarkerId(marker.id);
+                          }}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            isInteractingWithMarkerRef.current = true;
+                            lastMarkerPointerTimeRef.current = Date.now();
+                          }}
                         >
                           <div
                             className={`plan-marker ${marker.category} ${isSelected ? "selected" : ""}`}
@@ -843,6 +914,12 @@ export function FengShuiWorkspace({
                               "--marker-scale-x": scaleX,
                               "--marker-scale-y": scaleY
                             } as CSSProperties}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              isInteractingWithMarkerRef.current = true;
+                              lastMarkerPointerTimeRef.current = Date.now();
+                              setSelectedPlanMarkerId(marker.id);
+                            }}
                             onPointerDown={(e) => handleMarkerPointerDown(marker, e)}
                           >
                             {isFurniture ? (
@@ -872,11 +949,26 @@ export function FengShuiWorkspace({
 
                           {/* CONTEXTUAL FLOATING ACTION TOOLBAR */}
                           {isSelected && (isFurniture || isFixed) ? (
-                            <div className="marker-floating-actions" onClick={(e) => e.stopPropagation()}>
+                            <div
+                              className="marker-floating-actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                isInteractingWithMarkerRef.current = true;
+                                lastMarkerPointerTimeRef.current = Date.now();
+                              }}
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                isInteractingWithMarkerRef.current = true;
+                                lastMarkerPointerTimeRef.current = Date.now();
+                              }}
+                            >
                               <button
                                 type="button"
                                 className="action-btn rotate"
-                                onClick={() => handleRotateSelectedMarker(45)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRotateSelectedMarker(45);
+                                }}
                                 title="Obróć o 45°"
                               >
                                 <RotateCw size={13} />
@@ -884,16 +976,17 @@ export function FengShuiWorkspace({
                               </button>
 
                               <div className="action-stepper" title="Szerokość / Skala">
-                                <button type="button" onClick={() => handleScaleSelectedMarker(-0.1)}>-</button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); handleScaleSelectedMarker(-0.1); }}>-</button>
                                 <span>{Math.round((marker.scale ?? 1.0) * 100)}%</span>
-                                <button type="button" onClick={() => handleScaleSelectedMarker(0.1)}>+</button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); handleScaleSelectedMarker(0.1); }}>+</button>
                               </div>
 
                               {isFurniture ? (
                                 <button
                                   type="button"
                                   className="action-btn resident-pick"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     const curName = marker.assignedResidentLabel;
                                     const nextRes = residents.find((r) => r.label !== curName) || null;
                                     handleUpdateSelectedMarker({ assignedResidentLabel: nextRes ? nextRes.label : null });
@@ -908,7 +1001,10 @@ export function FengShuiWorkspace({
                               <button
                                 type="button"
                                 className="action-btn done"
-                                onClick={() => setSelectedPlanMarkerId(null)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedPlanMarkerId(null);
+                                }}
                                 title="Zatwierdź"
                               >
                                 <CheckCircle2 size={13} />
@@ -917,7 +1013,10 @@ export function FengShuiWorkspace({
                               <button
                                 type="button"
                                 className="action-btn delete"
-                                onClick={handleDeleteSelectedMarker}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteSelectedMarker();
+                                }}
                                 title="Usuń element"
                               >
                                 <Trash2 size={13} />
@@ -1290,31 +1389,26 @@ function getInitials(name: string): string {
 
 function renderNorthCompassRose(angle: number) {
   return (
-    <svg viewBox="0 0 100 100" className="architectural-compass-svg" width="68" height="68" aria-label="Róża wiatrów Północ">
-      <circle cx="50" cy="50" r="46" fill="rgba(16, 34, 31, 0.96)" stroke="#C49544" strokeWidth="2" />
-      <circle cx="50" cy="50" r="41" fill="none" stroke="rgba(196, 149, 68, 0.45)" strokeWidth="0.8" strokeDasharray="2 2" />
+    <svg viewBox="0 0 72 72" className="architectural-compass-svg" width="56" height="56" aria-label="Róża wiatrów Północ">
+      {/* Clean Dark Circle Background with Brass Trim */}
+      <circle cx="36" cy="36" r="32" fill="#10221F" stroke="#C49544" strokeWidth="1.5" />
+      <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.8" strokeDasharray="2 2" />
 
-      {/* Rotating Group */}
-      <g transform={`rotate(${angle} 50 50)`}>
-        {/* East/West small secondary wings */}
-        <polygon points="50,50 68,50 50,47" fill="#7A6E5D" />
-        <polygon points="50,50 68,50 50,53" fill="#41524B" />
-        <polygon points="50,50 32,50 50,47" fill="#7A6E5D" />
-        <polygon points="50,50 32,50 50,53" fill="#41524B" />
+      {/* Rotating Needle Group */}
+      <g transform={`rotate(${angle} 36 36)`}>
+        {/* North Needle (Solid Gold / Light Gold Split) */}
+        <polygon points="36,8 41,36 36,32" fill="#C49544" />
+        <polygon points="36,8 31,36 36,32" fill="#E6C88A" />
 
-        {/* SOUTH tail (muted small dark pin) */}
-        <polygon points="50,50 46,50 50,78" fill="#525E5A" />
-        <polygon points="50,50 54,50 50,78" fill="#303A36" />
-        <text x="50" y="87" fill="#8E9E98" fontSize="7.5" fontWeight="bold" textAnchor="middle">S</text>
+        {/* South Needle (Muted Deep Slate) */}
+        <polygon points="36,64 40,36 36,40" fill="#24332F" />
+        <polygon points="36,64 32,36 36,40" fill="#3A4D47" />
 
-        {/* NORTH MAIN ARROW (Bold Gold with RED Crest) */}
-        <polygon points="50,50 44,50 50,14" fill="#C49544" stroke="#FFFDFB" strokeWidth="0.5" />
-        <polygon points="50,50 56,50 50,14" fill="#E6B862" stroke="#FFFDFB" strokeWidth="0.5" />
+        {/* Center Brass Pivot */}
+        <circle cx="36" cy="36" r="3.5" fill="#FAF7F2" stroke="#10221F" strokeWidth="1.5" />
 
-        {/* Prominent Red Arrowhead */}
-        <polygon points="50,11 41,25 59,25" fill="#DC2626" stroke="#FFF" strokeWidth="1" />
-        <text x="50" y="10" fill="#FFD700" fontSize="11" fontWeight="900" textAnchor="middle">N</text>
-        <circle cx="50" cy="50" r="4.5" fill="#C49544" stroke="#10221F" strokeWidth="1.5" />
+        {/* Sharp, Clean N at North Tip */}
+        <text x="36" y="7" fill="#FFD700" fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="system-ui, sans-serif">N</text>
       </g>
     </svg>
   );
@@ -1419,18 +1513,17 @@ function renderCadSymbolSvg(furn: string) {
   }
   if (furn === "Sofa") {
     return (
-      <svg viewBox="0 0 72 72" className="arch-furniture-svg sofa-svg" aria-hidden="true">
-        {/* Dark backrest with clear depth */}
-        <rect x="10" y="12" width="52" height="14" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.8" />
-        {/* Dark armrest left */}
-        <rect x="10" y="26" width="11" height="34" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.8" />
-        {/* Dark armrest right */}
-        <rect x="51" y="26" width="11" height="34" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.8" />
-        {/* Clear lighter cushions */}
-        <rect x="21" y="26" width="15" height="32" rx="1" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.5" />
-        <rect x="36" y="26" width="15" height="32" rx="1" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.5" />
-        {/* Subtle cushion contour line */}
-        <line x1="36" y1="26" x2="36" y2="58" stroke="#1A2B27" strokeWidth="1.4" />
+      <svg viewBox="0 0 84 38" className="arch-furniture-svg sofa-svg" aria-hidden="true">
+        {/* Dark solid backrest along top edge */}
+        <rect x="4" y="3" width="76" height="9" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.6" />
+        {/* Left armrest */}
+        <rect x="4" y="12" width="10" height="23" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.6" />
+        {/* Right armrest */}
+        <rect x="70" y="12" width="10" height="23" rx="2" fill="#5C4724" stroke="#1A2B27" strokeWidth="1.6" />
+        {/* 3 distinct elongated lighter seat cushions */}
+        <rect x="14" y="12" width="18.5" height="21" rx="1.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.4" />
+        <rect x="32.5" y="12" width="19" height="21" rx="1.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.4" />
+        <rect x="51.5" y="12" width="18.5" height="21" rx="1.5" fill="#FAF7F2" stroke="#1A2B27" strokeWidth="1.4" />
       </svg>
     );
   }
