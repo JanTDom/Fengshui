@@ -4546,15 +4546,15 @@ body {
   transform: rotate(var(--marker-facing, 0deg)) scaleX(calc(var(--marker-scale-x, var(--marker-scale, 1)) * 1.03)) scaleY(calc(var(--marker-scale-y, var(--marker-scale, 1)) * 1.03));
 }
 
-.arch-furniture-svg {
+.plan-marker.furniture .arch-furniture-piece .arch-furniture-svg {
   display: block;
-  width: clamp(28px, 9cqi, 68px);
+  width: clamp(26px, 8cqi, 60px);
   height: auto;
   pointer-events: auto;
 }
 
-.arch-furniture-svg.sofa-svg {
-  width: clamp(42px, 13.5cqi, 98px);
+.plan-marker.furniture .arch-furniture-piece .sofa-svg {
+  width: clamp(38px, 11cqi, 80px);
   height: auto;
 }
 
@@ -4607,30 +4607,27 @@ body {
 }
 
 .architectural-compass-svg {
-  filter: drop-shadow(0 2px 8px rgba(16, 34, 31, 0.35));
-  transition: transform 0.1s ease;
+  display: block;
+  filter: drop-shadow(0 2px 6px rgba(16, 34, 31, 0.22));
 }
 
 .floating-north-compass {
   position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
+  top: 14px;
+  right: 14px;
   z-index: 20;
+  cursor: pointer;
   user-select: none;
   touch-action: none;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.compass-deg-badge {
-  font-size: 0.50rem;
-  font-weight: 800;
-  padding: 1px 5px;
-  background: rgba(16, 34, 31, 0.92);
-  color: #FAF7F2;
-  border: 1px solid #C49544;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
+.floating-north-compass:hover {
+  transform: scale(1.08);
+}
+
+.floating-north-compass:active {
+  transform: scale(0.95);
 }
 
 .plan-marker.furniture .furniture-floating-tag {
@@ -6011,12 +6008,16 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 6px;
+  justify-content: center;
+  padding: 8px 4px;
   border-radius: 8px;
   background: #FFFFFF;
   border: 1.5px solid rgba(16, 34, 31, 0.09);
   cursor: pointer;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .cad-furn-btn:hover {
@@ -6032,10 +6033,28 @@ body {
 }
 
 .cad-furn-preview {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
+  width: 100%;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.cad-furn-preview .arch-furniture-svg {
+  max-width: 82% !important;
+  max-height: 32px !important;
+  width: auto !important;
+  height: auto !important;
+  display: block;
+}
+
+.cad-furn-preview .sofa-svg {
+  max-width: 78% !important;
+  max-height: 24px !important;
+  width: auto !important;
+  height: auto !important;
 }
 
 .cad-furn-title {
@@ -6043,6 +6062,8 @@ body {
   font-weight: 700;
   color: #10221F;
   margin-top: 4px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .palette-help-hint {

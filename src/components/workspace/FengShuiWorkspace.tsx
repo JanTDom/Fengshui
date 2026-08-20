@@ -119,7 +119,7 @@ export function FengShuiWorkspace({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewMimeType, setPreviewMimeType] = useState<string | null>(null);
   const [previewAspectRatio, setPreviewAspectRatio] = useState<string | null>(null);
-  const [scanTool, setScanTool] = useState<"north" | "marker">("north");
+  const [scanTool, setScanTool] = useState<"north" | "marker">("marker");
   const [annotationMode, setAnnotationMode] = useState<AnnotationMode>("furniture");
   const [selectedMarkerLabel, setSelectedMarkerLabel] = useState<string>("Łóżko");
   const [selectedPlanMarkerId, setSelectedPlanMarkerId] = useState<string | null>(null);
@@ -312,24 +312,14 @@ export function FengShuiWorkspace({
   }
 
   function handleCanvasClick(event: MouseEvent<HTMLDivElement>) {
-    if (isInteractingWithMarkerRef.current) return;
-    if (Date.now() - lastMarkerPointerTimeRef.current < 500) return;
     if (suppressScanClickRef.current) {
       suppressScanClickRef.current = false;
       return;
     }
     const target = event.target as HTMLElement;
-    if (target.closest(".marker-floating-actions, .floating-north-compass, .plan-marker, .plan-marker-wrapper, button, input")) return;
-
-    if (scanTool === "north") return;
-
-    // If a marker is currently selected, clicking blank canvas should ONLY deselect it, NOT create a new marker!
-    if (selectedPlanMarkerId !== null) {
-      setSelectedPlanMarkerId(null);
+    if (target.closest(".marker-floating-actions, .floating-north-compass, .plan-marker, button, input")) {
       return;
     }
-
-    if (scanTool !== "marker") return;
 
     const img = planImageRef.current;
     const rect = img && img.clientWidth > 0 ? img.getBoundingClientRect() : event.currentTarget.getBoundingClientRect();
@@ -362,8 +352,6 @@ export function FengShuiWorkspace({
   }
 
   function handleMarkerPointerDown(marker: PlanMarker, event: PointerEvent<HTMLDivElement>) {
-    isInteractingWithMarkerRef.current = true;
-    lastMarkerPointerTimeRef.current = Date.now();
     event.stopPropagation();
     setSelectedPlanMarkerId(marker.id);
     setDraggingMarkerId(marker.id);
@@ -393,29 +381,20 @@ export function FengShuiWorkspace({
       );
       return;
     }
-
-    if (scanTool === "north" && isDraggingNorth && compassRef.current) {
-      const rect = compassRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const rad = Math.atan2(event.clientY - centerY, event.clientX - centerX);
-      let deg = Math.round(rad * (180 / Math.PI) + 90);
-      deg = normalizeAngle(deg);
-      setNorthAngle(deg);
-      return;
-    }
   }
 
   function handleCanvasPointerUp(event: PointerEvent<HTMLDivElement>) {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
-    setIsDraggingNorth(false);
+    if (draggingMarkerId) {
+      suppressScanClickRef.current = true;
+      setTimeout(() => {
+        suppressScanClickRef.current = false;
+      }, 150);
+    }
     setDraggingMarkerId(null);
-    lastMarkerPointerTimeRef.current = Date.now();
-    setTimeout(() => {
-      isInteractingWithMarkerRef.current = false;
-    }, 400);
+    setIsDraggingNorth(false);
   }
 
   function handleUpdateSelectedMarker(updates: Partial<PlanMarker>) {
@@ -845,29 +824,21 @@ export function FengShuiWorkspace({
                       </div>
                     ) : null}
 
-                    {/* UNAMBIGUOUS ARCHITECTURAL COMPASS ROSE */}
+                    {/* CLEAN ARCHITECTURAL NORTH ARROW (CAD Standard) */}
                     <div
-                      ref={compassRef}
-                      className={`floating-north-compass ${scanTool === "north" ? "interactive" : ""}`}
+                      className="floating-north-compass"
                       style={{
-                        top: "16px",
-                        right: "16px",
-                        cursor: scanTool === "north" ? "grab" : "pointer"
-                      }}
-                      onPointerDown={(e) => {
-                        e.stopPropagation();
-                        isInteractingWithMarkerRef.current = true;
-                        lastMarkerPointerTimeRef.current = Date.now();
-                        if (scanTool === "north") setIsDraggingNorth(true);
+                        top: "14px",
+                        right: "14px",
+                        cursor: "pointer"
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        isInteractingWithMarkerRef.current = true;
-                        lastMarkerPointerTimeRef.current = Date.now();
+                        setNorthAngle((a) => normalizeAngle(a + 45));
                       }}
+                      title={`Północ: ${northAngle}° (Kliknij, aby obrócić o 45°)`}
                     >
                       {renderNorthCompassRose(northAngle)}
-                      <span className="compass-deg-badge">Północ N: {northAngle}°</span>
                     </div>
 
                     {/* PLACED PLAN MARKERS */}
@@ -1389,26 +1360,25 @@ function getInitials(name: string): string {
 
 function renderNorthCompassRose(angle: number) {
   return (
-    <svg viewBox="0 0 72 72" className="architectural-compass-svg" width="56" height="56" aria-label="Róża wiatrów Północ">
-      {/* Clean Dark Circle Background with Brass Trim */}
-      <circle cx="36" cy="36" r="32" fill="#10221F" stroke="#C49544" strokeWidth="1.5" />
-      <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="0.8" strokeDasharray="2 2" />
+    <svg viewBox="0 0 50 50" className="architectural-compass-svg" width="46" height="46" aria-label="Kierunek Północy N">
+      {/* Clean White Architectural Disc with Thin CAD Border */}
+      <circle cx="25" cy="25" r="22" fill="#FFFFFF" fillOpacity="0.95" stroke="#1A2B27" strokeWidth="1.3" />
+      <circle cx="25" cy="25" r="19.5" fill="none" stroke="rgba(26, 43, 39, 0.16)" strokeWidth="0.6" />
 
-      {/* Rotating Needle Group */}
-      <g transform={`rotate(${angle} 36 36)`}>
-        {/* North Needle (Solid Gold / Light Gold Split) */}
-        <polygon points="36,8 41,36 36,32" fill="#C49544" />
-        <polygon points="36,8 31,36 36,32" fill="#E6C88A" />
+      {/* Rotating Architectural Needle */}
+      <g transform={`rotate(${angle} 25 25)`}>
+        {/* North Arrowhead: Black Solid Left, White Right (Classic CAD Standard) */}
+        <polygon points="25,7 28.5,24 25,21.5" fill="#1A2B27" stroke="#1A2B27" strokeWidth="0.6" />
+        <polygon points="25,7 21.5,24 25,21.5" fill="#FFFFFF" stroke="#1A2B27" strokeWidth="0.6" />
 
-        {/* South Needle (Muted Deep Slate) */}
-        <polygon points="36,64 40,36 36,40" fill="#24332F" />
-        <polygon points="36,64 32,36 36,40" fill="#3A4D47" />
+        {/* South Needle Line */}
+        <line x1="25" y1="21.5" x2="25" y2="41" stroke="#1A2B27" strokeWidth="1.2" />
 
-        {/* Center Brass Pivot */}
-        <circle cx="36" cy="36" r="3.5" fill="#FAF7F2" stroke="#10221F" strokeWidth="1.5" />
+        {/* Center Point */}
+        <circle cx="25" cy="25" r="2" fill="#1A2B27" />
 
-        {/* Sharp, Clean N at North Tip */}
-        <text x="36" y="7" fill="#FFD700" fontSize="8" fontWeight="900" textAnchor="middle" fontFamily="system-ui, sans-serif">N</text>
+        {/* Clean, Bold 'N' above the arrow */}
+        <text x="25" y="6" fill="#1A2B27" fontSize="6.5" fontWeight="900" textAnchor="middle" fontFamily="system-ui, -apple-system, sans-serif">N</text>
       </g>
     </svg>
   );
