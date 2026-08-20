@@ -1553,7 +1553,7 @@ function drawArchitecturalMarkerOnCanvas(
       ctx.restore();
     }
   } else if (marker.category === "fixed") {
-    // STAŁE PUNKTY ARCHITEKTONICZNE (Okno, Drzwi, Schody, Ściana, Pion)
+    // STAŁE PUNKTY ARCHITEKTONICZNE (Okno, Drzwi, Schody, Ściana, Pion) — kompaktowe i subtelne CAD
     const angleDeg = marker.facingDeg ?? 0;
     const angleRad = (angleDeg * Math.PI) / 180;
     const scale = marker.scale ?? 1.0;
@@ -1561,8 +1561,9 @@ function drawArchitecturalMarkerOnCanvas(
       label.includes("Okno") ||
       label.includes("Drzwi") ||
       label.includes("Ściana");
-    const scaleX = marker.flipX ? -scale : scale;
-    const scaleY = isLinear ? 1.0 : scale;
+    const baseFixedScale = 0.55; // Miniaturowy, precyzyjny rozmiar architektoniczny
+    const scaleX = (marker.flipX ? -scale : scale) * baseFixedScale;
+    const scaleY = (isLinear ? 1.0 : scale) * baseFixedScale;
 
     ctx.save();
     ctx.translate(px, py);
@@ -2658,339 +2659,443 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
     },
     content: [
       // 1. STRONA TYTUŁOWA & METRYKA ANALIZY
-      { text: "PLAN HARMONII · RAPORT AUDYTOWY PRZESTRZENI", style: "kicker" },
-      { text: "Profesjonalny Audyt Przestrzenny & Feng Shui", style: "title" },
       {
-        text: "Kompleksowa diagnoza układu, analiza 9 stref Bagua, Latających Gwiazd Okresu 9, profilu domowników oraz 3-poziomowy plan korekt architektonicznych.",
-        style: "subtitle"
+        unbreakable: true,
+        stack: [
+          { text: "PLAN HARMONII · RAPORT AUDYTOWY PRZESTRZENI", style: "kicker" },
+          { text: "Profesjonalny Audyt Przestrzenny & Feng Shui", style: "title" },
+          {
+            text: "Kompleksowa diagnoza układu, analiza 9 stref Bagua, Latających Gwiazd Okresu 9, profilu domowników oraz 3-poziomowy plan korekt architektonicznych.",
+            style: "subtitle"
+          },
+          pdfMetadataTable(report.property_metadata, report.input_data_record)
+        ]
       },
-      pdfMetadataTable(report.property_metadata, report.input_data_record),
 
-      // 20. EXECUTIVE SUMMARY (PODSUMOWANIE ZARZĄDCZE NA POCZĄTKU)
-      pdfSectionHeader(20, "Executive Summary (Podsumowanie Zarządcze)", "Główne wnioski strategiczne, bilans potencjału lokalu oraz kluczowe priorytety."),
+      // PODSUMOWANIE ZARZĄDCZE NA POCZĄTKU
       {
-        table: {
-          dontBreakRows: true,
-          widths: [130, "*"],
-          body: [
-            [
-              {
-                stack: [
-                  { text: "WYNIK POTENCJAŁU", style: "scoreLabel" },
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(1, "Podsumowanie w Pigułce (Dla Właściciela)", "Główne wnioski strategiczne, bilans potencjału lokalu oraz kluczowe priorytety."),
+          {
+            table: {
+              dontBreakRows: true,
+              widths: [130, "*"],
+              body: [
+                [
                   {
-                    text: [
-                      { text: `${report.score}`, fontSize: 28, bold: true, color: "#10221F" },
-                      { text: " / 100", fontSize: 14, bold: true, color: "#7A6E5D" }
+                    stack: [
+                      { text: "WYNIK POTENCJAŁU", style: "scoreLabel" },
+                      {
+                        text: [
+                          { text: `${report.score}`, fontSize: 28, bold: true, color: "#10221F" },
+                          { text: " / 100", fontSize: 14, bold: true, color: "#7A6E5D" }
+                        ],
+                        noWrap: true,
+                        margin: [0, 2, 0, 2]
+                      },
+                      { text: `Pewność: ${pdfConfidenceLabel(report.confidence)}`, style: "mutedText" }
                     ],
-                    noWrap: true,
-                    margin: [0, 2, 0, 2]
+                    fillColor: "#F7EDDB",
+                    margin: [10, 8, 10, 8]
                   },
-                  { text: `Pewność: ${pdfConfidenceLabel(report.confidence)}`, style: "mutedText" }
-                ],
-                fillColor: "#F7EDDB",
-                margin: [10, 8, 10, 8]
-              },
-              {
-                stack: [
-                  { text: "PODSUMOWANIE STRATEGICZNE", style: "cardEyebrow" },
-                  { text: pdfText(report.executive_summary), style: "bodyText" },
-                  { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 4, 0, 1] },
-                  { text: pdfText(report.purchase_decision), style: "bodyText" }
-                ],
-                fillColor: "#FFFDFB",
-                margin: [10, 8, 10, 8]
-              }
-            ]
-          ]
-        },
-        layout: {
-          hLineColor: () => "#D1B47A",
-          vLineColor: () => "#D1B47A",
-          paddingLeft: () => 0,
-          paddingRight: () => 0,
-          paddingTop: () => 0,
-          paddingBottom: () => 0
-        },
-        margin: [0, 0, 0, 8]
-      },
-      ...(report.executive_summary_points
-        ? [
-            {
-              unbreakable: true,
-              table: {
-                dontBreakRows: true,
-                widths: ["33.33%", "33.33%", "33.34%"],
-                body: [
-                  [
-                    {
-                      stack: [
-                        { text: "3 NAJWIĘKSZE ATUTY", style: "cardEyebrow", color: "#16A34A" },
-                        { ul: report.executive_summary_points.top_three_assets, style: "bulletText", margin: [0, 2, 0, 0] }
-                      ],
-                      fillColor: "#F0FDF4"
-                    },
-                    {
-                      stack: [
-                        { text: "3 GŁÓWNE WYZWANIA", style: "cardEyebrow", color: "#DC2626" },
-                        { ul: report.executive_summary_points.top_three_challenges, style: "bulletText", margin: [0, 2, 0, 0] }
-                      ],
-                      fillColor: "#FEF2F2"
-                    },
-                    {
-                      stack: [
-                        { text: "5 NATYCHMIASTOWYCH ZALECEŃ", style: "cardEyebrow", color: "#D97706" },
-                        { ul: report.executive_summary_points.top_five_instant_actions, style: "bulletText", margin: [0, 2, 0, 0] }
-                      ],
-                      fillColor: "#FFFBEB"
-                    }
-                  ]
+                  {
+                    stack: [
+                      { text: "PODSUMOWANIE STRATEGICZNE", style: "cardEyebrow" },
+                      { text: pdfText(report.executive_summary), style: "bodyText" },
+                      { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 4, 0, 1] },
+                      { text: pdfText(report.purchase_decision), style: "bodyText" }
+                    ],
+                    fillColor: "#FFFDFB",
+                    margin: [10, 8, 10, 8]
+                  }
                 ]
-              },
-              layout: {
-                hLineColor: () => "#D8CDB8",
-                vLineColor: () => "#D8CDB8",
-                paddingLeft: () => 6,
-                paddingRight: () => 6,
-                paddingTop: () => 6,
-                paddingBottom: () => 6
-              },
-              margin: [0, 0, 0, 10]
-            }
-          ]
-        : []),
+              ]
+            },
+            layout: {
+              hLineColor: () => "#D1B47A",
+              vLineColor: () => "#D1B47A",
+              paddingLeft: () => 0,
+              paddingRight: () => 0,
+              paddingTop: () => 0,
+              paddingBottom: () => 0
+            },
+            margin: [0, 0, 0, 8]
+          },
+          ...(report.executive_summary_points
+            ? [
+                {
+                  unbreakable: true,
+                  table: {
+                    dontBreakRows: true,
+                    widths: ["33.33%", "33.33%", "33.34%"],
+                    body: [
+                      [
+                        {
+                          stack: [
+                            { text: "3 NAJWIĘKSZE ATUTY", style: "cardEyebrow", color: "#16A34A" },
+                            { ul: report.executive_summary_points.top_three_assets, style: "bulletText", margin: [0, 2, 0, 0] }
+                          ],
+                          fillColor: "#F0FDF4"
+                        },
+                        {
+                          stack: [
+                            { text: "3 GŁÓWNE WYZWANIA", style: "cardEyebrow", color: "#DC2626" },
+                            { ul: report.executive_summary_points.top_three_challenges, style: "bulletText", margin: [0, 2, 0, 0] }
+                          ],
+                          fillColor: "#FEF2F2"
+                        },
+                        {
+                          stack: [
+                            { text: "5 NATYCHMIASTOWYCH ZALECEŃ", style: "cardEyebrow", color: "#D97706" },
+                            { ul: report.executive_summary_points.top_five_instant_actions, style: "bulletText", margin: [0, 2, 0, 0] }
+                          ],
+                          fillColor: "#FFFBEB"
+                        }
+                      ]
+                    ]
+                  },
+                  layout: {
+                    hLineColor: () => "#D8CDB8",
+                    vLineColor: () => "#D8CDB8",
+                    paddingLeft: () => 6,
+                    paddingRight: () => 6,
+                    paddingTop: () => 6,
+                    paddingBottom: () => 6
+                  },
+                  margin: [0, 0, 0, 10]
+                }
+              ]
+            : [])
+        ]
+      },
 
       // 2. CEL KONSULTACJI
-      pdfSectionHeader(2, "Cel Konsultacji i Oczekiwane Rezultaty", "Zdefiniowane intencje i priorytety właściciela lokalu."),
-      ...(report.consultation_goal
-        ? [
-            pdfCard(
-              "Nadrzędny cel audytu przestrzennego",
-              report.consultation_goal.primary_goal,
-              [
-                ...report.consultation_goal.focus_areas.map((f) => `Obszar koncentracji: ${f}`),
-                ...report.consultation_goal.expected_outcomes.map((o) => `Oczekiwany rezultat: ${o}`)
-              ],
-              "Intencja i priorytety użytkownika"
-            )
-          ]
-        : []),
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(2, "Cel Konsultacji i Oczekiwane Rezultaty", "Zdefiniowane intencje i priorytety właściciela lokalu."),
+          ...(report.consultation_goal
+            ? [
+                pdfCard(
+                  "Nadrzędny cel audytu przestrzennego",
+                  report.consultation_goal.primary_goal,
+                  [
+                    ...report.consultation_goal.focus_areas.map((f) => `Obszar koncentracji: ${f}`),
+                    ...report.consultation_goal.expected_outcomes.map((o) => `Oczekiwany rezultat: ${o}`)
+                  ],
+                  "Intencja i priorytety użytkownika"
+                )
+              ]
+            : [])
+        ]
+      },
 
-      // 3. ZAKRES I METODOLOGIA ANALIZY (EVA WONG, SKINNER, SZKOŁA FORMY, BA ZHAI, XUAN KONG)
-      pdfSectionHeader(3, "Zakres i Metodologia Analizy", "Fundamenty klasyczne: Eva Wong, Stephen Skinner, Szkoła Formy, Ba Zhai, Xuan Kong Fei Xing & Wu Xing."),
-      ...(report.methodology_scope
-        ? [
-            pdfCard(
-              "Zastosowane szkoły i ramy badawcze",
-              report.methodology_scope.scope_description,
-              [
-                ...report.methodology_scope.applied_schools.map((s) => `Metoda: ${s}`),
-                ...report.methodology_scope.sources_bibliography.map((b) => `Źródło: ${b}`)
-              ],
-              "Metodologia klasyczna & ergonomia wnętrz"
-            )
-          ]
-        : []),
+      // 3. ZAKRES I METODOLOGIA ANALIZY
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(3, "Zakres i Metodologia Analizy", "Fundamenty klasyczne: Eva Wong, Stephen Skinner, Szkoła Formy, Ba Zhai, Xuan Kong Fei Xing & Wu Xing."),
+          ...(report.methodology_scope
+            ? [
+                pdfCard(
+                  "Zastosowane szkoły i ramy badawcze",
+                  report.methodology_scope.scope_description,
+                  [
+                    ...report.methodology_scope.applied_schools.map((s) => `Metoda: ${s}`),
+                    ...report.methodology_scope.sources_bibliography.map((b) => `Źródło: ${b}`)
+                  ],
+                  "Metodologia klasyczna & ergonomia wnętrz"
+                )
+              ]
+            : [])
+        ]
+      },
 
       // 4. DANE WEJŚCIOWE
-      pdfSectionHeader(4, "Dane Wejściowe i Parametry Bazowe", "Zweryfikowane parametry geometryczne, kompasowe i demograficzne lokalu."),
-      ...(report.input_data_record
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(4, "Dane Wejściowe i Parametry Bazowe", "Zweryfikowane parametry geometryczne, kompasowe i demograficzne lokalu."),
+          ...(report.input_data_record
+            ? [
+                {
+                  unbreakable: true,
+                  table: {
+                    dontBreakRows: true,
+                    widths: ["50%", "50%"],
+                    body: [
+                      [
+                        { text: `• Status rzutu: ${report.input_data_record.floor_plan_status}`, style: "bodyText" },
+                        { text: `• Azymut Północy N: ${report.input_data_record.compass_north_azimuth}`, style: "bodyText" }
+                      ],
+                      [
+                        { text: `• Oś Fasada/Tył: ${report.input_data_record.facing_sitting}`, style: "bodyText" },
+                        { text: `• Okres energetyczny: ${report.input_data_record.period_and_timeline}`, style: "bodyText" }
+                      ],
+                      [
+                        { text: `• Liczba domowników: ${report.input_data_record.residents_count} os.`, style: "bodyText" },
+                        { text: `• Zidentyfikowane strefy: ${report.input_data_record.rooms_count} pomieszczeń`, style: "bodyText" }
+                      ]
+                    ]
+                  },
+                  layout: {
+                    fillColor: () => "#FFFDFB",
+                    hLineColor: () => "#E0D7C6",
+                    vLineColor: () => "#E0D7C6",
+                    paddingLeft: () => 6,
+                    paddingRight: () => 6,
+                    paddingTop: () => 4,
+                    paddingBottom: () => 4
+                  },
+                  margin: [0, 0, 0, 8]
+                }
+              ]
+            : [])
+        ]
+      },
+
+      // 5. ANALIZA OTOCZENIA BUDYNKU
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(5, "Analiza Otoczenia Budynku (Makrootoczenie)", "Ukształtowanie terenu, ciągi komunikacyjne, wejście na posesję, Sha Qi i źródła Sheng Qi."),
+          ...(report.macro_environment
+            ? [
+                pdfCard(
+                  "Wpływ otoczenia zewnętrznego na lokal",
+                  `${report.macro_environment.terrain_and_landform}\n\n${report.macro_environment.traffic_and_roads}`,
+                  [
+                    `Sąsiedztwo: ${report.macro_environment.surrounding_buildings}`,
+                    `Sha Qi z zewnątrz: ${report.macro_environment.sha_qi_external}`,
+                    `Źródła Sheng Qi: ${report.macro_environment.sheng_qi_sources}`,
+                    ...report.macro_environment.recommendations.map((r) => `Rekomendacja otoczenia: ${r}`)
+                  ],
+                  "Szkoła Formy Zewnętrznej (Luan Tou)"
+                )
+              ]
+            : [])
+        ]
+      },
+
+      // 6. ANALIZA BRYŁY I STRUKTURY BUDYNKU
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(6, "Analiza Bryły i Struktury Budynku", "Facing / Sitting, proporcje bryły, brakujące sektory i relacja lokalu do rdzenia obiektu."),
+          ...(report.building_morphology
+            ? [
+                pdfCard(
+                  "Morfologia architektoniczna lokalu",
+                  `${report.building_morphology.building_shape}\n\n${report.building_morphology.facing_sitting_verdict}`,
+                  [
+                    `Brakujące sektory: ${report.building_morphology.missing_sectors}`,
+                    `Komunikacja pionowa / Klatka: ${report.building_morphology.entry_and_vertical_circulation}`,
+                    `Pozycja w kondygnacji: ${report.building_morphology.dwelling_relation_to_core}`,
+                    ...report.building_morphology.recommendations.map((r) => `Zalecenie: ${r}`)
+                  ],
+                  "Architektura i proporcje"
+                )
+              ]
+            : [])
+        ]
+      },
+
+      // 7. GRAFICZNA ANALIZA RZUTU Z SIATKĄ 9 STREF BAGUA (PAGE BREAK)
+      {
+        pageBreak: "before",
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(7, "Graficzna Analiza Rzutu CAD z Siatką 9 Stref Bagua", "Wektory ścian, orientacja N oraz naniesione elementy wyposażenia wnętrza w skali."),
+          planOverlayImage
+            ? {
+                image: planOverlayImage,
+                width: 527,
+                alignment: "center",
+                margin: [0, 2, 0, 6]
+              }
+            : pdfCard("Podgląd planu", "Wgraj plik graficzny dla bezpośredniej nakładki 9 stref na rzucie.")
+        ]
+      },
+
+      // 8. ANALIZA PRZEPŁYWU QI
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(8, "Analiza Przepływu Qi (Cyrkulacja Architektoniczna)", "Wlot energii, osie drzwi-okno (Chong Qi), szerokość korytarzy, zakamarki i stan Tai Qi."),
+          ...(report.qi_flow
+            ? [
+                pdfCard(
+                  "Dynamika przepływu i cyrkulacji energii we wnętrzu",
+                  `${report.qi_flow.entry_qi_dynamics}\n\n${report.qi_flow.door_window_axes}`,
+                  [
+                    `Ciągi komunikacyjne: ${report.qi_flow.corridor_and_circulation_speed}`,
+                    `Strefy stagnacji energii: ${report.qi_flow.stagnation_pockets}`,
+                    `Stan centrum (Tai Qi): ${report.qi_flow.tai_qi_central_state}`,
+                    ...report.qi_flow.recommendations.map((r) => `Działanie udrażniające: ${r}`)
+                  ],
+                  "Przepływ energii Qi & ergonomia ciągów"
+                )
+              ]
+            : [])
+        ]
+      },
+
+      // 9. ANALIZA MING TANG
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(9, "Analiza Ming Tang (Strefa Wejścia Głównego)", "Akumulacja jasnej energii Sheng Qi, eliminacja zatorów, doświetlenie i lustra w przedpokoju."),
+          ...(report.ming_tang
+            ? [
+                pdfCard(
+                  "Jakość i pojemność Jasnej Sali (Ming Tang)",
+                  `${report.ming_tang.foyer_quality}\n\n${report.ming_tang.energy_accumulation_capacity}`,
+                  [
+                    `Zatory i buty: ${report.ming_tang.bottlenecks_and_clutter}`,
+                    `Doświetlenie i powitanie: ${report.ming_tang.welcome_lighting_and_flow}`,
+                    ...report.ming_tang.remedies.map((r) => `Korekta strefy wejściowej: ${r}`)
+                  ],
+                  "Ming Tang · Brama do obfitości"
+                )
+              ]
+            : [])
+        ]
+      },
+
+      // 10. SZCZEGÓŁOWA ANALIZA 9 SEKTORÓW BAGUA (PAGE BREAK)
+      {
+        pageBreak: "before",
+        stack: [
+          pdfSectionHeader(10, "Szczegółowa Analiza 9 Sektorów Bagua", "Pełna charakterystyka każdego sektora, powiązane żywioły, trygramy i diagnoza potencjału."),
+          pdfSectorMatrix(report.sector_map)
+        ]
+      },
+
+      // 11. XUAN KONG FLYING STARS
+      ...(natalChart
         ? [
             {
               unbreakable: true,
-              table: {
-                dontBreakRows: true,
-                widths: ["50%", "50%"],
-                body: [
+              stack: [
+                pdfSectionHeader(11, "Xuan Kong Flying Stars — Latające Gwiazdy Okresu 9 (2024–2043)", `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`),
+                pdfNatalChartMatrix(natalChart),
+                pdfCard(
+                  "Strategia energetyczna w Okresie 9 (2024–2043)",
+                  natalChart.period9_strategy,
                   [
-                    { text: `• Status rzutu: ${report.input_data_record.floor_plan_status}`, style: "bodyText" },
-                    { text: `• Azymut Północy N: ${report.input_data_record.compass_north_azimuth}`, style: "bodyText" }
+                    "Główny punkt koncentracji dobrostanu: sektory z Gwiazdą 9 (Władca Okresu)",
+                    "Strefa przyszłego wzrostu: sektory z Gwiazdą 1 (Woda / Mądrość)",
+                    "Rekomendacja: wycisz sektory 5 i 2 elementami żywiołu Metalu (biel, mosiądz, obłe formy)"
                   ],
-                  [
-                    { text: `• Oś Fasada/Tył: ${report.input_data_record.facing_sitting}`, style: "bodyText" },
-                    { text: `• Okres energetyczny: ${report.input_data_record.period_and_timeline}`, style: "bodyText" }
-                  ],
-                  [
-                    { text: `• Liczba domowników: ${report.input_data_record.residents_count} os.`, style: "bodyText" },
-                    { text: `• Zidentyfikowane strefy: ${report.input_data_record.rooms_count} pomieszczeń`, style: "bodyText" }
-                  ]
-                ]
-              },
-              layout: {
-                fillColor: () => "#FFFDFB",
-                hLineColor: () => "#E0D7C6",
-                vLineColor: () => "#E0D7C6",
-                paddingLeft: () => 6,
-                paddingRight: () => 6,
-                paddingTop: () => 4,
-                paddingBottom: () => 4
-              },
-              margin: [0, 0, 0, 8]
+                  "Transformacja Okresu 9 · Cykl 20-letni"
+                )
+              ]
             }
-          ]
-        : []),
-
-      // 5. ANALIZA OTOCZENIA BUDYNKU (MAKRO & SZKOŁA FORMY)
-      pdfSectionHeader(5, "Analiza Otoczenia Budynku (Makrootoczenie)", "Ukształtowanie terenu, ciągi komunikacyjne, wejście na posesję, Sha Qi i źródła Sheng Qi."),
-      ...(report.macro_environment
-        ? [
-            pdfCard(
-              "Wpływ otoczenia zewnętrznego na lokal",
-              `${report.macro_environment.terrain_and_landform}\n\n${report.macro_environment.traffic_and_roads}`,
-              [
-                `Sąsiedztwo: ${report.macro_environment.surrounding_buildings}`,
-                `Sha Qi z zewnątrz: ${report.macro_environment.sha_qi_external}`,
-                `Źródła Sheng Qi: ${report.macro_environment.sheng_qi_sources}`,
-                ...report.macro_environment.recommendations.map((r) => `Rekomendacja otoczenia: ${r}`)
-              ],
-              "Szkoła Formy Zewnętrznej (Luan Tou)"
-            )
-          ]
-        : []),
-
-      // 6. ANALIZA BRYŁY I STRUKTURY BUDYNKU
-      pdfSectionHeader(6, "Analiza Bryły i Struktury Budynku", "Facing / Sitting, proporcje bryły, brakujące sektory i relacja lokalu do rdzenia obiektu."),
-      ...(report.building_morphology
-        ? [
-            pdfCard(
-              "Morfologia architektoniczna lokalu",
-              `${report.building_morphology.building_shape}\n\n${report.building_morphology.facing_sitting_verdict}`,
-              [
-                `Brakujące sektory: ${report.building_morphology.missing_sectors}`,
-                `Komunikacja pionowa / Klatka: ${report.building_morphology.entry_and_vertical_circulation}`,
-                `Pozycja w kondygnacji: ${report.building_morphology.dwelling_relation_to_core}`,
-                ...report.building_morphology.recommendations.map((r) => `Zalecenie: ${r}`)
-              ],
-              "Architektura i proporcje"
-            )
-          ]
-        : []),
-
-      // 7. GRAFICZNA ANALIZA RZUTU Z SIATKĄ 9 STREF BAGUA
-      pdfSectionHeader(7, "Graficzna Analiza Rzutu CAD z Siatką 9 Stref Bagua", "Wektory ścian, orientacja N oraz naniesione elementy wyposażenia wnętrza w skali."),
-      planOverlayImage
-        ? {
-            image: planOverlayImage,
-            width: 527,
-            alignment: "center",
-            margin: [0, 2, 0, 6]
-          }
-        : pdfCard("Podgląd planu", "Wgraj plik graficzny dla bezpośredniej nakładki 9 stref na rzucie."),
-
-      // 8. ANALIZA PRZEPŁYWU QI
-      pdfSectionHeader(8, "Analiza Przepływu Qi (Cyrkulacja Architektoniczna)", "Wlot energii, osie drzwi-okno (Chong Qi), szerokość korytarzy, zakamarki i stan Tai Qi."),
-      ...(report.qi_flow
-        ? [
-            pdfCard(
-              "Dynamika przepływu i cyrkulacji energii we wnętrzu",
-              `${report.qi_flow.entry_qi_dynamics}\n\n${report.qi_flow.door_window_axes}`,
-              [
-                `Ciągi komunikacyjne: ${report.qi_flow.corridor_and_circulation_speed}`,
-                `Strefy stagnacji energii: ${report.qi_flow.stagnation_pockets}`,
-                `Stan centrum (Tai Qi): ${report.qi_flow.tai_qi_central_state}`,
-                ...report.qi_flow.recommendations.map((r) => `Działanie udrażniające: ${r}`)
-              ],
-              "Przepływ energii Qi & ergonomia ciągów"
-            )
-          ]
-        : []),
-
-      // 9. ANALIZA MING TANG (STREFA WEJŚCIOWA)
-      pdfSectionHeader(9, "Analiza Ming Tang (Strefa Wejścia Głównego)", "Akumulacja jasnej energii Sheng Qi, eliminacja zatorów, doświetlenie i lustra w przedpokoju."),
-      ...(report.ming_tang
-        ? [
-            pdfCard(
-              "Jakość i pojemność Jasnej Sali (Ming Tang)",
-              `${report.ming_tang.foyer_quality}\n\n${report.ming_tang.energy_accumulation_capacity}`,
-              [
-                `Zatory i buty: ${report.ming_tang.bottlenecks_and_clutter}`,
-                `Doświetlenie i powitanie: ${report.ming_tang.welcome_lighting_and_flow}`,
-                ...report.ming_tang.remedies.map((r) => `Korekta strefy wejściowej: ${r}`)
-              ],
-              "Ming Tang · Brama do obfitości"
-            )
-          ]
-        : []),
-
-      // 10. SZCZEGÓŁOWA ANALIZA 9 SEKTORÓW BAGUA
-      pdfSectionHeader(10, "Szczegółowa Analiza 9 Sektorów Bagua", "Pełna charakterystyka każdego sektora, powiązane żywioły, trygramy i diagnoza potencjału."),
-      pdfSectorMatrix(report.sector_map),
-
-      // 11. XUAN KONG FLYING STARS (LATAJĄCE GWIAZDY OKRESU 9)
-      ...(natalChart
-        ? [
-            pdfSectionHeader(11, "Xuan Kong Flying Stars — Latające Gwiazdy Okresu 9 (2024–2043)", `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`),
-            pdfNatalChartMatrix(natalChart),
-            pdfCard(
-              "Strategia energetyczna w Okresie 9 (2024–2043)",
-              natalChart.period9_strategy,
-              [
-                "Główny punkt koncentracji dobrostanu: sektory z Gwiazdą 9 (Władca Okresu)",
-                "Strefa przyszłego wzrostu: sektory z Gwiazdą 1 (Woda / Mądrość)",
-                "Rekomendacja: wycisz sektory 5 i 2 elementami żywiołu Metalu (biel, mosiądz, obłe formy)"
-              ],
-              "Transformacja Okresu 9 · Cykl 20-letni"
-            )
           ]
         : []),
 
       // 12. ANALIZA MIESZKAŃCÓW I MING GUA
-      pdfSectionHeader(12, "Analiza Mieszkańców i Personalizacja Ming Gua", "Kalkulacja Ba Zhai: liczby Kua, 4 kierunki sprzyjające, 4 niepomyślne oraz weryfikacja mebli."),
-      pdfCardGrid(residentCards, 2),
+      {
+        stack: [
+          pdfSectionHeader(12, "Analiza Mieszkańców i Personalizacja Ming Gua", "Kalkulacja Ba Zhai: liczby Kua, 4 kierunki sprzyjające, 4 niepomyślne oraz weryfikacja mebli."),
+          pdfCardGrid(residentCards, 2)
+        ]
+      },
 
-      // 13. AUDYT POMIESZCZENIE PO POMIESZCZENIU
-      pdfSectionHeader(13, "Audyt Pomieszczenie po Pomieszczeniu", "Schemat: Obserwacja → Znaczenie → Problem / Diagnoza → Rekomendacja aranżacyjna."),
-      pdfCardGrid(roomCards, 2),
+      // 13. AUDYT POMIESZCZENIE PO POMIESZCZENIU (PAGE BREAK)
+      {
+        pageBreak: "before",
+        stack: [
+          pdfSectionHeader(13, "Audyt Pomieszczenie po Pomieszczeniu", "Schemat: Obserwacja → Znaczenie → Problem / Diagnoza → Rekomendacja aranżacyjna."),
+          pdfCardGrid(roomCards, 2)
+        ]
+      },
 
-      // 14. ANALIZA 3 KLUCZOWYCH FILARÓW MEBLOWYCH (ŁÓŻKO, BIURKO, PŁYTA)
-      pdfSectionHeader(14, "Analiza 3 Kluczowych Filarów Meblowych", "Łóżko (Sen & Regeneracja), Biurko (Kariera & Skupienie) oraz Płyta kuchenna (Zdrowie & Zasoby)."),
-      pdfCardGrid(furnitureCards, 2),
+      // 14. ANALIZA 3 KLUCZOWYCH FILARÓW MEBLOWYCH
+      {
+        stack: [
+          pdfSectionHeader(14, "Analiza 3 Kluczowych Filarów Meblowych", "Łóżko (Sen & Regeneracja), Biurko (Kariera & Skupienie) oraz Płyta kuchenna (Zdrowie & Zasoby)."),
+          pdfCardGrid(furnitureCards, 2)
+        ]
+      },
 
       // 15. ANALIZA PIĘCIU ŻYWIOŁÓW (WU XING)
-      pdfSectionHeader(15, "Analiza Pięciu Żywiołów (Wu Xing Elemental Balance)", "Cykle odżywczy, osłabiający, kontrolujący oraz dedykowana paleta materiałowa i kolorystyczna."),
       ...(report.wu_xing
         ? [
-            pdfCard(
-              "Bilans żywiołów i wskazówki harmonizujące",
-              `${report.wu_xing.generative_cycle_advice}\n\n${report.wu_xing.controlling_cycle_advice}`,
-              [
-                `Żywioły dominujące: ${report.wu_xing.dominant_elements.join(", ")}`,
-                `Żywioły wymagające wsparcia: ${report.wu_xing.deficient_elements.join(", ")}`
-              ],
-              "Harmonia 5 Przemian (Wu Xing)"
-            ),
-            pdfWuXingTable(report.wu_xing)
+            {
+              unbreakable: true,
+              stack: [
+                pdfSectionHeader(15, "Analiza Pięciu Żywiołów (Wu Xing Elemental Balance)", "Cykle odżywczy, osłabiający, kontrolujący oraz dedykowana paleta materiałowa i kolorystyczna."),
+                pdfCard(
+                  "Bilans żywiołów i wskazówki harmonizujące",
+                  `${report.wu_xing.generative_cycle_advice}\n\n${report.wu_xing.controlling_cycle_advice}`,
+                  [
+                    `Żywioły dominujące: ${report.wu_xing.dominant_elements.join(", ")}`,
+                    `Żywioły wymagające wsparcia: ${report.wu_xing.deficient_elements.join(", ")}`
+                  ],
+                  "Harmonia 5 Przemian (Wu Xing)"
+                ),
+                pdfWuXingTable(report.wu_xing)
+              ]
+            }
           ]
         : []),
 
-      // 16. MATRYCA PROBLEMÓW Z PRIORYTETAMI (P1–P4)
-      pdfSectionHeader(16, "Matryca Problemów z Priorytetami (P1–P4)", "P1 – Krytyczny, P2 – Ważny, P3 – Zalecany, P4 – Opcjonalny."),
-      pdfPrioritizedIssuesTable(report.prioritized_issues),
+      // 16. MATRYCA PROBLEMÓW Z PRIORYTETAMI (PAGE BREAK)
+      {
+        pageBreak: "before",
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(16, "Matryca Problemów z Priorytetami (P1–P4)", "P1 – Krytyczny, P2 – Ważny, P3 – Zalecany, P4 – Opcjonalny."),
+          pdfPrioritizedIssuesTable(report.prioritized_issues)
+        ]
+      },
 
       // 17. 3-POZIOMOWE REKOMENDACJE KOREKT
-      pdfSectionHeader(17, "3-Poziomowe Rekomendacje Korekt", "Poziom 1: Bez remontu (koszt 0 zł), Poziom 2: Drobne ingerencje, Poziom 3: Prace architektoniczne."),
-      pdfTieredRecommendationsTable(report.tiered_recommendations),
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(17, "3-Poziomowe Rekomendacje Korekt", "Poziom 1: Bez remontu (koszt 0 zł), Poziom 2: Drobne ingerencje, Poziom 3: Prace architektoniczne."),
+          pdfTieredRecommendationsTable(report.tiered_recommendations)
+        ]
+      },
 
       // 18. HARMONOGRAM WDROŻENIA (ROADMAP)
-      pdfSectionHeader(18, "Harmonogram Wdrożenia (Roadmap)", "Krok po kroku: Etap 1 (1–7 dni), Etap 2 (30 dni), Etap 3 (Przy kolejnym remoncie)."),
-      pdfRoadmapTable(report.implementation_roadmap),
-
-      // 19. RZUT PRZED I PO Z ODNOŚNIKAMI DO ZALECEŃ
-      pdfSectionHeader(19, "Zestawienie Przestrzenne „Przed” i „Po”", "Numery zaleceń [1], [2], [3]... odsyłające bezpośrednio do wdrożonych korekt."),
-      pdfBeforeAfterTable(report.before_after_shifts),
-
-      // BIBLIOGRAFIA & REJESTR ŹRÓDEŁ
-      pdfSectionHeader(20, "Wykres Metod i Rejestr Źródeł Klasycznych", "Transparentność badawcza, stopień pewności metod i literatura źródłowa."),
-      pdfMethodScoreChart(report),
-      pdfCardGrid(
-        report.source_ledger.map((s) =>
-          pdfCard(pdfText(s.source), pdfText(s.used_for), [`Pewność metody: ${pdfConfidenceLabel(s.confidence)}`], "Rejestr źródeł")
-        ),
-        2
-      ),
       {
-        text: pdfText(report.disclaimer),
-        style: "mutedText",
-        margin: [0, 8, 0, 0]
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(18, "Harmonogram Wdrożenia (Roadmap)", "Krok po kroku: Etap 1 (1–7 dni), Etap 2 (30 dni), Etap 3 (Przy kolejnym remoncie)."),
+          pdfRoadmapTable(report.implementation_roadmap)
+        ]
+      },
+
+      // 19. RZUT PRZED I PO
+      {
+        unbreakable: true,
+        stack: [
+          pdfSectionHeader(19, "Zestawienie Przestrzenne „Przed” i „Po”", "Numery zaleceń [1], [2], [3]... odsyłające bezpośrednio do wdrożonych korekt."),
+          pdfBeforeAfterTable(report.before_after_shifts)
+        ]
+      },
+
+      // 20. BIBLIOGRAFIA & REJESTR ŹRÓDEŁ
+      {
+        stack: [
+          pdfSectionHeader(20, "Wykres Metod i Rejestr Źródeł Klasycznych", "Transparentność badawcza, stopień pewności metod i literatura źródłowa."),
+          pdfMethodScoreChart(report),
+          pdfCardGrid(
+            report.source_ledger.map((s) =>
+              pdfCard(pdfText(s.source), pdfText(s.used_for), [`Pewność metody: ${pdfConfidenceLabel(s.confidence)}`], "Rejestr źródeł")
+            ),
+            2
+          ),
+          {
+            text: pdfText(report.disclaimer),
+            style: "mutedText",
+            margin: [0, 8, 0, 0]
+          }
+        ]
       }
     ]
   };
