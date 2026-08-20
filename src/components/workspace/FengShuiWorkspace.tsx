@@ -263,10 +263,13 @@ export function FengShuiWorkspace({
       ...curr,
       {
         label: `Domownik ${curr.length + 1}`,
-        birthDate: "1990-01-01",
-        gender: "M",
-        profession: "",
-        roomName: "Sypialnia główna"
+        role: "Mieszkaniec",
+        birthDate: "1992-08-15",
+        birthTime: "10:00",
+        birthPlace: "",
+        gender: "female",
+        formulaCategory: "Kua",
+        note: ""
       }
     ]);
   }
