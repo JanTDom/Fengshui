@@ -2795,7 +2795,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(3, "Zakres i Metodologia Analizy", "Fundamenty klasyczne: Eva Wong, Stephen Skinner, Szkoła Formy, Ba Zhai, Xuan Kong Fei Xing & Wu Xing."),
+          pdfSectionHeader(3, "Zakres i Metodologia Analizy", "Zastosowane ramy: Szkoła Formy, Ba Zhai, 9 Stref Bagua oraz Ergonomia Wnętrz."),
           ...(report.methodology_scope
             ? [
                 pdfCard(
@@ -2859,7 +2859,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(5, "Analiza Otoczenia Budynku (Makrootoczenie)", "Ukształtowanie terenu, ciągi komunikacyjne, wejście na posesję, Sha Qi i źródła Sheng Qi."),
+          pdfSectionHeader(5, "Analiza Otoczenia Budynku i Ulicy", "Ukształtowanie terenu, ciągi komunikacyjne, wejście na posesję i ochrona przed zagrożeniami."),
           ...(report.macro_environment
             ? [
                 pdfCard(
@@ -2867,8 +2867,8 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                   `${report.macro_environment.terrain_and_landform}\n\n${report.macro_environment.traffic_and_roads}`,
                   [
                     `Sąsiedztwo: ${report.macro_environment.surrounding_buildings}`,
-                    `Sha Qi z zewnątrz: ${report.macro_environment.sha_qi_external}`,
-                    `Źródła Sheng Qi: ${report.macro_environment.sheng_qi_sources}`,
+                    `Zagrożenia z zewnątrz: ${report.macro_environment.sha_qi_external}`,
+                    `Atuty otoczenia: ${report.macro_environment.sheng_qi_sources}`,
                     ...report.macro_environment.recommendations.map((r) => `Rekomendacja otoczenia: ${r}`)
                   ],
                   "Szkoła Formy Zewnętrznej (Luan Tou)"
@@ -2882,15 +2882,15 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(6, "Analiza Bryły i Struktury Budynku", "Facing / Sitting, proporcje bryły, brakujące sektory i relacja lokalu do rdzenia obiektu."),
+          pdfSectionHeader(6, "Analiza Bryły i Układu Lokalu", "Facing / Sitting, proporcje bryły, ciągi komunikacyjne i pozycja w kondygnacji."),
           ...(report.building_morphology
             ? [
                 pdfCard(
                   "Morfologia architektoniczna lokalu",
                   `${report.building_morphology.building_shape}\n\n${report.building_morphology.facing_sitting_verdict}`,
                   [
-                    `Brakujące sektory: ${report.building_morphology.missing_sectors}`,
-                    `Komunikacja pionowa / Klatka: ${report.building_morphology.entry_and_vertical_circulation}`,
+                    `Brakujące strefy: ${report.building_morphology.missing_sectors}`,
+                    `Komunikacja pionowa / Schody: ${report.building_morphology.entry_and_vertical_circulation}`,
                     `Pozycja w kondygnacji: ${report.building_morphology.dwelling_relation_to_core}`,
                     ...report.building_morphology.recommendations.map((r) => `Zalecenie: ${r}`)
                   ],
@@ -2906,7 +2906,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         pageBreak: "before",
         unbreakable: true,
         stack: [
-          pdfSectionHeader(7, "Graficzna Analiza Rzutu CAD z Siatką 9 Stref Bagua", "Wektory ścian, orientacja N oraz naniesione elementy wyposażenia wnętrza w skali."),
+          pdfSectionHeader(7, "Graficzny Plan z Siatką Stref i Wektorami CAD", "Wektory ścian, orientacja N oraz naniesione elementy wyposażenia wnętrza w skali."),
           planOverlayImage
             ? {
                 image: planOverlayImage,
@@ -2922,7 +2922,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(8, "Analiza Przepływu Qi (Cyrkulacja Architektoniczna)", "Wlot energii, osie drzwi-okno (Chong Qi), szerokość korytarzy, zakamarki i stan Tai Qi."),
+          pdfSectionHeader(8, "Przepływ Energii i Komunikacja (Cyrkulacja)", "Ciągi komunikacyjne, osie drzwi–okno, doświetlenie i serce domu."),
           ...(report.qi_flow
             ? [
                 pdfCard(
@@ -2930,8 +2930,8 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                   `${report.qi_flow.entry_qi_dynamics}\n\n${report.qi_flow.door_window_axes}`,
                   [
                     `Ciągi komunikacyjne: ${report.qi_flow.corridor_and_circulation_speed}`,
-                    `Strefy stagnacji energii: ${report.qi_flow.stagnation_pockets}`,
-                    `Stan centrum (Tai Qi): ${report.qi_flow.tai_qi_central_state}`,
+                    `Strefy zastojów: ${report.qi_flow.stagnation_pockets}`,
+                    `Stan centrum domu (Tai Qi): ${report.qi_flow.tai_qi_central_state}`,
                     ...report.qi_flow.recommendations.map((r) => `Działanie udrażniające: ${r}`)
                   ],
                   "Przepływ energii Qi & ergonomia ciągów"
@@ -2945,18 +2945,18 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(9, "Analiza Ming Tang (Strefa Wejścia Głównego)", "Akumulacja jasnej energii Sheng Qi, eliminacja zatorów, doświetlenie i lustra w przedpokoju."),
+          pdfSectionHeader(9, "Strefa Wejściowa (Przedpokój / Hol)", "Pierwsze wrażenie, akumulacja energii, doświetlenie i eliminacja zatorów."),
           ...(report.ming_tang
             ? [
                 pdfCard(
-                  "Jakość i pojemność Jasnej Sali (Ming Tang)",
+                  "Jakość i pojemność strefy wejściowej (Ming Tang)",
                   `${report.ming_tang.foyer_quality}\n\n${report.ming_tang.energy_accumulation_capacity}`,
                   [
-                    `Zatory i buty: ${report.ming_tang.bottlenecks_and_clutter}`,
+                    `Zatory i obuwie: ${report.ming_tang.bottlenecks_and_clutter}`,
                     `Doświetlenie i powitanie: ${report.ming_tang.welcome_lighting_and_flow}`,
                     ...report.ming_tang.remedies.map((r) => `Korekta strefy wejściowej: ${r}`)
                   ],
-                  "Ming Tang · Brama do obfitości"
+                  "Strefa Wejściowa · Brama do obfitości"
                 )
               ]
             : [])
@@ -2967,7 +2967,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         pageBreak: "before",
         stack: [
-          pdfSectionHeader(10, "Szczegółowa Analiza 9 Sektorów Bagua", "Pełna charakterystyka każdego sektora, powiązane żywioły, trygramy i diagnoza potencjału."),
+          pdfSectionHeader(10, "Siatka 9 Stref Domu (Sektory Bagua)", "Pełna charakterystyka każdego sektora, powiązane sfery życia i diagnoza potencjału."),
           pdfSectorMatrix(report.sector_map)
         ]
       },
@@ -2978,7 +2978,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
             {
               unbreakable: true,
               stack: [
-                pdfSectionHeader(11, "Xuan Kong Flying Stars — Latające Gwiazdy Okresu 9 (2024–2043)", `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`),
+                pdfSectionHeader(11, "Tradycyjna Mapa Energii (Latające Gwiazdy Okresu 9: 2024–2043)", `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`),
                 pdfNatalChartMatrix(natalChart),
                 pdfCard(
                   "Strategia energetyczna w Okresie 9 (2024–2043)",
@@ -2998,7 +2998,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 12. ANALIZA MIESZKAŃCÓW I MING GUA
       {
         stack: [
-          pdfSectionHeader(12, "Analiza Mieszkańców i Personalizacja Ming Gua", "Kalkulacja Ba Zhai: liczby Kua, 4 kierunki sprzyjające, 4 niepomyślne oraz weryfikacja mebli."),
+          pdfSectionHeader(12, "Twoja Strefa Snu i Pracy (Profil Kua i Rok 2026)", "Osobiste kierunki regeneracji, skupienia i zalecenia dla domowników."),
           pdfCardGrid(residentCards, 2)
         ]
       },
@@ -3007,7 +3007,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         pageBreak: "before",
         stack: [
-          pdfSectionHeader(13, "Audyt Pomieszczenie po Pomieszczeniu", "Schemat: Obserwacja → Znaczenie → Problem / Diagnoza → Rekomendacja aranżacyjna."),
+          pdfSectionHeader(13, "Audyt Pomieszczenie po Pomieszczeniu", "Schemat: Obserwacja → Problem / Diagnoza → Konkretna porada aranżacyjna."),
           pdfCardGrid(roomCards, 2)
         ]
       },
@@ -3015,7 +3015,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 14. ANALIZA 3 KLUCZOWYCH FILARÓW MEBLOWYCH
       {
         stack: [
-          pdfSectionHeader(14, "Analiza 3 Kluczowych Filarów Meblowych", "Łóżko (Sen & Regeneracja), Biurko (Kariera & Skupienie) oraz Płyta kuchenna (Zdrowie & Zasoby)."),
+          pdfSectionHeader(14, "Ustawienie Kluczowych Mebli (Łóżko, Biurko, Kuchnia)", "Łóżko (Sen & Regeneracja), Biurko (Kariera & Skupienie) oraz Płyta kuchenna (Zdrowie & Zasoby)."),
           pdfCardGrid(furnitureCards, 2)
         ]
       },
@@ -3026,7 +3026,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
             {
               unbreakable: true,
               stack: [
-                pdfSectionHeader(15, "Analiza Pięciu Żywiołów (Wu Xing Elemental Balance)", "Cykle odżywczy, osłabiający, kontrolujący oraz dedykowana paleta materiałowa i kolorystyczna."),
+                pdfSectionHeader(15, "Harmonia Kolorów i Materiałów (5 Żywiołów)", "Rekomendowana paleta materiałowa, barwy i faktury wspierające równowagę."),
                 pdfCard(
                   "Bilans żywiołów i wskazówki harmonizujące",
                   `${report.wu_xing.generative_cycle_advice}\n\n${report.wu_xing.controlling_cycle_advice}`,
@@ -3047,7 +3047,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         pageBreak: "before",
         unbreakable: true,
         stack: [
-          pdfSectionHeader(16, "Matryca Problemów z Priorytetami (P1–P4)", "P1 – Krytyczny, P2 – Ważny, P3 – Zalecany, P4 – Opcjonalny."),
+          pdfSectionHeader(16, "Najważniejsze Korekty Uszeregowane Priorytetem (P1–P4)", "P1 – Pilny, P2 – Ważny, P3 – Zalecany, P4 – Opcjonalny."),
           pdfPrioritizedIssuesTable(report.prioritized_issues)
         ]
       },
@@ -3056,7 +3056,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(17, "3-Poziomowe Rekomendacje Korekt", "Poziom 1: Bez remontu (koszt 0 zł), Poziom 2: Drobne ingerencje, Poziom 3: Prace architektoniczne."),
+          pdfSectionHeader(17, "Plan Działania — 3 Poziomy Korekt", "Poziom 1: Bez remontu (koszt 0 zł, 15 min), Poziom 2: Drobne zakupy, Poziom 3: Prace remontowe."),
           pdfTieredRecommendationsTable(report.tiered_recommendations)
         ]
       },
@@ -3065,7 +3065,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(18, "Harmonogram Wdrożenia (Roadmap)", "Krok po kroku: Etap 1 (1–7 dni), Etap 2 (30 dni), Etap 3 (Przy kolejnym remoncie)."),
+          pdfSectionHeader(18, "Harmonogram Wdrożenia Krok po Kroku (Roadmap)", "Etap 1: Natychmiast (1–7 dni), Etap 2: W tym miesiącu (30 dni), Etap 3: Przy kolejnym remoncie."),
           pdfRoadmapTable(report.implementation_roadmap)
         ]
       },
@@ -3074,7 +3074,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(19, "Zestawienie Przestrzenne „Przed” i „Po”", "Numery zaleceń [1], [2], [3]... odsyłające bezpośrednio do wdrożonych korekt."),
+          pdfSectionHeader(19, "Zestawienie Przestrzenne „Przed” i „Po”", "Porównanie obecnego układu z docelowym układem po wdrożeniu korekt."),
           pdfBeforeAfterTable(report.before_after_shifts)
         ]
       },
@@ -3082,7 +3082,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 20. BIBLIOGRAFIA & REJESTR ŹRÓDEŁ
       {
         stack: [
-          pdfSectionHeader(20, "Wykres Metod i Rejestr Źródeł Klasycznych", "Transparentność badawcza, stopień pewności metod i literatura źródłowa."),
+          pdfSectionHeader(20, "Rejestr Metod i Źródeł Klasycznych", "Transparentność badawcza, stopień pewności metod i literatura źródłowa."),
           pdfMethodScoreChart(report),
           pdfCardGrid(
             report.source_ledger.map((s) =>
