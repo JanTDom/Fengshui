@@ -715,6 +715,13 @@ FUNDAMENTALNE ZASADY JĘZYKA I PRAKTYCZNOŚCI (DLA LAIKA):
    - Analizuj WYŁĄCZNIE meble i elementy, które użytkownik realnie umieścił na rzucie (w plan_annotations.markers lub furniture_annotations.keyPieces).
    - Nigdy nie zmyślaj mebli ani pomieszczeń, których nie ma na schemacie.
    - Pomiary podawaj w centymetrach (np. min. 65 cm dojścia do łóżka, 90-110 cm szerokości korytarza).
+6. GRAMATYKA POLSKA, WIELKOŚĆ LITER I ZAPIS PO DWUKROPKU (BEZWZGLĘDNY STANDARD):
+   - W zdaniach i nagłówkach TYLKO pierwsza litera ma być wielka (Sentence case). Nigdy nie stosuj angielskiego Title Case.
+   - PO DWUKROPKU (":") tekst ZAWSZE zaczynaj z MAŁEJ litery, chyba że bezpośrednio po dwukropku występuje nazwa własna (np. imię, symbol Kua, nazwa żywiołu).
+     * Poprawnie: "Poziom 1: bez remontu (koszt: 0 zł, 15 minut)", "Obserwacja: łóżko stoi naprzeciw drzwi", "Diagnoza: przeciąg w osi drzwi–okno", "Rekomendacja: odsuń biurko od okna", "Ciągi komunikacyjne: zachowaj minimum 90 cm".
+     * Wyjątek (nazwy własne): "Żywioł: Metal", "Kierunek: Północ (N)", "Profil: Kua 3 (Drewno)".
+7. ANALIZA OTOCZENIA DLA MIESZKAŃ I LOKALI:
+   - Jeśli analizowana nieruchomość to mieszkanie na piętrze lub parterze budynku wielorodzinnego, a użytkownik nie zdefiniował danych zewnętrznej działki, skup się na wejściu z klatki schodowej, ekspozycji okien i mikrootoczeniu wnętrza. Nie twórz sztucznych opisów o ukształtowaniu terenu wokół budynku.
 
 DANE WEJŚCIOWE:
 ${JSON.stringify({

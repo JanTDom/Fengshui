@@ -157,7 +157,7 @@ export function ReportModal({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px", marginTop: "16px", marginBottom: "20px" }}>
               <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: "8px", padding: "12px" }}>
                 <strong style={{ display: "block", color: "#166534", fontSize: "0.82rem", textTransform: "uppercase", marginBottom: "6px" }}>
-                  ✓ 3 Największe Atuty Mieszkania
+                  ✓ 3 największe atuty mieszkania
                 </strong>
                 <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "0.78rem", color: "#14532D", lineHeight: 1.45 }}>
                   {report.executive_summary_points.top_three_assets.map((a, i) => (
@@ -168,7 +168,7 @@ export function ReportModal({
 
               <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: "8px", padding: "12px" }}>
                 <strong style={{ display: "block", color: "#991B1B", fontSize: "0.82rem", textTransform: "uppercase", marginBottom: "6px" }}>
-                  ⚠ 3 Główne Wyzwania do Poprawy
+                  ⚠ 3 główne wyzwania do poprawy
                 </strong>
                 <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "0.78rem", color: "#7F1D1D", lineHeight: 1.45 }}>
                   {report.executive_summary_points.top_three_challenges.map((c, i) => (
@@ -179,7 +179,7 @@ export function ReportModal({
 
               <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", padding: "12px" }}>
                 <strong style={{ display: "block", color: "#92400E", fontSize: "0.82rem", textTransform: "uppercase", marginBottom: "6px" }}>
-                  ⚡ 5 Natychmiastowych Zaleceń (Koszt 0 zł)
+                  ⚡ 5 natychmiastowych zaleceń (koszt: 0 zł)
                 </strong>
                 <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "0.78rem", color: "#78350F", lineHeight: 1.45 }}>
                   {report.executive_summary_points.top_five_instant_actions.map((act, i) => (
@@ -194,8 +194,8 @@ export function ReportModal({
           {report.consultation_goal ? (
             <div style={{ background: "#FFFDFB", border: "1px solid #E0D7C6", borderRadius: "8px", padding: "14px 16px", marginTop: "16px", marginBottom: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                <span style={{ fontSize: "0.72rem", color: "#C49544", fontWeight: 800, textTransform: "uppercase" }}>Zdefiniowany Cel Konsultacji</span>
-                <span style={{ fontSize: "0.7rem", color: "var(--muted)", fontWeight: 600 }}>Architektura & Klasyczne Feng Shui</span>
+                <span style={{ fontSize: "0.72rem", color: "#C49544", fontWeight: 800, textTransform: "uppercase" }}>Zdefiniowany cel konsultacji</span>
+                <span style={{ fontSize: "0.7rem", color: "var(--muted)", fontWeight: 600 }}>Architektura & klasyczne Feng Shui</span>
               </div>
               <strong style={{ fontSize: "0.95rem", color: "var(--ink)", display: "block", marginBottom: "6px" }}>
                 {report.consultation_goal.primary_goal}
@@ -214,7 +214,7 @@ export function ReportModal({
           {report.resident_analysis && report.resident_analysis.length > 0 ? (
             <div className="report-residents-section" style={{ marginTop: "24px", marginBottom: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)", margin: 0 }}>Twoja strefa snu i pracy według roku urodzenia (Profil Kua)</h3>
+                <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)", margin: 0 }}>Twoja strefa snu i pracy według roku urodzenia (profil Kua)</h3>
                 <span style={{ fontSize: "0.72rem", background: "rgba(45, 90, 70, 0.1)", color: "#2D5A46", padding: "3px 8px", borderRadius: "6px", fontWeight: 700 }}>Wpływy w bieżącym roku</span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
@@ -243,7 +243,7 @@ export function ReportModal({
           {/* 3 KEY FURNITURE PILLARS */}
           {report.furniture_recommendations && report.furniture_recommendations.length > 0 ? (
             <div style={{ marginTop: "24px", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Ustawienie kluczowych mebli (Łóżko, Biurko, Płyta kuchenna)</h3>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Ustawienie kluczowych mebli (łóżko, biurko, kuchnia)</h3>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "12px" }}>
                 {report.furniture_recommendations.slice(0, 4).map((f, idx) => (
                   <div key={idx} style={{ background: "#FFFFFF", border: "1px solid #E0D7C6", borderRadius: "8px", padding: "12px 14px" }}>
@@ -270,7 +270,7 @@ export function ReportModal({
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "12px" }}>
                 <div style={{ background: "#F0FDF4", border: "1px solid #86EFAC", borderRadius: "8px", padding: "12px" }}>
                   <strong style={{ display: "block", color: "#166534", fontSize: "0.82rem", textTransform: "uppercase", marginBottom: "6px" }}>
-                    Poziom 1: Bez remontu (Koszt: 0 zł, 15 minut)
+                    Poziom 1: bez remontu (koszt: 0 zł, 15 minut)
                   </strong>
                   <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "0.76rem", color: "#14532D", lineHeight: 1.45 }}>
                     {report.tiered_recommendations.no_renovation_quick_wins.map((r, i) => (
@@ -281,7 +281,7 @@ export function ReportModal({
 
                 <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: "8px", padding: "12px" }}>
                   <strong style={{ display: "block", color: "#92400E", fontSize: "0.82rem", textTransform: "uppercase", marginBottom: "6px" }}>
-                    Poziom 2: Drobne ingerencje (Oświetlenie, tekstylia)
+                    Poziom 2: drobne zakupy i oświetlenie (koszt: 50–200 zł)
                   </strong>
                   <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "0.76rem", color: "#78350F", lineHeight: 1.45 }}>
                     {report.tiered_recommendations.light_interventions.map((r, i) => (
@@ -292,7 +292,7 @@ export function ReportModal({
 
                 <div style={{ background: "#F9FAFB", border: "1px solid #D1D5DB", borderRadius: "8px", padding: "12px" }}>
                   <strong style={{ display: "block", color: "#374151", fontSize: "0.82rem", textTransform: "uppercase", marginBottom: "6px" }}>
-                    Poziom 3: Prace aranżacyjne / Remont
+                    Poziom 3: prace aranżacyjne i remontowe
                   </strong>
                   <ul style={{ margin: 0, paddingLeft: "16px", fontSize: "0.76rem", color: "#1F2937", lineHeight: 1.45 }}>
                     {report.tiered_recommendations.architectural_renovations.map((r, i) => (
@@ -389,7 +389,7 @@ export function ReportModal({
             <div style={{ background: "#FAF8F4", border: "1px solid #D8CDB8", borderRadius: "8px", padding: "14px 16px", marginTop: "20px", marginBottom: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                 <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)", margin: 0 }}>Tradycyjna mapa energii — Latające Gwiazdy Okresu 9 (2024–2043)</h3>
-                <span style={{ fontSize: "0.72rem", color: "#8E601B", fontWeight: 700 }}>Fasada: {report.natal_chart.facing_direction} · Tył: {report.natal_chart.sitting_direction}</span>
+                <span style={{ fontSize: "0.72rem", color: "#8E601B", fontWeight: 700 }}>Fasada: {report.natal_chart.facing_direction} · tył: {report.natal_chart.sitting_direction}</span>
               </div>
               <p style={{ fontSize: "0.82rem", color: "var(--ink)", lineHeight: 1.45, margin: "0 0 10px 0" }}>
                 {report.natal_chart.period9_strategy}
@@ -400,17 +400,17 @@ export function ReportModal({
           {/* BEFORE AND AFTER SHIFTS */}
           {report.before_after_shifts && report.before_after_shifts.length > 0 ? (
             <div style={{ marginTop: "24px", marginBottom: "20px" }}>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Podsumowanie: Jak jest teraz vs Jak powinno być po korekcie</h3>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "var(--ink)", marginBottom: "12px" }}>Zestawienie przestrzenne „przed” i „po”</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {report.before_after_shifts.map((shift, idx) => (
                   <div key={idx} style={{ display: "grid", gridTemplateColumns: "30px 1fr 1fr", gap: "10px", background: "#FFFFFF", border: "1px solid #E0D7C6", borderRadius: "8px", padding: "10px 12px", alignItems: "center" }}>
                     <span style={{ fontWeight: 800, color: "#C49544", fontSize: "0.85rem" }}>[{shift.id}]</span>
                     <div>
-                      <small style={{ color: "#DC2626", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>Stan obecny (Przed):</small>
+                      <small style={{ color: "#DC2626", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>Stan obecny (przed):</small>
                       <span style={{ fontSize: "0.78rem", color: "#41524B" }}>{shift.before_state}</span>
                     </div>
                     <div>
-                      <small style={{ color: "#16A34A", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>Docelowo (Po korekcie):</small>
+                      <small style={{ color: "#16A34A", fontWeight: 700, display: "block", fontSize: "0.7rem", textTransform: "uppercase" }}>Docelowo (po korekcie):</small>
                       <span style={{ fontSize: "0.78rem", color: "#10221F", fontWeight: 600 }}>{shift.after_recommendation}</span>
                     </div>
                   </div>

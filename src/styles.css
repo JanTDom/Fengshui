@@ -6388,7 +6388,7 @@ body {
   display: grid;
   place-items: center;
   overflow: auto;
-  padding: 24px;
+  padding: 20px 20px 105px 20px;
   position: relative;
 }
 
@@ -6412,26 +6412,28 @@ body {
   max-height: 100%;
   margin: 0 auto;
   line-height: 0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
   width: min(900px, calc(100vw - 640px));
   min-width: min(720px, 100%);
-  height: min(68vh, 580px);
-  min-height: 420px;
+  height: min(60vh, 480px);
+  min-height: 380px;
 }
 
 .workspace-canvas-wrapper .scan-canvas-stage.file-preview {
   width: min(680px, 100%);
-  min-height: 360px;
+  min-height: 340px;
 }
 
 .workspace-canvas-wrapper .scan-canvas-stage.image-preview .scan-image-elem:not(.scan-pdf-elem) {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(880px, calc(100vw - 640px));
-  max-height: min(72vh, 600px);
+  max-width: min(840px, calc(100vw - 640px));
+  max-height: min(58vh, 480px);
   object-fit: contain;
   margin: 0 auto;
 }
@@ -6451,7 +6453,8 @@ body {
   }
 
   .workspace-canvas-wrapper .scan-canvas-stage.image-preview .scan-image-elem:not(.scan-pdf-elem) {
-    max-width: min(720px, calc(100vw - 48px));
+    max-width: min(700px, calc(100vw - 48px));
+    max-height: min(52vh, 440px);
   }
 
   .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
@@ -6500,19 +6503,19 @@ body {
 /* FLOATING CONTROLS AT BOTTOM OF CANVAS */
 .canvas-floating-controls {
   position: absolute;
-  bottom: 24px;
+  bottom: 16px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   z-index: 25;
-  background: rgba(255, 253, 251, 0.94);
+  background: rgba(255, 253, 251, 0.96);
   backdrop-filter: blur(14px);
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid rgba(16, 34, 31, 0.12);
-  box-shadow: 0 10px 32px rgba(16, 34, 31, 0.16);
+  box-shadow: 0 8px 24px rgba(16, 34, 31, 0.14);
 }
 
 .zoom-controls-group {

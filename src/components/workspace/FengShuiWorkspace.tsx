@@ -1278,6 +1278,9 @@ export function FengShuiWorkspace({
                 <Compass size={16} />
                 <strong>Otoczenie zewnętrzne i ulica (Szkoła Formy)</strong>
               </div>
+              <p style={{ fontSize: "0.72rem", color: "var(--muted)", margin: "0 0 8px 0" }}>
+                Dla mieszkań: określ widok z okien, sąsiedztwo i ruch na drodze pod budynkiem.
+              </p>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div>
                   <label className="res-field-label" style={{ display: "block", marginBottom: "4px", fontSize: "0.74rem", fontWeight: 700, color: "var(--ink)" }}>
@@ -1306,7 +1309,7 @@ export function FengShuiWorkspace({
                     onChange={(e) => setLandscapeForm(e.target.value)}
                     style={{ width: "100%", fontSize: "0.78rem", padding: "5px 8px" }}
                   >
-                    <option value="Wyższy budynek / wzniesienie z tyłu (Czarny Żółw - oparcie)">Wyższy budynek z tyłu (Stabilne oparcie Żółwia)</option>
+                    <option value="Wyższy budynek / wzniesienie z tyłu (Czarny Żółw - oparcie)">Wyższy budynek z tyłu (stabilne oparcie Żółwia)</option>
                     <option value="Otwarta, jasna przestrzeń przed oknami (Czerwony Feniks)">Otwarta przestrzeń przed oknami (Feniks)</option>
                     <option value="Zieleń i budynki po bokach (Smok i Tygrys)">Zieleń i budynki po bokach (Smok i Tygrys)</option>
                     <option value="Płaski, gęsty teren miejski">Płaski, jednolity teren miejski</option>
@@ -1323,10 +1326,10 @@ export function FengShuiWorkspace({
                     onChange={(e) => setShaQiHazards([e.target.value])}
                     style={{ width: "100%", fontSize: "0.78rem", padding: "5px 8px" }}
                   >
-                    <option value="Brak widocznych zagrożeń">Brak widocznych zagrożeń (Czyste otoczenie)</option>
-                    <option value="Ostry narożnik sąsiedniego budynku w oknach">Ostry narożnik budynku w oknach (Zatruta Strzała)</option>
+                    <option value="Brak widocznych zagrożeń">Brak widocznych zagrożeń (czyste otoczenie)</option>
+                    <option value="Ostry narożnik sąsiedniego budynku w oknach">Ostry narożnik budynku w oknach (zatruta strzała)</option>
                     <option value="Słup energetyczny / transformator za oknem">Słup energetyczny / transformator w pobliżu</option>
-                    <option value="Droga uderzająca prostopadle w budynek">Droga uderzająca prostopadle (T-skrzyżowanie)</option>
+                    <option value="Droga uderzająca prostopadle w budynek">Droga uderzająca prostopadle (skrzyżowanie T)</option>
                   </select>
                 </div>
               </div>

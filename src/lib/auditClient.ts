@@ -2676,7 +2676,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(1, "Podsumowanie w Pigułce (Dla Właściciela)", "Główne wnioski strategiczne, bilans potencjału lokalu oraz kluczowe priorytety."),
+          pdfSectionHeader(1, "Podsumowanie w pigułce (dla właściciela)", "Główne wnioski strategiczne, bilans potencjału lokalu oraz kluczowe priorytety."),
           {
             table: {
               dontBreakRows: true,
@@ -2685,7 +2685,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                 [
                   {
                     stack: [
-                      { text: "WYNIK POTENCJAŁU", style: "scoreLabel" },
+                      { text: "Wynik potencjału", style: "scoreLabel" },
                       {
                         text: [
                           { text: `${report.score}`, fontSize: 28, bold: true, color: "#10221F" },
@@ -2701,9 +2701,9 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                   },
                   {
                     stack: [
-                      { text: "PODSUMOWANIE STRATEGICZNE", style: "cardEyebrow" },
+                      { text: "Podsumowanie strategiczne", style: "cardEyebrow" },
                       { text: pdfText(report.executive_summary), style: "bodyText" },
-                      { text: "REKOMENDACJA DECYZYJNA", style: "cardEyebrow", margin: [0, 4, 0, 1] },
+                      { text: "Rekomendacja decyzyjna", style: "cardEyebrow", margin: [0, 4, 0, 1] },
                       { text: pdfText(report.purchase_decision), style: "bodyText" }
                     ],
                     fillColor: "#FFFDFB",
@@ -2733,21 +2733,21 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                       [
                         {
                           stack: [
-                            { text: "3 NAJWIĘKSZE ATUTY", style: "cardEyebrow", color: "#16A34A" },
+                            { text: "3 największe atuty", style: "cardEyebrow", color: "#16A34A" },
                             { ul: report.executive_summary_points.top_three_assets, style: "bulletText", margin: [0, 2, 0, 0] }
                           ],
                           fillColor: "#F0FDF4"
                         },
                         {
                           stack: [
-                            { text: "3 GŁÓWNE WYZWANIA", style: "cardEyebrow", color: "#DC2626" },
+                            { text: "3 główne wyzwania", style: "cardEyebrow", color: "#DC2626" },
                             { ul: report.executive_summary_points.top_three_challenges, style: "bulletText", margin: [0, 2, 0, 0] }
                           ],
                           fillColor: "#FEF2F2"
                         },
                         {
                           stack: [
-                            { text: "5 NATYCHMIASTOWYCH ZALECEŃ", style: "cardEyebrow", color: "#D97706" },
+                            { text: "5 natychmiastowych zaleceń (koszt: 0 zł)", style: "cardEyebrow", color: "#D97706" },
                             { ul: report.executive_summary_points.top_five_instant_actions, style: "bulletText", margin: [0, 2, 0, 0] }
                           ],
                           fillColor: "#FFFBEB"
@@ -2774,7 +2774,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(2, "Cel Konsultacji i Oczekiwane Rezultaty", "Zdefiniowane intencje i priorytety właściciela lokalu."),
+          pdfSectionHeader(2, "Cel konsultacji i oczekiwane rezultaty", "Zdefiniowane intencje i priorytety właściciela lokalu."),
           ...(report.consultation_goal
             ? [
                 pdfCard(
@@ -2795,7 +2795,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(3, "Zakres i Metodologia Analizy", "Zastosowane ramy: Szkoła Formy, Ba Zhai, 9 Stref Bagua oraz Ergonomia Wnętrz."),
+          pdfSectionHeader(3, "Zakres i metodologia analizy", "Zastosowane ramy: Szkoła Formy, Ba Zhai, 9 stref Bagua oraz ergonomia wnętrz."),
           ...(report.methodology_scope
             ? [
                 pdfCard(
@@ -2816,7 +2816,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(4, "Dane Wejściowe i Parametry Bazowe", "Zweryfikowane parametry geometryczne, kompasowe i demograficzne lokalu."),
+          pdfSectionHeader(4, "Dane wejściowe i parametry bazowe", "Zweryfikowane parametry geometryczne, kompasowe i demograficzne lokalu."),
           ...(report.input_data_record
             ? [
                 {
@@ -2830,7 +2830,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                         { text: `• Azymut Północy N: ${report.input_data_record.compass_north_azimuth}`, style: "bodyText" }
                       ],
                       [
-                        { text: `• Oś Fasada/Tył: ${report.input_data_record.facing_sitting}`, style: "bodyText" },
+                        { text: `• Oś fasada/tył: ${report.input_data_record.facing_sitting}`, style: "bodyText" },
                         { text: `• Okres energetyczny: ${report.input_data_record.period_and_timeline}`, style: "bodyText" }
                       ],
                       [
@@ -2859,7 +2859,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(5, "Analiza Otoczenia Budynku i Ulicy", "Ukształtowanie terenu, ciągi komunikacyjne, wejście na posesję i ochrona przed zagrożeniami."),
+          pdfSectionHeader(5, "Analiza otoczenia budynku i wejścia", "Ukształtowanie terenu, ciągi komunikacyjne, wejście do budynku i ochrona przed zagrożeniami."),
           ...(report.macro_environment
             ? [
                 pdfCard(
@@ -2882,7 +2882,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(6, "Analiza Bryły i Układu Lokalu", "Facing / Sitting, proporcje bryły, ciągi komunikacyjne i pozycja w kondygnacji."),
+          pdfSectionHeader(6, "Analiza bryły i układu lokalu", "Facing / sitting, proporcje bryły, ciągi komunikacyjne i pozycja w kondygnacji."),
           ...(report.building_morphology
             ? [
                 pdfCard(
@@ -2890,7 +2890,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                   `${report.building_morphology.building_shape}\n\n${report.building_morphology.facing_sitting_verdict}`,
                   [
                     `Brakujące strefy: ${report.building_morphology.missing_sectors}`,
-                    `Komunikacja pionowa / Schody: ${report.building_morphology.entry_and_vertical_circulation}`,
+                    `Komunikacja pionowa / schody: ${report.building_morphology.entry_and_vertical_circulation}`,
                     `Pozycja w kondygnacji: ${report.building_morphology.dwelling_relation_to_core}`,
                     ...report.building_morphology.recommendations.map((r) => `Zalecenie: ${r}`)
                   ],
@@ -2906,7 +2906,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         pageBreak: "before",
         unbreakable: true,
         stack: [
-          pdfSectionHeader(7, "Graficzny Plan z Siatką Stref i Wektorami CAD", "Wektory ścian, orientacja N oraz naniesione elementy wyposażenia wnętrza w skali."),
+          pdfSectionHeader(7, "Graficzny plan z siatką stref i wektorami CAD", "Wektory ścian, orientacja N oraz naniesione elementy wyposażenia wnętrza w skali."),
           planOverlayImage
             ? {
                 image: planOverlayImage,
@@ -2922,7 +2922,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(8, "Przepływ Energii i Komunikacja (Cyrkulacja)", "Ciągi komunikacyjne, osie drzwi–okno, doświetlenie i serce domu."),
+          pdfSectionHeader(8, "Przepływ energii i komunikacja wewnętrzna (cyrkulacja)", "Ciągi komunikacyjne, osie drzwi–okno, doświetlenie i serce domu."),
           ...(report.qi_flow
             ? [
                 pdfCard(
@@ -2945,7 +2945,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(9, "Strefa Wejściowa (Przedpokój / Hol)", "Pierwsze wrażenie, akumulacja energii, doświetlenie i eliminacja zatorów."),
+          pdfSectionHeader(9, "Strefa wejściowa (przedpokój / hol)", "Pierwsze wrażenie, akumulacja energii, doświetlenie i eliminacja zatorów."),
           ...(report.ming_tang
             ? [
                 pdfCard(
@@ -2956,7 +2956,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
                     `Doświetlenie i powitanie: ${report.ming_tang.welcome_lighting_and_flow}`,
                     ...report.ming_tang.remedies.map((r) => `Korekta strefy wejściowej: ${r}`)
                   ],
-                  "Strefa Wejściowa · Brama do obfitości"
+                  "Strefa wejściowa · Brama do obfitości"
                 )
               ]
             : [])
@@ -2967,7 +2967,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         pageBreak: "before",
         stack: [
-          pdfSectionHeader(10, "Siatka 9 Stref Domu (Sektory Bagua)", "Pełna charakterystyka każdego sektora, powiązane sfery życia i diagnoza potencjału."),
+          pdfSectionHeader(10, "Siatka 9 stref domu (sektory Bagua)", "Pełna charakterystyka każdego sektora, powiązane sfery życia i diagnoza potencjału."),
           pdfSectorMatrix(report.sector_map)
         ]
       },
@@ -2978,7 +2978,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
             {
               unbreakable: true,
               stack: [
-                pdfSectionHeader(11, "Tradycyjna Mapa Energii (Latające Gwiazdy Okresu 9: 2024–2043)", `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, Tył: ${natalChart.sitting_direction}`),
+                pdfSectionHeader(11, "Tradycyjna mapa energii (Latające Gwiazdy Okresu 9: 2024–2043)", `${natalChart.chart_type} · ${natalChart.period_label} | Fasada: ${natalChart.facing_direction}, tył: ${natalChart.sitting_direction}`),
                 pdfNatalChartMatrix(natalChart),
                 pdfCard(
                   "Strategia energetyczna w Okresie 9 (2024–2043)",
@@ -2998,7 +2998,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 12. ANALIZA MIESZKAŃCÓW I MING GUA
       {
         stack: [
-          pdfSectionHeader(12, "Twoja Strefa Snu i Pracy (Profil Kua i Rok 2026)", "Osobiste kierunki regeneracji, skupienia i zalecenia dla domowników."),
+          pdfSectionHeader(12, "Twoja strefa snu i pracy (profil Kua i rok 2026)", "Osobiste kierunki regeneracji, skupienia i zalecenia dla domowników."),
           pdfCardGrid(residentCards, 2)
         ]
       },
@@ -3007,7 +3007,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         pageBreak: "before",
         stack: [
-          pdfSectionHeader(13, "Audyt Pomieszczenie po Pomieszczeniu", "Schemat: Obserwacja → Problem / Diagnoza → Konkretna porada aranżacyjna."),
+          pdfSectionHeader(13, "Audyt pomieszczenie po pomieszczeniu", "Schemat: obserwacja → diagnoza problemu → konkretna porada aranżacyjna."),
           pdfCardGrid(roomCards, 2)
         ]
       },
@@ -3015,7 +3015,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 14. ANALIZA 3 KLUCZOWYCH FILARÓW MEBLOWYCH
       {
         stack: [
-          pdfSectionHeader(14, "Ustawienie Kluczowych Mebli (Łóżko, Biurko, Kuchnia)", "Łóżko (Sen & Regeneracja), Biurko (Kariera & Skupienie) oraz Płyta kuchenna (Zdrowie & Zasoby)."),
+          pdfSectionHeader(14, "Ustawienie kluczowych mebli (łóżko, biurko, kuchnia)", "Łóżko (sen i regeneracja), biurko (kariera i skupienie) oraz płyta kuchenna (zdrowie i zasoby)."),
           pdfCardGrid(furnitureCards, 2)
         ]
       },
@@ -3026,7 +3026,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
             {
               unbreakable: true,
               stack: [
-                pdfSectionHeader(15, "Harmonia Kolorów i Materiałów (5 Żywiołów)", "Rekomendowana paleta materiałowa, barwy i faktury wspierające równowagę."),
+                pdfSectionHeader(15, "Harmonia kolorów i materiałów (5 żywiołów)", "Rekomendowana paleta materiałowa, barwy i faktury wspierające równowagę."),
                 pdfCard(
                   "Bilans żywiołów i wskazówki harmonizujące",
                   `${report.wu_xing.generative_cycle_advice}\n\n${report.wu_xing.controlling_cycle_advice}`,
@@ -3047,7 +3047,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
         pageBreak: "before",
         unbreakable: true,
         stack: [
-          pdfSectionHeader(16, "Najważniejsze Korekty Uszeregowane Priorytetem (P1–P4)", "P1 – Pilny, P2 – Ważny, P3 – Zalecany, P4 – Opcjonalny."),
+          pdfSectionHeader(16, "Najważniejsze korekty uszeregowane priorytetem (P1–P4)", "P1 – pilny, P2 – ważny, P3 – zalecany, P4 – opcjonalny."),
           pdfPrioritizedIssuesTable(report.prioritized_issues)
         ]
       },
@@ -3056,7 +3056,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(17, "Plan Działania — 3 Poziomy Korekt", "Poziom 1: Bez remontu (koszt 0 zł, 15 min), Poziom 2: Drobne zakupy, Poziom 3: Prace remontowe."),
+          pdfSectionHeader(17, "Plan działania — 3 poziomy korekt", "Poziom 1: bez remontu (koszt: 0 zł, 15 min), Poziom 2: drobne zakupy i oświetlenie, Poziom 3: prace remontowe."),
           pdfTieredRecommendationsTable(report.tiered_recommendations)
         ]
       },
@@ -3065,7 +3065,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(18, "Harmonogram Wdrożenia Krok po Kroku (Roadmap)", "Etap 1: Natychmiast (1–7 dni), Etap 2: W tym miesiącu (30 dni), Etap 3: Przy kolejnym remoncie."),
+          pdfSectionHeader(18, "Harmonogram wdrożenia krok po kroku (roadmap)", "Etap 1: natychmiast (1–7 dni), Etap 2: w tym miesiącu (30 dni), Etap 3: przy kolejnym remoncie."),
           pdfRoadmapTable(report.implementation_roadmap)
         ]
       },
@@ -3074,7 +3074,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       {
         unbreakable: true,
         stack: [
-          pdfSectionHeader(19, "Zestawienie Przestrzenne „Przed” i „Po”", "Porównanie obecnego układu z docelowym układem po wdrożeniu korekt."),
+          pdfSectionHeader(19, "Zestawienie przestrzenne „przed” i „po”", "Porównanie obecnego układu z docelowym układem po wdrożeniu korekt."),
           pdfBeforeAfterTable(report.before_after_shifts)
         ]
       },
@@ -3082,7 +3082,7 @@ export async function downloadReportPdf(report: AuditReport, options: ReportPdfO
       // 20. BIBLIOGRAFIA & REJESTR ŹRÓDEŁ
       {
         stack: [
-          pdfSectionHeader(20, "Rejestr Metod i Źródeł Klasycznych", "Transparentność badawcza, stopień pewności metod i literatura źródłowa."),
+          pdfSectionHeader(20, "Rejestr metod i źródeł klasycznych", "Transparentność badawcza, stopień pewności metod i literatura źródłowa."),
           pdfMethodScoreChart(report),
           pdfCardGrid(
             report.source_ledger.map((s) =>
