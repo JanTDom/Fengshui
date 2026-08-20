@@ -4641,12 +4641,13 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   background: #FFFFFF;
   border: 1.5px solid #1A2B27;
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(16, 34, 31, 0.18);
-  min-width: 250px;
+  min-width: 280px;
+  max-width: 320px;
 }
 
 .calibrator-readout {
@@ -4670,7 +4671,7 @@ body {
 
 .calibrator-steppers button {
   height: 28px;
-  padding: 0 4px;
+  padding: 0 2px;
   background: #F4EFE6;
   border: 1px solid rgba(16, 34, 31, 0.15);
   border-radius: 4px;
@@ -4678,6 +4679,7 @@ body {
   font-weight: 700;
   color: #10221F;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.12s ease;
 }
 
@@ -4701,6 +4703,7 @@ body {
   font-size: 0.78rem;
   font-weight: 800;
   cursor: pointer;
+  white-space: nowrap;
   transition: background 0.15s ease;
 }
 
@@ -4710,12 +4713,12 @@ body {
 
 .floating-north-indicator {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 10px;
+  right: 10px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 5px 9px;
   background: rgba(255, 255, 255, 0.95);
   border: 1.5px solid #1A2B27;
   border-radius: 6px;
@@ -4724,6 +4727,7 @@ body {
   font-weight: 800;
   cursor: pointer;
   z-index: 20;
+  white-space: nowrap;
   box-shadow: 0 2px 8px rgba(16, 34, 31, 0.15);
   transition: all 0.15s ease;
   pointer-events: auto !important;
@@ -4742,6 +4746,7 @@ body {
   background: rgba(196, 149, 68, 0.18);
   color: #8C6D38;
   border-radius: 3px;
+  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
@@ -6400,11 +6405,12 @@ body {
 .workspace-canvas-wrapper .scan-canvas-stage.image-preview {
   position: relative;
   display: inline-block;
-  width: max-content;
-  height: max-content;
-  max-width: min(920px, calc(100vw - 640px));
-  max-height: min(72vh, 600px);
-  margin: auto;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0 auto;
+  line-height: 0;
 }
 
 .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
@@ -6423,8 +6429,10 @@ body {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(920px, calc(100vw - 640px));
+  max-width: min(880px, calc(100vw - 640px));
   max-height: min(72vh, 600px);
+  object-fit: contain;
+  margin: 0 auto;
 }
 
 .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview .scan-pdf-elem {
@@ -6437,12 +6445,12 @@ body {
 
 @media (max-width: 1180px) {
   .workspace-canvas-wrapper {
-    width: min(100%, 760px);
+    width: auto;
+    max-width: 100%;
   }
 
-  .workspace-canvas-wrapper .scan-canvas-stage.image-preview,
-  .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {
-    max-width: min(760px, calc(100vw - 64px));
+  .workspace-canvas-wrapper .scan-canvas-stage.image-preview .scan-image-elem:not(.scan-pdf-elem) {
+    max-width: min(720px, calc(100vw - 48px));
   }
 
   .workspace-canvas-wrapper .scan-canvas-stage.pdf-preview {

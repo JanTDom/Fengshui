@@ -228,39 +228,38 @@ export function FengShuiWorkspace({
       setNorthConfirmed(true);
       setScanTool("marker");
 
-      // Place default starting markers
+      // Place default starting markers precisely on the furniture in the blueprint
       setPlanMarkers([
         {
           id: "m_bed1",
           label: "Łóżko",
           category: "furniture",
-          xPercent: 78,
-          yPercent: 42,
-          facingDeg: 270,
-          scale: 1.1,
+          xPercent: 24,
+          yPercent: 62,
+          facingDeg: 90,
+          scale: 1.05,
           assignedResidentLabel: "Główny domownik",
           orientationRole: "Wezgłowie (kierunek głowy podczas snu)"
-        },
-        {
-          id: "m_desk1",
-          label: "Biurko",
-          category: "furniture",
-          xPercent: 28,
-          yPercent: 32,
-          facingDeg: 180,
-          scale: 1.0,
-          assignedResidentLabel: "Główny domownik",
-          orientationRole: "Kierunek wzroku podczas pracy"
         },
         {
           id: "m_sofa1",
           label: "Sofa",
           category: "furniture",
-          xPercent: 42,
-          yPercent: 68,
-          facingDeg: 0,
+          xPercent: 78,
+          yPercent: 72,
+          facingDeg: 270,
           scale: 1.15,
           orientationRole: "Oparcie (plecy przy ścianie)"
+        },
+        {
+          id: "m_table1",
+          label: "Stół jadalniany",
+          category: "furniture",
+          xPercent: 66,
+          yPercent: 49,
+          facingDeg: 0,
+          scale: 1.0,
+          orientationRole: "Stół centralny"
         }
       ]);
     } catch (err) {
@@ -314,9 +313,9 @@ export function FengShuiWorkspace({
 
   // Marker creation & manipulation
   function handleSelectTool(mode: AnnotationMode, label: string) {
+    setScanTool("marker");
     setAnnotationMode(mode);
     setSelectedMarkerLabel(label);
-    setScanTool("marker");
     setSelectedPlanMarkerId(null);
     if (mode === "furniture") {
       setFurnitureOrientationRole(defaultFurnitureOrientationRole(label));
@@ -329,12 +328,11 @@ export function FengShuiWorkspace({
       return;
     }
     const target = event.target as HTMLElement;
-    if (target.closest(".marker-floating-actions, .floating-north-compass, .plan-marker, button, input")) {
+    if (target.closest(".marker-floating-actions, .north-center-calibrator, .floating-north-indicator, .plan-marker, button, input")) {
       return;
     }
 
-    const img = planImageRef.current;
-    const rect = img && img.clientWidth > 0 ? img.getBoundingClientRect() : event.currentTarget.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
 
     const xPercent = Math.max(1, Math.min(99, ((event.clientX - rect.left) / rect.width) * 100));
@@ -785,11 +783,14 @@ export function FengShuiWorkspace({
               <div
                 className="workspace-canvas-wrapper"
                 style={{ transform: `scale(${zoomLevel})` }}
-                onClick={handleCanvasClick}
                 onPointerMove={handleCanvasPointerMove}
                 onPointerUp={handleCanvasPointerUp}
               >
-                <div className={scanStageClassName} style={scanStageStyle}>
+                <div
+                  className={scanStageClassName}
+                  style={scanStageStyle}
+                  onClick={handleCanvasClick}
+                >
                   {isPdfPreview ? (
                     <object
                       data={previewUrl}
@@ -868,7 +869,7 @@ export function FengShuiWorkspace({
                             <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a - 15))}>-15°</button>
                             <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 15))}>+15°</button>
                             <button type="button" onClick={() => setNorthAngle((a) => normalizeAngle(a + 45))}>+45°</button>
-                            <button type="button" onClick={() => setNorthAngle(0)}>Reset N (0°)</button>
+                            <button type="button" onClick={() => setNorthAngle(0)}>Reset (0°)</button>
                           </div>
                           <button
                             type="button"
