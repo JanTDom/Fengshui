@@ -227,41 +227,10 @@ export function FengShuiWorkspace({
       setNorthAngle(335);
       setNorthConfirmed(true);
       setScanTool("marker");
-
-      // Place default starting markers precisely on the furniture in the blueprint
-      setPlanMarkers([
-        {
-          id: "m_bed1",
-          label: "Łóżko",
-          category: "furniture",
-          xPercent: 24,
-          yPercent: 62,
-          facingDeg: 90,
-          scale: 1.05,
-          assignedResidentLabel: "Główny domownik",
-          orientationRole: "Wezgłowie (kierunek głowy podczas snu)"
-        },
-        {
-          id: "m_sofa1",
-          label: "Sofa",
-          category: "furniture",
-          xPercent: 78,
-          yPercent: 72,
-          facingDeg: 270,
-          scale: 1.15,
-          orientationRole: "Oparcie (plecy przy ścianie)"
-        },
-        {
-          id: "m_table1",
-          label: "Stół jadalniany",
-          category: "furniture",
-          xPercent: 66,
-          yPercent: 49,
-          facingDeg: 0,
-          scale: 1.0,
-          orientationRole: "Stół centralny"
-        }
-      ]);
+      setAnnotationMode("furniture");
+      setSelectedMarkerLabel("Łóżko");
+      setSelectedPlanMarkerId(null);
+      setPlanMarkers([]);
     } catch (err) {
       console.error("Błąd ładowania przykładowego rzutu:", err);
     }
@@ -877,6 +846,9 @@ export function FengShuiWorkspace({
                             onClick={() => {
                               setNorthConfirmed(true);
                               setScanTool("marker");
+                              setAnnotationMode("furniture");
+                              setSelectedMarkerLabel("Łóżko");
+                              setSelectedPlanMarkerId(null);
                             }}
                           >
                             <CheckCircle2 size={16} />
@@ -901,8 +873,8 @@ export function FengShuiWorkspace({
                       </button>
                     )}
 
-                    {/* PLACED PLAN MARKERS */}
-                    {planMarkers.map((marker) => {
+                    {/* PLACED PLAN MARKERS (Hidden during North calibration so the blueprint is 100% clean) */}
+                    {scanTool !== "north" && planMarkers.map((marker) => {
                       const isSelected = marker.id === selectedPlanMarkerId;
                       const isFurniture = marker.category === "furniture";
                       const isFixed = marker.category === "fixed";
@@ -1534,7 +1506,7 @@ function getShortDirectionLabel(deg: number): string {
 
 function renderLargeCenterNorthCompass(angle: number) {
   return (
-    <svg viewBox="0 0 160 160" width="160" height="160" aria-label="Duża tarcza kalibracji Północy">
+    <svg viewBox="0 0 160 160" width="124" height="124" aria-label="Duża tarcza kalibracji Północy">
       {/* Outer Crisp Disc */}
       <circle cx="80" cy="80" r="76" fill="#FFFFFF" fillOpacity="0.96" stroke="#1A2B27" strokeWidth="2.5" />
       <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(26, 43, 39, 0.22)" strokeWidth="1" strokeDasharray="3 3" />
